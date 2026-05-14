@@ -1,0 +1,119 @@
+'use client'
+
+import { useRef } from 'react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { ContentCard } from '@/components/content-card'
+import type { Movie, Series } from '@/lib/content-types'
+
+interface ContentRowProps {
+  title: string
+  content: (Movie | Series)[]
+  type: 'movie' | 'series'
+  showRank?: boolean
+  accentColor?: string
+  viewAllHref?: string
+}
+
+const ROW_CONFIG: Record<string, { color: string; href: string }> = {
+  'Nouveautés Films':            { color: '#e53935', href: '/movies?sort=new' },
+  'Nouveautés Séries':           { color: '#7c3aed', href: '/series?sort=new' },
+  'Top 10 Films de la semaine':  { color: '#f59e0b', href: '/movies?sort=top' },
+  'Top 10 Séries de la semaine': { color: '#06b6d4', href: '/series?sort=top' },
+  'Films populaires':            { color: '#10b981', href: '/movies?sort=popular' },
+  'Séries populaires':           { color: '#ec4899', href: '/series?sort=popular' },
+}
+
+export function ContentRow({ title, content, type, showRank = false, accentColor, viewAllHref }: ContentRowProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const config = ROW_CONFIG[title]
+  const color = accentColor ?? config?.color ?? '#e53935'
+  const href = viewAllHref ?? config?.href ?? (type === 'movie' ? '/movies' : '/series')
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return
+    const scrollAmount = scrollRef.current.clientWidth * 0.8
+    scrollRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    })
+  }
+
+  if (content.length === 0) return null
+
+  return (
+    <section className="relative py-6">
+      <div className="container mx-auto px-4 mb-4 flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="flex items-center gap-2 pl-3"
+        >
+          <div
+            className="w-[3px] rounded-full self-stretch"
+            style={{
+              background: `linear-gradient(to bottom, ${color}, transparent)`,
+              minHeight: '2rem',
+            }}
+          />
+          <h2 className="text-2xl md:text-3xl font-black text-white">
+            {title}
+          </h2>
+        </motion.div>
+
+        <Link href={href}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="flex items-center justify-center w-8 h-8 border border-white/20 text-white/60 hover:text-white hover:border-white/50 transition-all rounded-full cursor-pointer"
+          >
+            <ArrowUpRight className="w-4 h-4" />
+          </motion.div>
+        </Link>
+      </div>
+
+      <div className="relative group">
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm hover:bg-background"
+          onClick={() => scroll('left')}
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm hover:bg-background"
+          onClick={() => scroll('right')}
+        >
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto hide-scrollbar pb-4"
+          style={{ paddingLeft: "max(1rem, calc((100% - 80rem) / 2 + 1rem))", paddingRight: "1rem" }}
+        >
+          {content.map((item, index) => (
+            <ContentCard
+              key={`${type}-${item.id}-${index}`}
+              content={item}
+              type={type}
+              index={index}
+              showRank={showRank}
+            />
+          ))}
+        </div>
+
+        <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+      </div>
+    </section>
+  )
+}
