@@ -136,7 +136,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
             animate={{ opacity: 1, x: 0, rotate: -4 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             className="hidden md:block flex-shrink-0 relative"
-            style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8))' }}
+            style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0))' }}
           >
             {/* Rating badge */}
             <div className="absolute -top-3 -right-3 z-10 w-12 h-12 bg-zinc-900 rounded-full border-2 border-yellow-500/30 flex flex-col items-center justify-center shadow-xl">
