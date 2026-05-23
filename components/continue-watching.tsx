@@ -41,12 +41,12 @@ export function ContinueWatching() {
 
   return (
     <section className="relative py-6">
-      <div className="container mx-auto px-4 mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between" style={{ paddingLeft: 'max(1rem, calc((100% - 80rem) / 2 + 1rem))', paddingRight: 'max(1rem, calc((100% - 80rem) / 2 + 1rem))' }}>
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          className="flex items-center gap-2 pl-3"
+          className="flex items-center gap-2"
         >
           <div
             className="w-[3px] rounded-full self-stretch"
