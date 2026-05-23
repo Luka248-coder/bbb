@@ -246,7 +246,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
       )}
 
       {/* Tabs */}
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-6 mt-16">
         <div className="flex items-center gap-6 border-b border-white/10 mb-8">
           {(['synopsis', 'casting', 'similaires'] as TabType[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
