@@ -199,7 +199,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
             <div className="flex flex-wrap items-center gap-3">
               {/* Regarder */}
               <button
-                onClick={() => window.location.href = `/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}`}
+                onClick={() => router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}`)}
                 className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-7 py-3 rounded-full transition-all shadow-lg shadow-primary/30"
               >
                 <Play className="w-5 h-5 fill-current" />
