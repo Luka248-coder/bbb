@@ -158,3 +158,8 @@ body { background: transparent !important; }
 .bg-background { background-color: rgba(18,8,10,0.82) !important; }
 .bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(18,8,10,0.82) !important; }
 .min-h-screen { background: transparent !important; }
+
+/* Hide V0 badge */
+#V0-badge {
+  display: none !important;
+}
