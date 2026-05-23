@@ -4,7 +4,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Play, Star, Plus, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +20,33 @@ function isMovie(item: Movie | Series): item is Movie {
   return 'title' in item
 }
 
+function getBadges(content: Movie | Series, type: 'movie' | 'series'): { label: string; color: string }[] {
+  const badges: { label: string; color: string }[] = []
+  const releaseDate = isMovie(content) ? content.release_date : content.first_air_date
+  const hasVideo = !!content.video_url
+
+  // Badge "Nouveau" — sorti dans les 60 derniers jours
+  if (releaseDate) {
+    const daysSince = (Date.now() - new Date(releaseDate).getTime()) / 86400000
+    if (daysSince < 60 && daysSince >= 0) {
+      badges.push({ label: 'Nouveau', color: 'bg-green-500' })
+    }
+  }
+
+  // Badge "HD" — si le contenu a un lien vidéo
+  if (hasVideo) {
+    badges.push({ label: 'HD', color: 'bg-blue-600' })
+  }
+
+  // Badge type
+  badges.push({
+    label: type === 'movie' ? 'Film' : 'Série',
+    color: type === 'movie' ? 'bg-primary/80' : 'bg-purple-600/80',
+  })
+
+  return badges.slice(0, 2) // max 2 badges pour pas surcharger
+}
+
 export function ContentCard({
   content, type, index = 0, showRank = false, isFavorite = false, onToggleFavorite,
 }: ContentCardProps) {
@@ -29,6 +55,7 @@ export function ContentCard({
   const year = releaseDate ? new Date(releaseDate).getFullYear() : ''
   const tmdbId = content.tmdb_id || content.id
   const rank = index + 1
+  const badges = getBadges(content, type)
 
   return (
     <motion.div
@@ -38,7 +65,7 @@ export function ContentCard({
       whileHover={{ scale: 1.05 }}
       className="relative group flex-shrink-0"
     >
-      {/* Rank number — bold stroke style */}
+      {/* Rank number */}
       {showRank && (
         <div
           className="absolute -left-3 bottom-4 z-10 leading-none pointer-events-none select-none font-black text-primary/30"
@@ -73,8 +100,23 @@ export function ContentCard({
           {/* Dark overlay on hover */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          {/* Rating badge */}
-          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-sm rounded-lg text-xs font-semibold text-white">
+          {/* ── Badges top-right ── */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+            {badges.map(b => (
+              <span
+                key={b.label}
+                className={cn(
+                  'text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md text-white shadow-lg backdrop-blur-sm',
+                  b.color
+                )}
+              >
+                {b.label}
+              </span>
+            ))}
+          </div>
+
+          {/* Rating badge bottom-left */}
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-xs font-semibold text-white">
             <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
             {content.vote_average?.toFixed(1) ?? 'N/A'}
           </div>
@@ -88,7 +130,7 @@ export function ContentCard({
 
           {/* Favorite button */}
           {onToggleFavorite && (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <button className="w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/20"
                 onClick={e => { e.preventDefault(); onToggleFavorite() }}>
                 {isFavorite ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Plus className="w-3.5 h-3.5 text-white" />}
