@@ -301,64 +301,44 @@ export function Navbar() {
         />
       </div>
 
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          <Link href="/">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Image
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-                alt="Cinemafrance" width={200} height={60} className="h-10 md:h-14 w-auto"
-              />
-            </motion.div>
+      <div className="w-full px-6">
+        <div className="flex items-center h-16 md:h-20 gap-8">
+          <Link href="/" className="flex-shrink-0">
+            <Image
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
+              alt="StreamSelf" width={200} height={60} className="h-10 md:h-12 w-auto"
+            />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(link => {
               const isActive = pathname === link.href
               const isHighlight = 'highlight' in link && link.highlight
               return (
                 <Link key={link.href} href={link.href}>
-                  {isHighlight ? (
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={cn(
-                        'relative px-5 py-2 rounded-full text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 overflow-hidden',
-                        isActive
-                          ? 'bg-red-600 text-white shadow-lg shadow-red-900/40'
-                          : 'bg-gradient-to-r from-red-700/80 to-red-500/80 text-white hover:from-red-600 hover:to-red-400 shadow-md shadow-red-900/30'
-                      )}
-                    >
+                  <div className={cn(
+                    'relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 cursor-pointer flex flex-col items-center gap-0 select-none',
+                    isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white',
+                    isHighlight && !isActive && 'text-red-400 hover:text-red-300'
+                  )}>
+                    {link.label}
+                    {isActive && (
                       <motion.div
-                        animate={{ rotate: [0, 180, 360] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                      >
-                        <link.icon className="w-3.5 h-3.5" />
-                      </motion.div>
-                      {link.label}
-                      {/* shimmer */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full"
-                        animate={{ translateX: ['-100%', '200%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
+                        layoutId="nav-indicator"
+                        className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[2px] w-6 rounded-full"
+                        style={{ background: 'linear-gradient(to right, #f97316, #ef4444)' }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                       />
-                    </motion.div>
-                  ) : (
-                    <div className={cn(
-                      'px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer',
-                      isActive
-                        ? 'bg-zinc-800 text-white border border-zinc-700'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
-                    )}>
-                      {link.label}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </Link>
               )
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Search */}
             <div ref={searchRef} className="relative">
               <AnimatePresence>
