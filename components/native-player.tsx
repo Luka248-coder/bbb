@@ -646,6 +646,29 @@ export function NativePlayer({
   }
 
   // ─── Episode selection ───────────────────────────────────────────────────────
+
+  const [allEpisodes, setAllEpisodes] = useState<Episode[]>([])
+
+  useEffect(() => {
+    if (type !== 'series' || !seriesDbId) return
+    fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
+      .then(r => r.json())
+      .then((data: Episode[]) => setAllEpisodes(data || []))
+      .catch(() => {})
+  }, [seriesDbId, type])
+
+  const sortedEpisodes = [...allEpisodes].sort((a, b) =>
+    a.season_number !== b.season_number ? a.season_number - b.season_number : a.episode_number - b.episode_number
+  )
+  const currentIdx = sortedEpisodes.findIndex(e => e.season_number === currentSeason && e.episode_number === currentEpisode)
+  const prevEp = currentIdx > 0 ? sortedEpisodes[currentIdx - 1] : null
+  const nextEp = currentIdx < sortedEpisodes.length - 1 ? sortedEpisodes[currentIdx + 1] : null
+
+  const goToEpisode = (ep: Episode) => {
+    if (!ep.video_url) return
+    handleSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, ep.title || `Épisode ${ep.episode_number}`)
+  }
+
   const handleSelectEpisode = (season: number, episode: number, url: string, episodeTitle: string) => {
     setCurrentSeason(season)
     setCurrentEpisode(episode)
@@ -846,6 +869,32 @@ export function NativePlayer({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Prev / Next episode buttons — series only */}
+      {type === 'series' && (
+        <AnimatePresence>
+          {showControls && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
+              <button
+                onClick={() => prevEp && goToEpisode(prevEp)}
+                disabled={!prevEp}
+                className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center border transition-all backdrop-blur-sm ${prevEp ? 'bg-black/50 border-white/20 text-white hover:bg-white/20' : 'bg-black/20 border-white/10 text-white/20 cursor-not-allowed'}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+              </button>
+              <div className="w-24 h-24" />
+              <button
+                onClick={() => nextEp && goToEpisode(nextEp)}
+                disabled={!nextEp}
+                className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center border transition-all backdrop-blur-sm ${nextEp ? 'bg-black/50 border-white/20 text-white hover:bg-white/20' : 'bg-black/20 border-white/10 text-white/20 cursor-not-allowed'}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M6 18l8.5-6L6 6v12zm10-12v12h2V6h-2z"/></svg>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Controls overlay */}
       <AnimatePresence>
