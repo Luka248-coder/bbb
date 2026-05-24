@@ -4,6 +4,9 @@ import { getMovies, getSeries } from '@/lib/fastflux'
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
 import { Loading } from '@/components/loading'
 
+// Force dynamic : jamais de cache, données fraîches à chaque requête
+export const dynamic = 'force-dynamic'
+
 export const metadata = { title: 'Dashboard - Admin' }
 
 async function DashboardContent() {
