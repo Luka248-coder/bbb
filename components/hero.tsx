@@ -59,8 +59,7 @@ export function Hero({ content }: HeroProps) {
           />
           {/* Gradients */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/30" />
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#12080a] to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
         </motion.div>
       </AnimatePresence>
 
@@ -83,11 +82,6 @@ export function Hero({ content }: HeroProps) {
               height={300}
               className="rounded-2xl"
             />
-            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm rounded-b-2xl py-2 text-center">
-              <span className="text-white text-xs font-bold tracking-widest uppercase">
-                {type === 'movie' ? 'Film' : 'Série'}
-              </span>
-            </div>
           </div>
         </motion.div>
       </AnimatePresence>
