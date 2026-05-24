@@ -25,6 +25,7 @@ async function DashboardContent() {
     { data: recentTickets },
     { data: requestsByDay },
     { data: usersByDay },
+    { data: playerErrors },
   ] = await Promise.all([
     getMovies(),
     getSeries(),
@@ -57,6 +58,10 @@ async function DashboardContent() {
       .select('created_at')
       .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: true }),
+    supabase.from('player_errors')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50),
   ])
 
   return (
@@ -78,6 +83,7 @@ async function DashboardContent() {
       recentTickets={recentTickets || []}
       requestsByDay={requestsByDay || []}
       usersByDay={usersByDay || []}
+      playerErrors={playerErrors || []}
     />
   )
 }
