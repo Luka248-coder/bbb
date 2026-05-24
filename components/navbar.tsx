@@ -189,6 +189,18 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false)
+        setSearchResults([])
+        setSearchQuery('')
+      }
+    }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+
   const fetchNotifications = async () => {
     if (!user) return
     setLoadingNotifs(true)
