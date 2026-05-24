@@ -427,56 +427,50 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
             </div>
           </motion.div>
 
-        </div>
-
-        {/* ─── Player Errors ─── */}
-        {playerErrors.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-            className="mt-6 rounded-2xl overflow-hidden"
-            style={{ background: 'rgba(229,9,20,0.05)', border: '1px solid rgba(229,9,20,0.2)' }}
-          >
-            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'rgba(229,9,20,0.15)' }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(229,9,20,0.15)' }}>
-                  <AlertTriangle className="w-4 h-4 text-red-400" />
-                </div>
+          {/* ─── Erreurs de lecture ─── */}
+          <motion.div {...fade(0.22)} className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(229,9,20,0.2)', background: 'rgba(229,9,20,0.04)' }}>
+            <div className="flex items-center justify-between px-4 py-3.5 border-b" style={{ borderColor: 'rgba(229,9,20,0.15)' }}>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
                 <span className="font-semibold text-white text-sm">Erreurs de lecture</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-red-400" style={{ background: 'rgba(229,9,20,0.2)' }}>
-                  {playerErrors.length}
-                </span>
+                {playerErrors.length > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-red-400" style={{ background: 'rgba(229,9,20,0.2)' }}>
+                    {playerErrors.length}
+                  </span>
+                )}
               </div>
-              <span className="text-xs text-white/30">Signalées automatiquement (timeout 30s)</span>
+              <span className="text-[10px] text-white/20">timeout 30s</span>
             </div>
-            <div className="divide-y" style={{ borderColor: 'rgba(229,9,20,0.08)' }}>
-              {playerErrors.map((err) => (
-                <div key={err.id} className="flex items-center gap-4 px-5 py-3 hover:bg-red-500/5 transition-colors">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    {err.content_type === 'movie'
-                      ? <Film className="w-4 h-4 text-white/40" />
-                      : <Tv className="w-4 h-4 text-white/40" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-semibold truncate">{err.title}</p>
-                    <p className="text-white/30 text-xs">
-                      {err.content_type === 'series' && err.season != null && err.episode != null
-                        ? `Saison ${err.season} · Épisode ${err.episode}`
-                        : err.content_type === 'movie' ? 'Film' : 'Série'}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-white/30 text-xs">
+            <div className="divide-y divide-white/[0.05]">
+              {playerErrors.length === 0 ? (
+                <div className="px-4 py-6 text-center text-white/20 text-xs">Aucune erreur signalée</div>
+              ) : (
+                playerErrors.slice(0, 8).map((err) => (
+                  <div key={err.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.03] transition-colors">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      {err.content_type === 'movie'
+                        ? <Film className="w-3.5 h-3.5 text-white/40" />
+                        : <Tv className="w-3.5 h-3.5 text-white/40" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-medium truncate">{err.title}</p>
+                      <p className="text-white/30 text-[10px]">
+                        {err.content_type === 'series' && err.season != null && err.episode != null
+                          ? `S${err.season} · E${err.episode}`
+                          : err.content_type === 'movie' ? 'Film' : 'Série'}
+                      </p>
+                    </div>
+                    <p className="text-white/20 text-[10px] flex-shrink-0">
                       {new Date(err.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </p>
-                    <p className="text-white/20 text-[10px]">
-                      {new Date(err.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </motion.div>
-        )}
+
+        </div>
+
 
       </div>
     </div>
