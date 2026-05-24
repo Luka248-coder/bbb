@@ -222,18 +222,21 @@ export function EmbedPlayer({
         setShowError(true)
         // Report to admin
         try {
-          await fetch('/api/player-errors', {
+          const base = typeof window !== 'undefined' ? window.location.origin : ''
+          const res = await fetch(`${base}/api/player-errors`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              tmdb_id: tmdbId,
+              tmdb_id: tmdbId ?? null,
               content_type: type,
-              title,
-              season: type === 'series' ? currentSeason : null,
-              episode: type === 'series' ? currentEpisode : null,
+              title: title ?? '',
+              season: type === 'series' ? (currentSeason ?? null) : null,
+              episode: type === 'series' ? (currentEpisode ?? null) : null,
             }),
           })
-        } catch {}
+          if (!res.ok) console.error('[PlayerError] API error', res.status, await res.text())
+          else console.log('[PlayerError] signalé avec succès')
+        } catch (e) { console.error('[PlayerError] fetch failed', e) }
       }, 30000)
     }
     return () => { if (errorTimer.current) clearTimeout(errorTimer.current) }
