@@ -245,10 +245,10 @@ export function RouletteClient({ userId }: Props) {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg,#0a0a0a 0%,#0d0d0d 100%)' }}>
-      <div className="max-w-5xl mx-auto px-6 py-16">
+      <div className="max-w-5xl mx-auto px-6 py-6">
 
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-14">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <p className="text-zinc-600 text-xs uppercase tracking-[0.2em] font-medium mb-2">Découverte</p>
           <h1 className="text-3xl font-bold text-white tracking-tight">Roulette</h1>
         </motion.div>
