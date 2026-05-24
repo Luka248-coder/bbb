@@ -451,7 +451,7 @@ export function NativePlayer({
     const el = containerRef.current; const v = videoRef.current; if (!el) return
     if (document.fullscreenElement) document.exitFullscreen()
     else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen()
-    else if (v && (v as any).webkitEnterFullscreen) ;(v as any).webkitEnterFullscreen()
+    else if (v && (v as any).webkitEnterFullscreen) { (v as any).webkitEnterFullscreen() }
     else el.requestFullscreen()
   }
 
