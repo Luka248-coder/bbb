@@ -329,34 +329,32 @@ export function EmbedPlayer({
           >
 
             <div className="relative flex items-center justify-center mb-8">
-              <div className="absolute w-20 h-20 rounded-full"
-                style={{ border: '2px solid rgba(255,255,255,0.06)' }} />
+              {/* Cercle de fond */}
+              <div className="absolute w-16 h-16 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.06)' }} />
+              {/* Arc tournant principal */}
               <motion.div
-                className="absolute w-20 h-20 rounded-full"
+                className="absolute w-16 h-16 rounded-full"
                 style={{
-                  border: '2px solid transparent',
-                  borderTopColor: '#cc0a0a',
-                  borderRightColor: 'rgba(180,10,10,0.4)',
+                  background: 'conic-gradient(from 0deg, #e50914 0%, rgba(229,9,20,0.15) 35%, transparent 60%)',
+                  borderRadius: '50%',
                 }}
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
               />
-              <motion.div
-                className="absolute w-[5px] h-[5px] rounded-full"
-                style={{ background: '#e50914', top: '2px', left: '50%', marginLeft: '-2.5px', boxShadow: '0 0 6px 2px rgba(229,9,20,0.7)' }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
-              />
-              <div className="w-14 h-14 rounded-full" style={{ background: 'rgba(8,2,2,0.85)' }} />
+              {/* Masque central */}
+              <div className="absolute w-[52px] h-[52px] rounded-full" style={{ background: 'rgba(6,1,1,0.95)' }} />
+              {/* Logo au centre */}
+              <div className="relative w-6 h-6 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-red-600" style={{ boxShadow: '0 0 8px 2px rgba(229,9,20,0.6)' }} />
+              </div>
             </div>
             <motion.p
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-white/80 text-sm font-bold tracking-[0.25em] uppercase select-none"
-              style={{ fontFamily: 'system-ui, -apple-system, sans-serif', textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}
+              className="text-white/50 text-xs font-medium tracking-[0.3em] uppercase select-none"
             >
-              STREAMSELF PRÉPARE VOTRE FILM...
+              STREAMSELF PRÉPARE VOTRE {type === 'series' ? 'SÉRIE' : 'FILM'}...
             </motion.p>
 
             {/* Back button on overlay */}
