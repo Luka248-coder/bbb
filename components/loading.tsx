@@ -7,31 +7,15 @@ export function Loading() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px]">
       <div className="relative flex items-center justify-center">
-        {/* Cercle animé extérieur */}
-        <motion.div
-          className="absolute w-24 h-24 rounded-full border-2 border-primary/20"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-        />
-        {/* Arc rouge tournant */}
         <motion.div
           className="absolute w-24 h-24 rounded-full"
           style={{
             border: '2px solid transparent',
             borderTopColor: '#e50914',
-            borderRightColor: '#e50914',
           }}
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         />
-        {/* Petit point brillant */}
-        <motion.div
-          className="absolute w-2 h-2 rounded-full bg-primary"
-          style={{ top: '4px', left: '50%', marginLeft: '-4px' }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        />
-        {/* Logo au centre */}
         <Image
           src="/images/logo.png"
           alt="Logo"
@@ -41,23 +25,10 @@ export function Loading() {
           priority
         />
       </div>
-
-      {/* Points de chargement */}
-      <div className="flex gap-1.5 mt-8">
-        {[0, 1, 2].map(i => (
-          <motion.div
-            key={i}
-            className="w-1.5 h-1.5 rounded-full bg-primary/60"
-            animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.2, 0.8] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-          />
-        ))}
-      </div>
     </div>
   )
 }
 
-// Splash screen plein écran (utilisé au démarrage de l'app)
 export function SplashScreen() {
   return (
     <motion.div
@@ -66,26 +37,13 @@ export function SplashScreen() {
       transition={{ duration: 0.5 }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className="relative flex items-center justify-center mb-8"
-      >
-        <motion.div
-          className="absolute w-32 h-32 rounded-full border border-primary/10"
-          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
+      <div className="relative flex items-center justify-center">
         <motion.div
           className="absolute w-32 h-32 rounded-full"
-          style={{ border: '2px solid transparent', borderTopColor: '#e50914', borderRightColor: '#e50914' }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50"
-          style={{ top: '4px', left: '50%', marginLeft: '-4px' }}
+          style={{
+            border: '2px solid transparent',
+            borderTopColor: '#e50914',
+          }}
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         />
@@ -97,17 +55,6 @@ export function SplashScreen() {
           className="object-contain relative z-10"
           priority
         />
-      </motion.div>
-
-      <div className="flex gap-1.5">
-        {[0, 1, 2].map(i => (
-          <motion.div
-            key={i}
-            className="w-1.5 h-1.5 rounded-full bg-primary/60"
-            animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.2, 0.8] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-          />
-        ))}
       </div>
     </motion.div>
   )
