@@ -66,7 +66,7 @@ export function FavoritesList({ userId }: FavoritesListProps) {
             <span className="text-zinc-400">Mes Favoris</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-1 h-14 rounded-full bg-primary flex-shrink-0" />
+            <div className="w-[3px] rounded-full self-stretch flex-shrink-0" style={{ background: 'linear-gradient(to bottom, #e53935, transparent)', minHeight: '3.5rem' }} />
             <div>
               <h1 className="text-3xl md:text-4xl font-black text-white leading-none tracking-tight">Mes Favoris</h1>
               {!loading && (
