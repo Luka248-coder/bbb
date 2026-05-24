@@ -13,33 +13,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Hls from 'hls.js'
 
 interface Episode {
-  id: number
-  season_number: number
-  episode_number: number
-  title: string | null
-  overview: string | null
-  still_path: string | null
-  air_date: string | null
-  video_url: string | null
-  runtime?: number
+  id: number; season_number: number; episode_number: number
+  title: string | null; overview: string | null; still_path: string | null
+  air_date: string | null; video_url: string | null; runtime?: number
 }
 
 interface NativePlayerProps {
-  videoUrl: string | null
-  title: string
-  backUrl: string
-  type?: 'movie' | 'series'
-  tmdbId?: number
-  seriesDbId?: number
-  currentSeason?: number
-  currentEpisode?: number
-  userId?: string | null
-  poster?: string | null
+  videoUrl: string | null; title: string; backUrl: string
+  type?: 'movie' | 'series'; tmdbId?: number; seriesDbId?: number
+  currentSeason?: number; currentEpisode?: number
+  userId?: string | null; poster?: string | null
 }
 
-function EpisodesPanel({
-  seriesDbId, tmdbId, currentSeason, currentEpisode, onClose, onSelectEpisode,
-}: {
+function EpisodesPanel({ seriesDbId, tmdbId, currentSeason, currentEpisode, onClose, onSelectEpisode }: {
   seriesDbId: number; tmdbId: number; currentSeason: number; currentEpisode: number
   onClose: () => void
   onSelectEpisode: (season: number, episode: number, url: string, title: string) => void
@@ -51,8 +37,7 @@ function EpisodesPanel({
 
   useEffect(() => {
     fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
-      .then(r => r.json())
-      .then((data: Episode[]) => { setEpisodes(data || []); setLoading(false) })
+      .then(r => r.json()).then((data: Episode[]) => { setEpisodes(data || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [seriesDbId])
 
@@ -81,7 +66,6 @@ function EpisodesPanel({
           </button>
         </div>
       </div>
-
       <div className="px-4 py-3 border-b border-white/5">
         <button onClick={() => setShowSeasonPicker(!showSeasonPicker)}
           className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors border border-white/10">
@@ -99,16 +83,13 @@ function EpisodesPanel({
                 <button key={s} onClick={() => { setSelectedSeason(s); setShowSeasonPicker(false) }}
                   className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors ${s === selectedSeason ? 'text-primary' : 'text-white'}`}>
                   <span className="font-semibold">Saison {s}</span>
-                  <span className={`text-sm ${s === selectedSeason ? 'text-primary font-bold' : 'text-white/40'}`}>
-                    {episodes.filter(e => e.season_number === s).length} ép.
-                  </span>
+                  <span className={`text-sm ${s === selectedSeason ? 'text-primary font-bold' : 'text-white/40'}`}>{episodes.filter(e => e.season_number === s).length} ép.</span>
                 </button>
               ))}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
@@ -129,9 +110,7 @@ function EpisodesPanel({
                       <div className="w-full h-full flex items-center justify-center"><Film className="w-5 h-5 text-white/20" /></div>}
                     <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs font-bold px-1.5 py-0.5 rounded">E{ep.episode_number}</div>
                     {isCurrent && <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                        <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
-                      </div>
+                      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center"><Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" /></div>
                     </div>}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -178,6 +157,7 @@ export function NativePlayer({
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
+  // showError contrôle le popup + le loading overlay
   const [showError, setShowError] = useState(false)
   const [showVol, setShowVol] = useState(false)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
@@ -188,72 +168,65 @@ export function NativePlayer({
   const [subtitle, setSubtitle] = useState<'off' | 'fr' | 'en'>('off')
   const [hlsAudioTracks, setHlsAudioTracks] = useState<{ id: number; name: string; lang: string }[]>([])
 
-  // Refs internes
+  // Refs pour watch progress
   const currentTimeRef = useRef(0)
   const durationRef = useRef(0)
   const currentSeasonRef = useRef(initialSeason)
   const currentEpisodeRef = useRef(initialEpisode)
   const titleRef = useRef(initialTitle)
+  const posterRef = useRef(poster)
+
+  // Refs pour le timer d'erreur (valeurs toujours à jour sans recréer le timer)
   const tmdbIdRef = useRef(tmdbId)
   const typeRef = useRef(type)
-
-  // Le vrai état de chargement : true = on attend que la vidéo joue pour la 1ère fois
-  const waitingFirstPlay = useRef(true)
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const errorReported = useRef(false) // évite les doublons si on réessaie
+  const hasPlayedRef = useRef(false) // true dès que la vidéo a vraiment joué
 
   useEffect(() => { currentSeasonRef.current = currentSeason }, [currentSeason])
   useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
   useEffect(() => { titleRef.current = title }, [title])
   useEffect(() => { tmdbIdRef.current = tmdbId }, [tmdbId])
   useEffect(() => { typeRef.current = type }, [type])
+  useEffect(() => { posterRef.current = poster }, [poster])
 
-  // ─── Démarrer le timer d'erreur (appelé au load de chaque vidéo) ─────────────
+  // ─── Signaler l'erreur à l'API ──────────────────────────────────────────────
+  const reportError = useCallback(async () => {
+    try {
+      const res = await fetch('/api/player-errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tmdb_id: tmdbIdRef.current ?? null,
+          content_type: typeRef.current,
+          title: titleRef.current ?? '',
+          season: typeRef.current === 'series' ? (currentSeasonRef.current ?? null) : null,
+          episode: typeRef.current === 'series' ? (currentEpisodeRef.current ?? null) : null,
+          poster: posterRef.current ?? null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) console.error('[PlayerError] API error', res.status, json)
+      else console.log('[PlayerError] ✅ signalé avec succès', json)
+    } catch (e) {
+      console.error('[PlayerError] fetch failed', e)
+    }
+  }, [])
+
+  // ─── Démarrer le timer 30s à chaque nouveau chargement ──────────────────────
   const startErrorTimer = useCallback(() => {
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
-    errorReported.current = false
-    waitingFirstPlay.current = true
+    hasPlayedRef.current = false
+    setShowError(false)
+    setBuffering(true)
 
-    errorTimerRef.current = setTimeout(async () => {
-      // Si la vidéo n'a toujours pas joué après 30s → erreur
-      if (!waitingFirstPlay.current) return // a joué entre temps
-      setShowError(true)
-      if (errorReported.current) return
-      errorReported.current = true
-
-      console.log('[PlayerError] 30s timeout — signalement...', {
-        tmdb_id: tmdbIdRef.current,
-        type: typeRef.current,
-        title: titleRef.current,
-        season: currentSeasonRef.current,
-        episode: currentEpisodeRef.current,
-      })
-
-      try {
-        const res = await fetch('/api/player-errors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tmdb_id: tmdbIdRef.current ?? null,
-            content_type: typeRef.current,
-            title: titleRef.current ?? '',
-            season: typeRef.current === 'series' ? (currentSeasonRef.current ?? null) : null,
-            episode: typeRef.current === 'series' ? (currentEpisodeRef.current ?? null) : null,
-          }),
-        })
-        const json = await res.json()
-        if (!res.ok) console.error('[PlayerError] API error', res.status, json)
-        else console.log('[PlayerError] ✅ signalé avec succès', json)
-      } catch (e) {
-        console.error('[PlayerError] fetch failed', e)
+    errorTimerRef.current = setTimeout(() => {
+      // Si la vidéo n'a toujours pas joué après 30s → afficher l'erreur et signaler
+      if (!hasPlayedRef.current) {
+        setShowError(true)
+        reportError()
       }
     }, 30000)
-  }, [])
-
-  const cancelErrorTimer = useCallback(() => {
-    if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
-    waitingFirstPlay.current = false
-  }, [])
+  }, [reportError])
 
   const fmt = (s: number) => {
     if (isNaN(s)) return '0:00'
@@ -267,15 +240,14 @@ export function NativePlayer({
     hideTimer.current = setTimeout(() => setShowControls(false), 3500)
   }, [])
 
+  // ─── HLS loader ─────────────────────────────────────────────────────────────
   const loadVideo = useCallback((url: string) => {
     const v = videoRef.current
     if (!v) return
 
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
     setHlsAudioTracks([])
-    setShowError(false)
-    setBuffering(true)
-    startErrorTimer() // ← démarre le compte à rebours à chaque chargement
+    startErrorTimer()
 
     const isHls = url.includes('.m3u8')
 
@@ -311,25 +283,28 @@ export function NativePlayer({
     }
   }, [startErrorTimer])
 
+  // ─── Événements vidéo ───────────────────────────────────────────────────────
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
 
     const onTimeUpdate = () => { setCurrentTime(v.currentTime); currentTimeRef.current = v.currentTime }
     const onMeta = () => {
-      setDuration(v.duration)
-      durationRef.current = v.duration
+      setDuration(v.duration); durationRef.current = v.duration
       for (let i = 0; i < v.textTracks.length; i++) v.textTracks[i].mode = 'disabled'
     }
     const onPlay = () => {
       setPlaying(true)
       resetTimer()
       // La vidéo joue vraiment → annuler le timer d'erreur
-      cancelErrorTimer()
+      hasPlayedRef.current = true
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
+      setBuffering(false)
+      setShowError(false)
     }
     const onPause = () => { setPlaying(false); setShowControls(true) }
     const onWaiting = () => setBuffering(true)
-    const onCanPlay = () => { setBuffering(false) }
+    const onCanPlay = () => setBuffering(false)
     const onProgress = () => {
       if (v.buffered.length > 0) setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100)
     }
@@ -352,11 +327,11 @@ export function NativePlayer({
       v.removeEventListener('progress', onProgress)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
-  }, [resetTimer, cancelErrorTimer])
+  }, [resetTimer])
 
   useEffect(() => {
     if (videoUrl) loadVideo(videoUrl)
-    return () => { hlsRef.current?.destroy(); hlsRef.current = null }
+    return () => { hlsRef.current?.destroy(); hlsRef.current = null; if (errorTimerRef.current) clearTimeout(errorTimerRef.current) }
   }, [videoUrl, loadVideo])
 
   useEffect(() => {
@@ -387,20 +362,19 @@ export function NativePlayer({
     return () => window.removeEventListener('keydown', fn)
   }, [playing, showEpisodes])
 
-  // Save watch progress
+  // ─── Watch progress ──────────────────────────────────────────────────────────
   const saveProgress = useCallback(async () => {
     if (!userId || !tmdbId) return
     const ct = currentTimeRef.current; const dur = durationRef.current
     if (dur < 10) return
-    const progress = Math.round((ct / dur) * 100)
     try {
       await fetch('/api/watch-history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, tmdb_id: tmdbId, content_type: type, title: titleRef.current, poster, season: type === 'series' ? currentSeasonRef.current : null, episode: type === 'series' ? currentEpisodeRef.current : null, progress }),
+        body: JSON.stringify({ user_id: userId, tmdb_id: tmdbId, content_type: type, title: titleRef.current, poster: posterRef.current, season: type === 'series' ? currentSeasonRef.current : null, episode: type === 'series' ? currentEpisodeRef.current : null, progress: Math.round((ct / dur) * 100) }),
       })
     } catch {}
-  }, [userId, tmdbId, type, poster])
+  }, [userId, tmdbId, type])
 
   useEffect(() => {
     if (!userId) return
@@ -410,6 +384,7 @@ export function NativePlayer({
 
   useEffect(() => { return () => { saveProgress() } }, [saveProgress])
 
+  // ─── Contrôles ──────────────────────────────────────────────────────────────
   const togglePlay = () => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause() }
   const skip = (s: number) => { const v = videoRef.current; if (v) { v.currentTime = Math.max(0, Math.min(duration, v.currentTime + s)); resetTimer() } }
   const toggleMute = () => { const v = videoRef.current; if (v) { v.muted = !v.muted; setMuted(v.muted) } }
@@ -450,7 +425,7 @@ export function NativePlayer({
   const toggleFs = () => {
     const el = containerRef.current; const v = videoRef.current; if (!el) return
     if (document.fullscreenElement) document.exitFullscreen()
-    else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen()
+    else if ((el as any).webkitRequestFullscreen) { (el as any).webkitRequestFullscreen() }
     else if (v && (v as any).webkitEnterFullscreen) { (v as any).webkitEnterFullscreen() }
     else el.requestFullscreen()
   }
@@ -510,9 +485,9 @@ export function NativePlayer({
       onMouseMove={resetTimer} onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}>
       <video ref={videoRef} className="w-full h-full object-contain" playsInline onClick={togglePlay} />
 
-      {/* Loading overlay — affiché tant que la vidéo n'a pas joué */}
+      {/* Loading overlay — affiché pendant le chargement initial, disparaît dès que la vidéo joue */}
       <AnimatePresence>
-        {buffering && !showError && (
+        {(buffering && !showError) && (
           <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}
             className="absolute inset-0 z-50 flex flex-col items-center justify-center"
             style={{ background: 'radial-gradient(ellipse at 70% 60%, rgba(160,10,10,0.35) 0%, rgba(20,5,5,0.7) 45%, #0a0404 100%)' }}>
@@ -539,7 +514,7 @@ export function NativePlayer({
         )}
       </AnimatePresence>
 
-      {/* Popup erreur 30s */}
+      {/* Popup erreur après 30s */}
       <AnimatePresence>
         {showError && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -570,9 +545,8 @@ export function NativePlayer({
 
       {/* Buffering mid-play */}
       <AnimatePresence>
-        {buffering && !showError && playing && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {buffering && playing && !showError && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>
@@ -581,7 +555,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {!playing && !buffering && (
+        {!playing && !buffering && !showError && (
           <motion.div initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
@@ -592,7 +566,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {showControls && (
+        {showControls && !showError && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
@@ -609,7 +583,6 @@ export function NativePlayer({
                 </button>
               )}
             </div>
-
             <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
               <p className="text-white/50 text-xs font-medium mb-2 truncate">{title}</p>
               <div ref={progressRef} className="relative w-full cursor-pointer group/bar mb-4" style={{ height: '4px' }} onClick={seek}
