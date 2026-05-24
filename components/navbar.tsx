@@ -301,15 +301,15 @@ export function Navbar() {
       </div>
 
       <div className="w-full px-6">
-        <div className="flex items-center h-16 gap-6">
+        <div className="flex items-center h-16 gap-3">
           <Link href="/" className="flex-shrink-0">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={240} height={72} className="h-14 w-auto"
+              alt="StreamSelf" width={280} height={84} className="h-16 w-auto"
             />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-0.5">
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
