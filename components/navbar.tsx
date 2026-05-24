@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import {
   Search, Menu, X, User, LogOut, Settings, Heart,
   Film, Tv, Home, Plus, Bell, Check, Trash2, ChevronRight, Shield, Shuffle,
@@ -309,6 +309,7 @@ export function Navbar() {
             />
           </Link>
 
+          <LayoutGroup>
           <nav className="hidden md:flex items-center gap-0.5">
             {navLinks.map(link => {
               const isActive = pathname === link.href
@@ -324,6 +325,7 @@ export function Navbar() {
                     {isActive && (
                       <motion.div
                         layoutId="nav-underline"
+                        layout="position"
                         className="absolute left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-full"
                         style={{ background: 'linear-gradient(to right, #f97316, #ef4444)', bottom: '4px' }}
                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
@@ -334,6 +336,7 @@ export function Navbar() {
               )
             })}
           </nav>
+          </LayoutGroup>
 
           <div className="flex-1" />
 
