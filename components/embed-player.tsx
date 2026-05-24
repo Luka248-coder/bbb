@@ -168,6 +168,19 @@ export function EmbedPlayer({
   const [language, setLanguage] = useState<'fr' | 'en'>('fr')
   const [subtitle, setSubtitle] = useState<'off' | 'fr' | 'en'>('off')
 
+  // Refs pour capturer les valeurs dynamiques sans recréer le timer
+  const tmdbIdRef = useRef(tmdbId)
+  const typeRef = useRef(type)
+  const titleRef = useRef(title)
+  const currentSeasonRef = useRef(currentSeason)
+  const currentEpisodeRef = useRef(currentEpisode)
+
+  useEffect(() => { tmdbIdRef.current = tmdbId }, [tmdbId])
+  useEffect(() => { typeRef.current = type }, [type])
+  useEffect(() => { titleRef.current = title }, [title])
+  useEffect(() => { currentSeasonRef.current = currentSeason }, [currentSeason])
+  useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
+
   const fmt = (s: number) => {
     if (isNaN(s)) return '0:00'
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60)
@@ -214,33 +227,31 @@ export function EmbedPlayer({
     return () => window.removeEventListener('keydown', fn)
   }, [playing, showEpisodes])
 
-  // 30s error timeout
+  // 30s error timeout — dépend UNIQUEMENT de initialLoading
+  // Les valeurs dynamiques (title, season, episode...) passent par des refs
   useEffect(() => {
-    if (initialLoading) {
-      if (errorTimer.current) clearTimeout(errorTimer.current)
-      errorTimer.current = setTimeout(async () => {
-        setShowError(true)
-        // Report to admin
-        try {
-          const base = typeof window !== 'undefined' ? window.location.origin : ''
-          const res = await fetch(`${base}/api/player-errors`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tmdb_id: tmdbId ?? null,
-              content_type: type,
-              title: title ?? '',
-              season: type === 'series' ? (currentSeason ?? null) : null,
-              episode: type === 'series' ? (currentEpisode ?? null) : null,
-            }),
-          })
-          if (!res.ok) console.error('[PlayerError] API error', res.status, await res.text())
-          else console.log('[PlayerError] signalé avec succès')
-        } catch (e) { console.error('[PlayerError] fetch failed', e) }
-      }, 30000)
-    }
+    if (!initialLoading) return
+    if (errorTimer.current) clearTimeout(errorTimer.current)
+    errorTimer.current = setTimeout(async () => {
+      setShowError(true)
+      try {
+        const res = await fetch('/api/player-errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tmdb_id: tmdbIdRef.current ?? null,
+            content_type: typeRef.current,
+            title: titleRef.current ?? '',
+            season: typeRef.current === 'series' ? (currentSeasonRef.current ?? null) : null,
+            episode: typeRef.current === 'series' ? (currentEpisodeRef.current ?? null) : null,
+          }),
+        })
+        if (!res.ok) console.error('[PlayerError] API error', res.status, await res.text())
+        else console.log('[PlayerError] signalé avec succès')
+      } catch (e) { console.error('[PlayerError] fetch failed', e) }
+    }, 30000)
     return () => { if (errorTimer.current) clearTimeout(errorTimer.current) }
-  }, [initialLoading, tmdbId, type, title, currentSeason, currentEpisode])
+  }, [initialLoading]) // ← SEULEMENT initialLoading
 
   const togglePlay = () => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause() }
   const skip = (s: number) => { const v = videoRef.current; if (v) { v.currentTime = Math.max(0, Math.min(duration, v.currentTime + s)); resetTimer() } }
