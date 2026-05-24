@@ -305,7 +305,7 @@ export function Navbar() {
           <Link href="/" className="flex-shrink-0">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={280} height={84} className="h-16 w-auto"
+              alt="StreamSelf" width={280} height={84} className="h-8 md:h-16 w-auto"
             />
           </Link>
 
