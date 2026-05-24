@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -8,7 +8,11 @@ function getServiceClient() {
     console.error('[player-errors] Missing env vars', { url: !!url, key: !!key })
     return null
   }
-  return createClient(url, key, { auth: { persistSession: false } })
+  // On utilise @supabase/ssr avec la service role key et sans cookies (accès serveur pur)
+  return createServerClient(url, key, {
+    cookies: { getAll: () => [], setAll: () => {} },
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
 
 export async function POST(request: NextRequest) {
