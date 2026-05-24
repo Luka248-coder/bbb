@@ -315,7 +315,7 @@ export function Navbar() {
               return (
                 <Link key={link.href} href={link.href}>
                   <div className={cn(
-                    'relative px-6 py-2 rounded-full text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
+                    'relative px-4 py-3 rounded-2xl text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
                     isActive
                       ? 'bg-zinc-800/60 text-white'
                       : 'text-zinc-500 hover:text-white'
