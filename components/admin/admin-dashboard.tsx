@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import {
   Film, Tv, Users, MessageSquare, CheckCircle, XCircle,
   Clock, Headphones, Ban, TrendingUp, ChevronRight,
-  Activity, Star, ShieldAlert,
+  Activity, Star, ShieldAlert, AlertTriangle, RefreshCw,
 } from 'lucide-react'
 import type { ContentRequest } from '@/lib/types'
 
@@ -17,6 +17,16 @@ interface Stats {
   pendingRequests: number; approvedRequests: number; rejectedRequests: number
   openTickets: number; closedTickets: number; bannedUsers: number
 }
+interface PlayerError {
+  id: number
+  tmdb_id: number | null
+  content_type: string
+  title: string
+  season: number | null
+  episode: number | null
+  created_at: string
+}
+
 interface AdminDashboardProps {
   stats: Stats
   recentRequests: ContentRequest[]
@@ -24,6 +34,7 @@ interface AdminDashboardProps {
   recentTickets: any[]
   requestsByDay: any[]
   usersByDay: any[]
+  playerErrors: PlayerError[]
 }
 
 /* ─── Mini Sparkline (SVG pur, pas de lib) ───────────────────── */
@@ -108,7 +119,7 @@ function DonutChart({ segments }: { segments: { value: number; color: string; la
 }
 
 /* ─── Main Dashboard ─────────────────────────────────────────── */
-export function AdminDashboard({ stats, recentRequests, recentUsers, recentTickets, requestsByDay, usersByDay }: AdminDashboardProps) {
+export function AdminDashboard({ stats, recentRequests, recentUsers, recentTickets, requestsByDay, usersByDay, playerErrors }: AdminDashboardProps) {
 
   // Build last-14-days buckets for requests
   const reqChartData = useMemo(() => {
@@ -417,6 +428,56 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
           </motion.div>
 
         </div>
+
+        {/* ─── Player Errors ─── */}
+        {playerErrors.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+            className="mt-6 rounded-2xl overflow-hidden"
+            style={{ background: 'rgba(229,9,20,0.05)', border: '1px solid rgba(229,9,20,0.2)' }}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'rgba(229,9,20,0.15)' }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(229,9,20,0.15)' }}>
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                </div>
+                <span className="font-semibold text-white text-sm">Erreurs de lecture</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-red-400" style={{ background: 'rgba(229,9,20,0.2)' }}>
+                  {playerErrors.length}
+                </span>
+              </div>
+              <span className="text-xs text-white/30">Signalées automatiquement (timeout 30s)</span>
+            </div>
+            <div className="divide-y" style={{ borderColor: 'rgba(229,9,20,0.08)' }}>
+              {playerErrors.map((err) => (
+                <div key={err.id} className="flex items-center gap-4 px-5 py-3 hover:bg-red-500/5 transition-colors">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    {err.content_type === 'movie'
+                      ? <Film className="w-4 h-4 text-white/40" />
+                      : <Tv className="w-4 h-4 text-white/40" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-semibold truncate">{err.title}</p>
+                    <p className="text-white/30 text-xs">
+                      {err.content_type === 'series' && err.season != null && err.episode != null
+                        ? `Saison ${err.season} · Épisode ${err.episode}`
+                        : err.content_type === 'movie' ? 'Film' : 'Série'}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-white/30 text-xs">
+                      {new Date(err.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </p>
+                    <p className="text-white/20 text-[10px]">
+                      {new Date(err.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
       </div>
     </div>
   )
