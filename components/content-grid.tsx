@@ -106,7 +106,7 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
       <div className="flex items-start justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className={`w-1 h-8 ${accentColor} rounded-full`} />
+            <div className="w-[3px] rounded-full self-stretch" style={{ background: type === 'movie' ? 'linear-gradient(to bottom, #e53935, transparent)' : 'linear-gradient(to bottom, #7c3aed, transparent)', minHeight: '2rem' }} />
             <h1 className="text-4xl font-black text-white">{title}</h1>
           </div>
           <p className="text-white/30 text-sm ml-4">
