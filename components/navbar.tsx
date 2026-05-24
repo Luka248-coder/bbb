@@ -305,7 +305,7 @@ export function Navbar() {
           <Link href="/" className="flex-shrink-0">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={160} height={48} className="h-9 w-auto"
+              alt="StreamSelf" width={240} height={72} className="h-14 w-auto"
             />
           </Link>
 
@@ -315,16 +315,16 @@ export function Navbar() {
               return (
                 <Link key={link.href} href={link.href}>
                   <div className={cn(
-                    'relative px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-150 cursor-pointer select-none',
+                    'relative px-4 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
                     isActive
-                      ? 'bg-zinc-800 text-white'
+                      ? 'bg-zinc-800/80 text-white'
                       : 'text-zinc-500 hover:text-white'
                   )}>
                     {link.label}
                     {isActive && (
                       <motion.div
                         layoutId="nav-underline"
-                        className="absolute left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full"
+                        className="absolute left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-full"
                         style={{ background: 'linear-gradient(to right, #f97316, #ef4444)', bottom: '4px' }}
                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                       />
