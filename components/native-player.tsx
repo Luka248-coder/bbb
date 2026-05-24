@@ -262,6 +262,8 @@ export function NativePlayer({
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [showError, setShowError] = useState(false)
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showVol, setShowVol] = useState(false)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
@@ -282,6 +284,30 @@ export function NativePlayer({
   useEffect(() => { currentSeasonRef.current = currentSeason }, [currentSeason])
   useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
   useEffect(() => { titleRef.current = title }, [title])
+
+  // 30s error timeout
+  useEffect(() => {
+    if (initialLoading) {
+      if (errorTimer.current) clearTimeout(errorTimer.current)
+      errorTimer.current = setTimeout(async () => {
+        setShowError(true)
+        try {
+          await fetch('/api/player-errors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tmdb_id: tmdbId,
+              content_type: type,
+              title,
+              season: type === 'series' ? currentSeason : null,
+              episode: type === 'series' ? currentEpisode : null,
+            }),
+          })
+        } catch {}
+      }, 30000)
+    }
+    return () => { if (errorTimer.current) clearTimeout(errorTimer.current) }
+  }, [initialLoading, tmdbId, type, title, currentSeason, currentEpisode])
 
   const saveProgress = useCallback(async () => {
     if (!userId || !tmdbId) return
@@ -421,7 +447,12 @@ export function NativePlayer({
     const onPlay = () => { setPlaying(true); resetTimer() }
     const onPause = () => { setPlaying(false); setShowControls(true) }
     const onWaiting = () => setBuffering(true)
-    const onCanPlay = () => { setBuffering(false); setInitialLoading(false) }
+    const onCanPlay = () => {
+      setBuffering(false)
+      setInitialLoading(false)
+      setShowError(false)
+      if (errorTimer.current) clearTimeout(errorTimer.current)
+    }
     const onProgress = () => {
       if (v.buffered.length > 0) {
         setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100)
@@ -614,6 +645,7 @@ export function NativePlayer({
     setShowEpisodes(false)
     setBuffering(true)
     setInitialLoading(true)
+    setShowError(false)
     loadVideo(url)
     router.replace(`/watch/series/${tmdbId}?play=1&season=${season}&episode=${episode}`, { scroll: false })
   }
@@ -724,6 +756,58 @@ export function NativePlayer({
             >
               STREAMSELF PRÉPARE VOTRE FILM...
             </motion.p>
+
+            {/* Back button on overlay */}
+            <Link href={backUrl} className="absolute top-5 left-5 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium group pointer-events-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+              Retour
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 30s error popup */}
+      <AnimatePresence>
+        {showError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[60] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="mx-4 rounded-2xl p-8 flex flex-col items-center text-center max-w-sm w-full"
+              style={{ background: 'rgba(18,8,8,0.95)', border: '1px solid rgba(229,9,20,0.3)' }}
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
+                style={{ background: 'rgba(229,9,20,0.1)', border: '1px solid rgba(229,9,20,0.3)' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <h3 className="text-white font-bold text-lg mb-2">Problème de lecture</h3>
+              <p className="text-white/50 text-sm leading-relaxed mb-6">
+                Le contenu met trop de temps à se lancer.<br/>Réessayez ou revenez plus tard.
+              </p>
+              <div className="flex gap-3 w-full">
+                <Link href={backUrl} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors text-center"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  Retour
+                </Link>
+                <button
+                  onClick={() => { setShowError(false); setInitialLoading(true); loadVideo(videoUrl || '') }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
+                  style={{ background: 'rgba(229,9,20,0.85)', border: '1px solid rgba(229,9,20,0.5)' }}
+                >
+                  Réessayer
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
