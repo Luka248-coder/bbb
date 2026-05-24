@@ -157,6 +157,7 @@ export function EmbedPlayer({
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [showVol, setShowVol] = useState(false)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
@@ -184,7 +185,7 @@ export function EmbedPlayer({
     v.addEventListener('play', () => { setPlaying(true); resetTimer() })
     v.addEventListener('pause', () => { setPlaying(false); setShowControls(true) })
     v.addEventListener('waiting', () => setBuffering(true))
-    v.addEventListener('canplay', () => setBuffering(false))
+    v.addEventListener('canplay', () => { setBuffering(false); setInitialLoading(false) })
     v.addEventListener('progress', () => { if (v.buffered.length > 0) setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100) })
     return () => { if (hideTimer.current) clearTimeout(hideTimer.current) }
   }, [resetTimer])
@@ -229,7 +230,7 @@ export function EmbedPlayer({
 
   const handleSelectEpisode = (season: number, episode: number, url: string, epTitle: string) => {
     setCurrentSeason(season); setCurrentEpisode(episode); setVideoUrl(url); setTitle(epTitle)
-    setShowEpisodes(false); setBuffering(true)
+    setShowEpisodes(false); setBuffering(true); setInitialLoading(true)
     const v = videoRef.current; if (v) { v.src = url; v.play() }
     router.replace(`/embed/series/${tmdbId}?season=${season}&episode=${episode}`, { scroll: false })
   }
@@ -270,8 +271,54 @@ export function EmbedPlayer({
       onMouseMove={resetTimer} onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}>
       <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" playsInline onClick={togglePlay} />
 
+      {/* STREAMSELF cinematic loading overlay */}
       <AnimatePresence>
-        {buffering && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        {initialLoading && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+            style={{ background: 'radial-gradient(ellipse at 70% 60%, rgba(160,10,10,0.35) 0%, rgba(20,5,5,0.7) 45%, #0a0404 100%)' }}
+          >
+            <div className="absolute inset-0 opacity-[0.04]"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")', backgroundSize: '128px 128px' }} />
+            <div className="relative flex items-center justify-center mb-8">
+              <div className="absolute w-20 h-20 rounded-full"
+                style={{ border: '2px solid rgba(255,255,255,0.06)' }} />
+              <motion.div
+                className="absolute w-20 h-20 rounded-full"
+                style={{
+                  border: '2px solid transparent',
+                  borderTopColor: '#cc0a0a',
+                  borderRightColor: 'rgba(180,10,10,0.4)',
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
+              />
+              <motion.div
+                className="absolute w-[5px] h-[5px] rounded-full"
+                style={{ background: '#e50914', top: '2px', left: '50%', marginLeft: '-2.5px', boxShadow: '0 0 6px 2px rgba(229,9,20,0.7)' }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
+              />
+              <div className="w-14 h-14 rounded-full" style={{ background: 'rgba(8,2,2,0.85)' }} />
+            </div>
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-white/80 text-sm font-bold tracking-[0.25em] uppercase select-none"
+              style={{ fontFamily: 'system-ui, -apple-system, sans-serif', textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}
+            >
+              STREAMSELF PRÉPARE VOTRE FILM...
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {buffering && !initialLoading && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
             <Loader2 className="w-8 h-8 text-white animate-spin" />
