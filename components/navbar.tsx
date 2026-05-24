@@ -286,8 +286,7 @@ export function Navbar() {
   }
 
   return (
-    <motion.header
-      initial={{ y: -100 }} animate={{ y: 0 }}
+    <header
       className={cn('fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         isScrolled ? 'bg-background/95 backdrop-blur-md shadow-lg border-b border-border/50' : 'bg-gradient-to-b from-background/80 to-transparent'
       )}
@@ -302,32 +301,32 @@ export function Navbar() {
       </div>
 
       <div className="w-full px-6">
-        <div className="flex items-center h-16 md:h-20 gap-8">
+        <div className="flex items-center h-16 gap-6">
           <Link href="/" className="flex-shrink-0">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={200} height={60} className="h-10 md:h-12 w-auto"
+              alt="StreamSelf" width={160} height={48} className="h-9 w-auto"
             />
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(link => {
               const isActive = pathname === link.href
-              const isHighlight = 'highlight' in link && link.highlight
               return (
                 <Link key={link.href} href={link.href}>
                   <div className={cn(
-                    'relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 cursor-pointer flex flex-col items-center gap-0 select-none',
-                    isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white',
-                    isHighlight && !isActive && 'text-red-400 hover:text-red-300'
+                    'relative px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer select-none',
+                    isActive
+                      ? 'bg-zinc-800 text-white'
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                   )}>
                     {link.label}
                     {isActive && (
                       <motion.div
-                        layoutId="nav-indicator"
-                        className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[2px] w-6 rounded-full"
-                        style={{ background: 'linear-gradient(to right, #f97316, #ef4444)' }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        layoutId="nav-underline"
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full"
+                        style={{ background: 'linear-gradient(to right, #f97316, #ef4444)', bottom: '-1px' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                       />
                     )}
                   </div>
@@ -861,6 +860,6 @@ export function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </motion.header>
+    </header>
   )
 }
