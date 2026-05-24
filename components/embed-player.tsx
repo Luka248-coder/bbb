@@ -357,14 +357,7 @@ export function EmbedPlayer({
               STREAMSELF PRÉPARE VOTRE {type === 'series' ? 'SÉRIE' : 'FILM'}...
             </motion.p>
 
-            {/* Back button on overlay */}
-            <button
-              onClick={() => router.back()}
-              className="absolute top-5 left-5 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium group pointer-events-auto"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-              Retour
-            </button>
+
           </motion.div>
         )}
       </AnimatePresence>
