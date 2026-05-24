@@ -285,29 +285,38 @@ export function NativePlayer({
   useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
   useEffect(() => { titleRef.current = title }, [title])
 
-  // 30s error timeout
+  // Refs pour le timer d'erreur — capturent les valeurs sans recréer le timer
+  const tmdbIdRef = useRef(tmdbId)
+  const typeRef = useRef(type)
+
+  useEffect(() => { tmdbIdRef.current = tmdbId }, [tmdbId])
+  useEffect(() => { typeRef.current = type }, [type])
+
+  // 30s error timeout — dépend UNIQUEMENT de initialLoading
+  // Les valeurs dynamiques (title, season, episode...) passent par des refs
   useEffect(() => {
-    if (initialLoading) {
-      if (errorTimer.current) clearTimeout(errorTimer.current)
-      errorTimer.current = setTimeout(async () => {
-        setShowError(true)
-        try {
-          await fetch('/api/player-errors', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tmdb_id: tmdbId,
-              content_type: type,
-              title,
-              season: type === 'series' ? currentSeason : null,
-              episode: type === 'series' ? currentEpisode : null,
-            }),
-          })
-        } catch {}
-      }, 30000)
-    }
+    if (!initialLoading) return
+    if (errorTimer.current) clearTimeout(errorTimer.current)
+    errorTimer.current = setTimeout(async () => {
+      setShowError(true)
+      try {
+        const res = await fetch('/api/player-errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tmdb_id: tmdbIdRef.current ?? null,
+            content_type: typeRef.current,
+            title: titleRef.current ?? '',
+            season: typeRef.current === 'series' ? (currentSeasonRef.current ?? null) : null,
+            episode: typeRef.current === 'series' ? (currentEpisodeRef.current ?? null) : null,
+          }),
+        })
+        if (!res.ok) console.error('[PlayerError] API error', res.status, await res.text())
+        else console.log('[PlayerError] signalé avec succès')
+      } catch (e) { console.error('[PlayerError] fetch failed', e) }
+    }, 30000)
     return () => { if (errorTimer.current) clearTimeout(errorTimer.current) }
-  }, [initialLoading, tmdbId, type, title, currentSeason, currentEpisode])
+  }, [initialLoading]) // ← SEULEMENT initialLoading
 
   const saveProgress = useCallback(async () => {
     if (!userId || !tmdbId) return
