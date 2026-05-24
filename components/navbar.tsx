@@ -315,17 +315,17 @@ export function Navbar() {
               return (
                 <Link key={link.href} href={link.href}>
                   <div className={cn(
-                    'relative px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer select-none',
+                    'relative px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-150 cursor-pointer select-none',
                     isActive
                       ? 'bg-zinc-800 text-white'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                      : 'text-zinc-500 hover:text-white'
                   )}>
                     {link.label}
                     {isActive && (
                       <motion.div
                         layoutId="nav-underline"
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full"
-                        style={{ background: 'linear-gradient(to right, #f97316, #ef4444)', bottom: '-1px' }}
+                        className="absolute left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full"
+                        style={{ background: 'linear-gradient(to right, #f97316, #ef4444)', bottom: '4px' }}
                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                       />
                     )}
