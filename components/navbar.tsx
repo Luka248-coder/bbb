@@ -317,7 +317,7 @@ export function Navbar() {
                   <div className={cn(
                     'relative px-4 py-3 rounded-2xl text-xs font-semibold transition-all duration-150 cursor-pointer select-none',
                     isActive
-                      ? 'text-white font-bold'
+                      ? 'text-white font-bold border border-zinc-600/50'
                       : 'text-zinc-500 hover:text-white hover:bg-zinc-800/60'
                   )}>
                     {link.label}
