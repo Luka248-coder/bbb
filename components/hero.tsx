@@ -59,7 +59,8 @@ export function Hero({ content }: HeroProps) {
           />
           {/* Gradients */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/30" />
+          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#12080a] to-transparent" />
         </motion.div>
       </AnimatePresence>
 
