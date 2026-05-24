@@ -8,7 +8,6 @@ function getServiceClient() {
     console.error('[player-errors] Missing env vars', { url: !!url, key: !!key })
     return null
   }
-  // On utilise @supabase/ssr avec la service role key et sans cookies (accès serveur pur)
   return createServerClient(url, key, {
     cookies: { getAll: () => [], setAll: () => {} },
     auth: { persistSession: false, autoRefreshToken: false },
@@ -18,8 +17,8 @@ function getServiceClient() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { tmdb_id, content_type, title, season, episode } = body
-    console.log('[player-errors] POST received', { tmdb_id, content_type, title, season, episode })
+    const { tmdb_id, content_type, title, season, episode, poster } = body
+    console.log('[player-errors] POST received', { tmdb_id, content_type, title, season, episode, poster })
 
     const supabase = getServiceClient()
     if (!supabase) return NextResponse.json({ error: 'Server config error' }, { status: 500 })
@@ -30,6 +29,7 @@ export async function POST(request: NextRequest) {
       title: title ?? '',
       season: season ?? null,
       episode: episode ?? null,
+      poster: poster ?? null,
     })
 
     if (error) {
