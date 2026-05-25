@@ -160,7 +160,7 @@ export function Hero({ content }: HeroProps) {
             >
               {/* Lecture */}
               <Link href={`/watch/${type}/${tmdbId}?play=1`}>
-                <button className="flex items-center gap-2.5 bg-white hover:bg-white/90 text-black font-bold px-7 py-3 rounded-full transition-all shadow-xl text-sm">
+                <button className="flex items-center gap-2.5 bg-white hover:bg-white/90 text-black font-bold px-7 py-3.5 rounded-2xl transition-all shadow-xl text-sm">
                   <Play className="w-4 h-4 fill-current" />
                   Lecture
                 </button>
@@ -168,15 +168,15 @@ export function Hero({ content }: HeroProps) {
 
               {/* Fiche */}
               <Link href={`/watch/${type}/${tmdbId}`}>
-                <button className="flex items-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold px-6 py-3 rounded-full border border-white/20 transition-all text-sm">
+                <button className="flex items-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold px-6 py-3.5 rounded-2xl border border-white/15 transition-all text-sm">
                   <Info className="w-4 h-4" />
-                  Fiche
+                  Plus d&apos;infos
                 </button>
               </Link>
 
               {/* Favoris */}
-              <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-4 py-3 rounded-full border border-white/20 transition-all">
-                <BookmarkPlus className="w-4 h-4" />
+              <button className="flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white w-12 h-12 rounded-2xl border border-white/15 transition-all">
+                <BookmarkPlus className="w-5 h-5" />
               </button>
             </motion.div>
           </motion.div>
