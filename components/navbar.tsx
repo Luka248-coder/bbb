@@ -328,7 +328,7 @@ export function Navbar() {
                       <motion.div
                         layoutId="nav-active-bg"
                         className="absolute inset-0 rounded-full"
-                        style={{ background: 'linear-gradient(135deg, rgba(30,30,32,0.95) 0%, rgba(20,20,22,0.98) 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
+                        style={{ background: 'transparent' }}
                         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                       />
                     )}
