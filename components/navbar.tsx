@@ -307,13 +307,13 @@ export function Navbar() {
       </div>
 
       <div className="w-full px-5 md:px-8">
-        <div className="flex items-center justify-between h-[58px] gap-4">
+        <div className="flex items-center justify-between h-[58px] gap-4 -mt-2">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 mr-2 -ml-2">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={280} height={84} className="h-7 md:h-20 w-auto -mt-2"
+              alt="StreamSelf" width={280} height={84} className="h-7 md:h-20 w-auto"
             />
           </Link>
 
