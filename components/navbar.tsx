@@ -293,6 +293,10 @@ export function Navbar() {
           : 'bg-transparent'
       )}
     >
+      {/* Extension du fond jusqu'en haut */}
+      {isScrolled && (
+        <div className="absolute bottom-full left-0 right-0 h-3 bg-black/60 backdrop-blur-xl" />
+      )}
       {/* Scroll progress line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-transparent">
         <motion.div
