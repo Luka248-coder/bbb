@@ -309,35 +309,39 @@ export function Navbar() {
             />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
-  {navLinks.map(link => {
-    const isActive = pathname === link.href
-    return (
-      <Link key={link.href} href={link.href}>
-        <div className={cn(
-          'relative px-6 py-2.5 rounded-full text-[14px] font-bold transition-all duration-200 cursor-pointer select-none',
-          isActive
-            ? 'text-white bg-[#1f2023]' 
-            : 'text-[#9ca3af] hover:text-white hover:bg-[#1f2023]/60'
-        )}>
-          {link.label}
+          <nav className="hidden md:flex items-center gap-1 bg-[#161719] p-1.5 rounded-full border border-white/5">
+  <LayoutGroup id="navbar">
+    {navLinks.map(link => {
+      const isActive = pathname === link.href
+      return (
+        <Link key={link.href} href={link.href} className="relative select-none">
           {isActive && (
             <motion.div
-              layoutId="nav-underline"
-              layout="position"
-              className="absolute left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full"
-              style={{ 
-                background: 'linear-gradient(to right, #f97316, #dc2626)', 
-                bottom: '6px' 
-              }}
+              layoutId="nav-active-bg"
+              className="absolute inset-0 bg-[#1f2023] rounded-full"
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
           )}
-        </div>
-      </Link>
-    )
-  })}
+          <div className={cn(
+            'relative z-10 px-5 py-2 rounded-full text-[14px] font-bold transition-colors duration-200 flex flex-col items-center gap-0.5',
+            isActive ? 'text-white' : 'text-[#9ca3af] hover:text-white'
+          )}>
+            {link.label}
+            {isActive && (
+              <motion.div
+                layoutId="nav-underline"
+                className="h-[3px] w-5 rounded-full mt-0.5"
+                style={{ background: 'linear-gradient(to right, #f97316, #dc2626)' }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
+          </div>
+        </Link>
+      )
+    })}
+  </LayoutGroup>
 </nav>
+
           <div className="flex-1" />
 
           <div className="flex items-center gap-2 flex-shrink-0">
