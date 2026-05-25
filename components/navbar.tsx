@@ -333,7 +333,7 @@ export function Navbar() {
                       />
                     )}
                     <div className={cn(
-                      'relative z-10 px-6 py-1.5 rounded-full text-[13px] font-semibold transition-colors duration-200',
+                      'relative z-10 px-6 py-2.5 rounded-full text-[13px] font-semibold transition-colors duration-200',
                       isActive ? 'text-white' : 'text-white/40 hover:text-white/80'
                     )}>
                       {link.label}
