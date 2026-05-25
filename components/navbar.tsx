@@ -287,16 +287,12 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'fixed top-3 left-0 right-0 z-50 transition-all duration-500',
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-500 pt-3',
         isScrolled
           ? 'bg-black/60 backdrop-blur-xl border-b border-white/[0.06]'
           : 'bg-transparent'
       )}
     >
-      {/* Extension du fond jusqu'en haut */}
-      {isScrolled && (
-        <div className="absolute bottom-full left-0 right-0 h-3 bg-black/60 backdrop-blur-xl" />
-      )}
       {/* Scroll progress line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-transparent">
         <motion.div
