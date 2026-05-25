@@ -307,7 +307,7 @@ export function Navbar() {
       </div>
 
       <div className="w-full px-5 md:px-8">
-        <div className="flex items-center h-[58px] gap-4">
+        <div className="flex items-center justify-between h-[58px] gap-4">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 mr-2">
