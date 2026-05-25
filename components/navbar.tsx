@@ -318,7 +318,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center bg-black/60 border border-white/[0.06] backdrop-blur-md rounded-full p-1 gap-0.5">
+          <nav className="hidden md:flex items-center gap-0.5">
             <LayoutGroup id="navbar">
               {navLinks.map(link => {
                 const isActive = pathname === link.href
@@ -328,7 +328,7 @@ export function Navbar() {
                       <motion.div
                         layoutId="nav-active-bg"
                         className="absolute inset-0 rounded-full"
-                        style={{ background: 'transparent' }}
+                        style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.07)' }}
                         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                       />
                     )}
