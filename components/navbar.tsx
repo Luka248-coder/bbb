@@ -301,7 +301,7 @@ export function Navbar() {
       </div>
 
       <div className="w-full px-6">
-        <div className="flex items-center gap-3" style={{ height: '52px' }}>
+        <div className="flex items-center gap-3" style={{ height: '40px' }}>
           <Link href="/" className="flex-shrink-0">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
