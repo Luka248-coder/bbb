@@ -318,7 +318,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center bg-white/[0.05] border border-white/[0.07] backdrop-blur-md rounded-full p-1 gap-0.5">
+          <nav className="hidden md:flex items-center bg-black/60 border border-white/[0.06] backdrop-blur-md rounded-full p-1 gap-0.5">
             <LayoutGroup id="navbar">
               {navLinks.map(link => {
                 const isActive = pathname === link.href
@@ -328,19 +328,19 @@ export function Navbar() {
                       <motion.div
                         layoutId="nav-active-bg"
                         className="absolute inset-0 rounded-full"
-                        style={{ background: 'rgba(255,255,255,0.09)' }}
+                        style={{ background: 'linear-gradient(135deg, rgba(30,30,32,0.95) 0%, rgba(20,20,22,0.98) 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
                         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                       />
                     )}
                     <div className={cn(
-                      'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors duration-200 flex flex-col items-center',
+                      'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors duration-200',
                       isActive ? 'text-white' : 'text-white/40 hover:text-white/80'
                     )}>
                       {link.label}
                       {isActive && (
                         <motion.div
                           layoutId="nav-underline"
-                          className="h-[2px] w-4 rounded-full mt-[3px]"
+                          className="absolute bottom-1 left-1/2 -translate-x-1/2 h-[2px] w-4 rounded-full"
                           style={{ background: 'linear-gradient(to right, #f97316, #dc2626)' }}
                           transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                         />
