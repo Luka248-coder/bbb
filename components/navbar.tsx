@@ -310,7 +310,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-[58px] gap-4">
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 mr-2">
+          <Link href="/" className="flex-shrink-0 mr-2 -ml-2">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
               alt="StreamSelf" width={280} height={84} className="h-7 md:h-20 w-auto"
