@@ -309,35 +309,35 @@ export function Navbar() {
             />
           </Link>
 
-          <LayoutGroup>
-          <nav className="hidden md:flex items-center gap-0.5">
-            {navLinks.map(link => {
-              const isActive = pathname === link.href
-              return (
-                <Link key={link.href} href={link.href}>
-                  <div className={cn(
-                    'relative px-5 py-2 rounded-2xl text-xs font-bold transition-all duration-150 cursor-pointer select-none',
-                    isActive
-                      ? 'text-white bg-[#1c1c1e]'
-                      : 'text-zinc-500 hover:text-white hover:bg-[#1c1c1e]/80'
-                  )}>
-                    {link.label}
-                    {isActive && (
-                      <motion.div
-                        layoutId="nav-underline"
-                        layout="position"
-                        className="absolute left-1/2 -translate-x-1/2 h-[2px] w-6 rounded-full"
-                        style={{ background: 'linear-gradient(to right, #f97316, #dc2626)', bottom: '5px' }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                      />
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </nav>
-          </LayoutGroup>
-
+          <nav className="hidden md:flex items-center gap-1">
+  {navLinks.map(link => {
+    const isActive = pathname === link.href
+    return (
+      <Link key={link.href} href={link.href}>
+        <div className={cn(
+          'relative px-6 py-2.5 rounded-full text-[14px] font-bold transition-all duration-200 cursor-pointer select-none',
+          isActive
+            ? 'text-white bg-[#1f2023]' 
+            : 'text-[#9ca3af] hover:text-white hover:bg-[#1f2023]/60'
+        )}>
+          {link.label}
+          {isActive && (
+            <motion.div
+              layoutId="nav-underline"
+              layout="position"
+              className="absolute left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full"
+              style={{ 
+                background: 'linear-gradient(to right, #f97316, #dc2626)', 
+                bottom: '6px' 
+              }}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
+          )}
+        </div>
+      </Link>
+    )
+  })}
+</nav>
           <div className="flex-1" />
 
           <div className="flex items-center gap-2 flex-shrink-0">
