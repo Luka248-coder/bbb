@@ -340,7 +340,7 @@ export function Navbar() {
                       {isActive && (
                         <motion.div
                           layoutId="nav-underline"
-                          className="absolute bottom-1 left-2 right-2 h-[2px] rounded-full"
+                          className="absolute bottom-1 left-4 right-4 h-[2px] rounded-full"
                           style={{ background: 'linear-gradient(to right, #f97316, #dc2626)' }}
                           transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                         />
