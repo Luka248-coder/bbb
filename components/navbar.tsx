@@ -294,7 +294,7 @@ export function Navbar() {
       )}
     >
       {/* Scroll progress line */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-white/5">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-transparent">
         <motion.div
           className="h-full"
           style={{
