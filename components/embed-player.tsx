@@ -31,6 +31,7 @@ interface EmbedPlayerProps {
   seriesDbId?: number
   currentSeason?: number
   currentEpisode?: number
+  seriesName?: string | null
 }
 
 // Reuse episodes panel from native-player logic inline
@@ -136,6 +137,7 @@ export function EmbedPlayer({
   videoUrl: initialVideoUrl, title: initialTitle,
   type = 'movie', tmdbId, seriesDbId,
   currentSeason: initialSeason = 1, currentEpisode: initialEpisode = 1,
+  seriesName = null,
 }: EmbedPlayerProps) {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -148,6 +150,17 @@ export function EmbedPlayer({
   const [title, setTitle] = useState(initialTitle)
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
+
+  const getDisplayTitle = (season: number, episode: number) =>
+    type === 'series' && seriesName
+      ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
+      : title
+
+  const [displayTitle, setDisplayTitle] = useState(() =>
+    type === 'series' && seriesName
+      ? `${seriesName} - S${String(initialSeason).padStart(2, '0')}E${String(initialEpisode).padStart(2, '0')}`
+      : initialTitle
+  )
   const [showEpisodes, setShowEpisodes] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -299,6 +312,11 @@ export function EmbedPlayer({
 
   const handleSelectEpisode = (season: number, episode: number, url: string, epTitle: string) => {
     setCurrentSeason(season); setCurrentEpisode(episode); setVideoUrl(url); setTitle(epTitle)
+    setDisplayTitle(
+      type === 'series' && seriesName
+        ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
+        : epTitle
+    )
     setShowEpisodes(false); setBuffering(true); setInitialLoading(true); setShowError(false)
     const v = videoRef.current; if (v) { v.src = url; v.play() }
     router.replace(`/embed/series/${tmdbId}?season=${season}&episode=${episode}`, { scroll: false })
@@ -490,7 +508,7 @@ export function EmbedPlayer({
 
             {/* Top bar — Logo + title + episodes button (NO back button) */}
             <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
-              <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{title}</h1>
+              <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
 
               {/* Episodes button */}
               {type === 'series' && seriesDbId && (
@@ -515,7 +533,7 @@ export function EmbedPlayer({
 
             {/* Bottom controls — identical to NativePlayer */}
             <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-              <p className="text-white/50 text-xs font-medium mb-2 truncate">{title}</p>
+              <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
               <div ref={progressRef} className="relative w-full cursor-pointer group/bar mb-4" style={{ height: '4px' }} onClick={seek}
                 onMouseMove={onProgressHover} onMouseLeave={() => setHoverTime(null)}
                 onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.height = '6px' }}
