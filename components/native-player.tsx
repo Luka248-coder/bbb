@@ -35,6 +35,7 @@ interface NativePlayerProps {
   currentEpisode?: number
   userId?: string | null
   poster?: string | null
+  seriesName?: string | null
 }
 
 // ─── Episodes Panel ────────────────────────────────────────────────────────────
@@ -237,6 +238,7 @@ export function NativePlayer({
   currentEpisode: initialEpisode = 1,
   userId = null,
   poster = null,
+  seriesName = null,
 }: NativePlayerProps) {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -250,6 +252,13 @@ export function NativePlayer({
   const [title, setTitle] = useState(initialTitle)
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
+
+  const getDisplayTitle = (season: number, episode: number) =>
+    type === 'series' && seriesName
+      ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
+      : title
+
+  const [displayTitle, setDisplayTitle] = useState(() => getDisplayTitle(initialSeason, initialEpisode))
   const [showEpisodes, setShowEpisodes] = useState(false)
 
   const [playing, setPlaying] = useState(false)
@@ -674,6 +683,11 @@ export function NativePlayer({
     setCurrentEpisode(episode)
     setVideoUrl(url)
     setTitle(episodeTitle)
+    setDisplayTitle(
+      type === 'series' && seriesName
+        ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
+        : episodeTitle
+    )
     setShowEpisodes(false)
     setBuffering(true)
     setInitialLoading(true)
@@ -911,7 +925,7 @@ export function NativePlayer({
                   <span className="text-sm font-medium">Retour</span>
                 </button>
               </Link>
-              <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{title}</h1>
+              <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
 
               {type === 'series' && seriesDbId && (
                 <button
@@ -926,7 +940,7 @@ export function NativePlayer({
 
             {/* Bottom controls */}
             <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-              <p className="text-white/50 text-xs font-medium mb-2 truncate">{title}</p>
+              <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
 
               {/* Progress bar */}
               <div
