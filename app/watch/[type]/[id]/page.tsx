@@ -27,6 +27,7 @@ async function WatchContent({
   let title = ''
   let seriesDbId: number | undefined
   let poster: string | null = null
+  let seriesName: string | null = null
 
   if (type === 'movie') {
     const movie = await getMovieById(tmdbId)
@@ -36,6 +37,7 @@ async function WatchContent({
   } else {
     const series = await getSeriesById(tmdbId)
     seriesDbId = series?.id
+    seriesName = series?.name || null
     title = `${series?.name || 'Série'} — S${String(season).padStart(2,'0')}E${String(episode).padStart(2,'0')}`
     playerUrl = await getEpisodeVideoUrl(tmdbId, season, episode)
     poster = series?.poster_path ? getPosterUrl(series.poster_path) : null
@@ -54,6 +56,7 @@ async function WatchContent({
         currentEpisode={episode}
         userId={user?.id || null}
         poster={poster}
+        seriesName={seriesName}
       />
     )
   }
