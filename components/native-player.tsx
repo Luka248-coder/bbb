@@ -802,9 +802,11 @@ export function NativePlayer({
             </motion.p>
 
             {/* Back button on overlay */}
-            <Link href={backUrl} className="absolute top-5 left-5 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium group pointer-events-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-              Retour
+            <Link href={backUrl} className="absolute top-5 left-5 pointer-events-auto">
+              <button className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 shadow-lg active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                Retour
+              </button>
             </Link>
           </motion.div>
         )}
@@ -920,9 +922,9 @@ export function NativePlayer({
             {/* Top bar */}
             <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
               <Link href={backUrl} className="shrink-0">
-                <button className="flex items-center gap-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl transition-all border border-white/10">
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="text-sm font-medium">Retour</span>
+                <button className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 active:scale-95">
+                  <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                  <span>Retour</span>
                 </button>
               </Link>
               <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
