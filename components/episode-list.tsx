@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, ChevronDown, Clock, Star, Lock } from 'lucide-react'
+import { Play, ChevronDown, Clock, Star, Lock, X } from 'lucide-react'
 import type { TMDBEpisode } from '@/lib/tmdb'
 
 interface EpisodeListProps {
@@ -26,6 +26,87 @@ function formatRuntime(mins: number) {
 function formatDate(dateStr: string) {
   if (!dateStr) return null
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+// Composant modal pour le sélecteur de saison (scroll garanti)
+function SeasonModal({
+  open,
+  totalSeasons,
+  currentSeason,
+  episodeCount,
+  onSelect,
+  onClose,
+}: {
+  open: boolean
+  totalSeasons: number
+  currentSeason: number
+  episodeCount: number
+  onSelect: (s: number) => void
+  onClose: () => void
+}) {
+  // Fermer avec Escape
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 40 }}
+        transition={{ duration: 0.2 }}
+        onClick={e => e.stopPropagation()}
+        className="relative z-10 w-full sm:w-80 bg-zinc-900 border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/60 overflow-hidden"
+        style={{ maxHeight: '70vh' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
+          <span className="text-white font-bold text-base">Choisir une saison</span>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+            <X className="w-4 h-4 text-white/70" />
+          </button>
+        </div>
+
+        {/* Liste scrollable */}
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 60px)' }}>
+          {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
+            <button
+              key={s}
+              onClick={() => { onSelect(s); onClose() }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold transition-colors border-b border-white/5 last:border-0 ${
+                s === currentSeason
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <span>Saison {s}</span>
+              <div className="flex items-center gap-3">
+                {s === currentSeason && (
+                  <span className="text-xs text-primary/70 font-medium">{episodeCount} ép.</span>
+                )}
+                {s === currentSeason && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  )
 }
 
 export function EpisodeList({
@@ -60,42 +141,31 @@ export function EpisodeList({
       <div className="flex items-center justify-between mb-6">
         <div className="relative">
           <button
-            onClick={() => setSeasonOpen(!seasonOpen)}
+            onClick={() => setSeasonOpen(true)}
             className="flex items-center gap-3 px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-white font-bold transition-all group"
           >
             <span className="text-base">Saison {currentSeason}</span>
             <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2 py-0.5">
               <span className="text-xs text-white/60 font-medium">{episodes.length} épisodes</span>
             </div>
-            <ChevronDown className={`w-4 h-4 text-white/50 transition-transform duration-300 ${seasonOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className="w-4 h-4 text-white/50" />
           </button>
-
-          <AnimatePresence>
-            {seasonOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                transition={{ duration: 0.15 }}
-                className="absolute top-full left-0 mt-2 z-50 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/50 min-w-[180px] max-h-[60vh] overflow-y-auto"
-              >
-                {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
-                  <button
-                    key={s}
-                    onClick={() => { onSeasonChange(s); setSeasonOpen(false) }}
-                    className={`w-full flex items-center justify-between px-5 py-3 text-sm font-semibold transition-colors ${s === currentSeason ? 'bg-primary/20 text-primary' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
-                  >
-                    <span>Saison {s}</span>
-                    {s === currentSeason && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    )}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
+
+      {/* Season modal — rendu hors du flux normal, pas de problème overflow */}
+      <AnimatePresence>
+        {seasonOpen && (
+          <SeasonModal
+            open={seasonOpen}
+            totalSeasons={totalSeasons}
+            currentSeason={currentSeason}
+            episodeCount={episodes.length}
+            onSelect={onSeasonChange}
+            onClose={() => setSeasonOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Episode list */}
       <div className="space-y-2">
