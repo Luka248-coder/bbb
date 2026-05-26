@@ -135,7 +135,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           </Link>
         </div>
 
-        <div className="relative container mx-auto px-6 py-12 pt-6 flex items-center gap-10" style={{marginTop: '0px'}}>
+        <div className="relative container mx-auto px-6 py-12 pt-6 flex items-center gap-10" style={{marginTop: '16px'}}>
           {/* Tilted poster */}
           <motion.div
             initial={{ opacity: 0, x: -30, rotate: -6 }}
