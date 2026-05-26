@@ -81,7 +81,7 @@ function SeasonModal({
         </div>
 
         {/* Liste scrollable */}
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 60px)' }}>
+        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(70vh - 60px)', WebkitOverflowScrolling: 'touch' }}>
           {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
             <button
               key={s}
