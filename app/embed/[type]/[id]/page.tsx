@@ -23,6 +23,7 @@ async function EmbedContent({
   let playerUrl: string | null = null
   let title = ''
   let seriesDbId: number | undefined
+  let seriesName: string | null = null
 
   if (type === 'movie') {
     const movie = await getMovieById(tmdbId)
@@ -31,6 +32,7 @@ async function EmbedContent({
   } else {
     const series = await getSeriesById(tmdbId)
     seriesDbId = series?.id
+    seriesName = series?.name || null
     title = `${series?.name || 'Série'} — S${String(season).padStart(2,'0')}E${String(episode).padStart(2,'0')}`
     playerUrl = await getEpisodeVideoUrl(tmdbId, season, episode)
   }
@@ -44,6 +46,7 @@ async function EmbedContent({
       seriesDbId={seriesDbId}
       currentSeason={season}
       currentEpisode={episode}
+      seriesName={seriesName}
     />
   )
 }
