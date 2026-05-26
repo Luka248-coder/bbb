@@ -85,7 +85,7 @@ function EpisodesPanel({
         <AnimatePresence>
           {showSeasonPicker && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden mt-2 bg-zinc-900 rounded-2xl border border-white/10">
+              className="mt-2 bg-zinc-900 rounded-2xl border border-white/10 overflow-y-auto overscroll-contain" style={{ maxHeight: '40vh', WebkitOverflowScrolling: 'touch' }}>
               {seasons.map(s => (
                 <button key={s} onClick={() => { setSelectedSeason(s); setShowSeasonPicker(false) }}
                   className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors ${s === selectedSeason ? 'text-primary' : 'text-white'}`}>
