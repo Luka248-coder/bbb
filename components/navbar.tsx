@@ -453,13 +453,195 @@ export function Navbar() {
                   <AnimatePresence>
                     {(showNotifications || showNotifPrefsBell) && (
                       <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                        initial={{ opacity: 0, y: 12, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.96 }}
-                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                        className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
-                        style={{ background: 'rgba(14,14,16,0.97)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(24px)' }}
+                        exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl"
+                        style={{
+                          background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
+                          border: '1px solid rgba(255,255,255,0.09)',
+                          backdropFilter: 'blur(32px)',
+                          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 1px 0 rgba(255,255,255,0.08) inset',
+                        }}
                       >
+                        {/* Ambient glow top */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 pointer-events-none"
+                          style={{ background: 'radial-gradient(ellipse, rgba(220,38,38,0.18) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+
+                        {!showNotifPrefsBell ? (
+                          <>
+                            {/* Header */}
+                            <div className="relative px-5 pt-5 pb-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                    style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)', boxShadow: '0 0 12px rgba(239,68,68,0.15)' }}>
+                                    <Bell className="w-4 h-4 text-red-400" />
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-white text-[15px] leading-tight">Notifications</p>
+                                    {unreadCount > 0
+                                      ? <p className="text-[11px] font-medium mt-0.5" style={{ color: 'rgba(252,165,165,0.8)' }}>{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
+                                      : <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>Tout est à jour</p>
+                                    }
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {unreadCount > 0 && (
+                                    <button onClick={markAllRead} title="Tout marquer lu"
+                                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                                      style={{ color: 'rgba(255,255,255,0.3)' }}
+                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(52,211,153,0.1)'; e.currentTarget.style.color = 'rgb(52,211,153)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
+                                      <Check className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  {notifications.length > 0 && (
+                                    <button onClick={clearAll} title="Tout effacer"
+                                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                                      style={{ color: 'rgba(255,255,255,0.3)' }}
+                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgb(239,68,68)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  <button onClick={() => setShowNotifications(false)}
+                                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                                    style={{ color: 'rgba(255,255,255,0.3)' }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'white' }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Separator */}
+                            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
+
+                            {/* List */}
+                            <div className="overflow-y-auto" style={{ maxHeight: '340px' }}>
+                              {loadingNotifs ? (
+                                <div className="flex items-center justify-center py-12">
+                                  <div className="w-5 h-5 rounded-full" style={{ border: '2px solid rgba(239,68,68,0.2)', borderTopColor: 'rgba(239,68,68,0.7)', animation: 'spin 0.8s linear infinite' }} />
+                                </div>
+                              ) : notifications.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-14 gap-3">
+                                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.15)' }} />
+                                  </div>
+                                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>Aucune notification</p>
+                                </div>
+                              ) : (
+                                <div className="py-2">
+                                  {notifications.map((notif, i) => (
+                                    <motion.div
+                                      key={notif.id}
+                                      initial={{ opacity: 0, x: -6 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: i * 0.035 }}
+                                      className="group flex gap-3.5 px-5 py-3.5 cursor-pointer relative transition-all"
+                                      style={notif.is_read
+                                        ? { background: 'transparent' }
+                                        : { background: 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }
+                                      }
+                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.background = notif.is_read ? 'transparent' : 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }}
+                                      onClick={async () => {
+                                        await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notification_id: notif.id, user_id: user.id }) })
+                                        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
+                                        if (notif.content_id && notif.content_type) { setShowNotifications(false); router.push(`/watch/${notif.content_type}/${notif.content_id}`) }
+                                      }}
+                                    >
+                                      {/* Unread bar */}
+                                      {!notif.is_read && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full"
+                                          style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))', boxShadow: '0 0 8px rgba(239,68,68,0.4)' }} />
+                                      )}
+
+                                      {/* Poster */}
+                                      {notif.image_url ? (
+                                        <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden"
+                                          style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                          <Image src={notif.image_url} alt="" fill className="object-cover" sizes="44px" />
+                                          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent 50%)' }} />
+                                        </div>
+                                      ) : (
+                                        <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center"
+                                          style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', border: '1px solid rgba(239,68,68,0.15)' }}>
+                                          <Bell className="w-4 h-4 text-red-400" />
+                                        </div>
+                                      )}
+
+                                      {/* Text */}
+                                      <div className="flex-1 min-w-0 py-0.5">
+                                        <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>
+                                          {notif.title}
+                                        </p>
+                                        <p className="text-[12px] line-clamp-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>{notif.message}</p>
+                                        <p className="text-[11px] mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(notif.created_at)}</p>
+                                      </div>
+
+                                      {!notif.is_read && (
+                                        <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
+                                          style={{ background: 'radial-gradient(circle, rgb(239,68,68), rgb(185,28,28))', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }} />
+                                      )}
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
+                            <button
+                              onClick={() => setShowNotifPrefsBell(true)}
+                              className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-medium transition-all"
+                              style={{ color: 'rgba(255,255,255,0.25)' }}
+                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.25)' }}
+                            >
+                              <Settings className="w-3.5 h-3.5" />
+                              Préférences d'alertes
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Prefs header */}
+                            <div className="relative flex items-center gap-3 px-5 py-4">
+                              <button onClick={() => setShowNotifPrefsBell(false)}
+                                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                                style={{ color: 'rgba(255,255,255,0.3)' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'white' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
+                                <ChevronRight className="w-4 h-4 rotate-180" />
+                              </button>
+                              <p className="font-bold text-white text-[15px]">Préférences</p>
+                            </div>
+                            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
+                            <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+                              {prefConfig.map(pref => {
+                                const Icon = pref.icon
+                                const enabled = notifPrefs[pref.key as keyof NotifPrefs]
+                                return (
+                                  <div key={pref.key} className="flex items-center gap-3 p-3.5 rounded-xl transition-all"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${pref.color}`}>
+                                      <Icon className="w-3.5 h-3.5" />
+                                    </div>
+                                    <p className="text-sm font-medium flex-1" style={{ color: 'rgba(255,255,255,0.75)' }}>{pref.label}</p>
+                                    <Toggle enabled={enabled} onChange={v => updatePref(pref.key, v)} />
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                         {!showNotifPrefsBell ? (
                           <>
                             {/* Header */}
