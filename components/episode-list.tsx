@@ -77,7 +77,7 @@ export function EpisodeList({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
-                className="absolute top-full left-0 mt-2 z-50 bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/50 min-w-[180px]"
+                className="absolute top-full left-0 mt-2 z-50 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/50 min-w-[180px] max-h-[60vh] overflow-y-auto"
               >
                 {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
                   <button
