@@ -124,7 +124,7 @@ function EpisodesPanel({
               initial={{ opacity: 0, y: -10, height: 0 }}
               animate={{ opacity: 1, y: 0, height: 'auto' }}
               exit={{ opacity: 0, y: -10, height: 0 }}
-              className="overflow-hidden mt-2 bg-zinc-900 rounded-2xl border border-white/10"
+              className="mt-2 bg-zinc-900 rounded-2xl border border-white/10 overflow-y-auto overscroll-contain" style={{ maxHeight: '40vh', WebkitOverflowScrolling: 'touch' }}
             >
               {seasons.map(s => {
                 const sEps = episodes.filter(e => e.season_number === s)
