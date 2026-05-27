@@ -241,6 +241,20 @@ export function EmbedPlayer({
     return () => window.removeEventListener('keydown', fn)
   }, [playing, showEpisodes])
 
+  const autoReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 5s auto-reload if video hasn't started
+  useEffect(() => {
+    if (!initialLoading) {
+      if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current)
+      return
+    }
+    autoReloadTimer.current = setTimeout(() => {
+      if (initialLoading) window.location.reload()
+    }, 5000)
+    return () => { if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current) }
+  }, [initialLoading])
+
   // 30s error timeout — dépend UNIQUEMENT de initialLoading
   // Les valeurs dynamiques (title, season, episode...) passent par des refs
   useEffect(() => {
