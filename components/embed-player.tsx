@@ -218,6 +218,7 @@ export function EmbedPlayer({
       setBuffering(false)
       setInitialLoading(false)
       setShowError(false)
+      sessionStorage.removeItem('player_reload_count')
       if (errorTimer.current) clearTimeout(errorTimer.current)
     })
     v.addEventListener('progress', () => { if (v.buffered.length > 0) setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100) })
@@ -243,14 +244,19 @@ export function EmbedPlayer({
 
   const autoReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // 5s auto-reload if video hasn't started
+  // 5s auto-reload up to 3 times if video hasn't started
   useEffect(() => {
     if (!initialLoading) {
       if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current)
       return
     }
+    const reloadCount = parseInt(sessionStorage.getItem('player_reload_count') || '0')
+    if (reloadCount >= 3) return
     autoReloadTimer.current = setTimeout(() => {
-      if (initialLoading) window.location.reload()
+      if (initialLoading) {
+        sessionStorage.setItem('player_reload_count', String(reloadCount + 1))
+        window.location.reload()
+      }
     }, 5000)
     return () => { if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current) }
   }, [initialLoading])
