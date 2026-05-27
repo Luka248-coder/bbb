@@ -8,7 +8,8 @@ import {
   getSeriesVideos,
   getSimilarMovies,
   getSimilarSeries,
-  getSeasonDetails
+  getSeasonDetails,
+  getCollection
 } from '@/lib/tmdb'
 
 export async function GET(
@@ -37,11 +38,17 @@ export async function GET(
         return NextResponse.json({ error: 'Movie not found' }, { status: 404 })
       }
 
+      // Fetch collection (saga) if the movie belongs to one
+      const collection = details.belongs_to_collection
+        ? await getCollection(details.belongs_to_collection.id)
+        : null
+
       return NextResponse.json({
         details,
         credits,
         videos: videos.filter(v => v.site === 'YouTube'),
-        similar: similar.slice(0, 12)
+        similar: similar.slice(0, 12),
+        collection
       })
     } else if (type === 'series') {
       const [details, credits, videos, similar] = await Promise.all([
