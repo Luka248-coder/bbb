@@ -21,6 +21,8 @@ export interface TMDBMovieDetails {
   tagline: string
   status: string
   adult: boolean
+  original_language: string
+  belongs_to_collection: { id: number; name: string; poster_path: string | null; backdrop_path: string | null } | null
 }
 
 export interface TMDBSeriesDetails {
@@ -358,4 +360,31 @@ export function formatDate(dateString: string): string {
 export function formatYear(dateString: string): string {
   if (!dateString) return ''
   return new Date(dateString).getFullYear().toString()
+}
+
+// Get collection details (saga)
+export async function getCollection(collectionId: number): Promise<{
+  id: number
+  name: string
+  overview: string
+  poster_path: string | null
+  backdrop_path: string | null
+  parts: { id: number; title: string; poster_path: string | null; release_date: string; vote_average: number }[]
+} | null> {
+  try {
+    const response = await fetch(
+      `${TMDB_BASE_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      { next: { revalidate: 3600 } }
+    )
+    if (!response.ok) return null
+    const data = await response.json()
+    // Sort by release date
+    data.parts = (data.parts || []).sort((a: any, b: any) =>
+      new Date(a.release_date).getTime() - new Date(b.release_date).getTime()
+    )
+    return data
+  } catch (error) {
+    console.error('Error fetching collection:', error)
+    return null
+  }
 }
