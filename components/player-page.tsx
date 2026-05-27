@@ -34,7 +34,6 @@ type TabType = 'synopsis' | 'casting' | 'similaires'
 
 export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId }: PlayerPageProps) {
   const router = useRouter()
-  const [tab, setTab] = useState<TabType>('synopsis')
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -264,77 +263,186 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="container mx-auto px-6 mt-16">
-        <div className="flex items-center gap-6 border-b border-white/10 mb-8">
-          {(['synopsis', 'casting', 'similaires'] as TabType[]).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`pb-3 text-sm font-semibold capitalize transition-all relative ${tab === t ? 'text-white' : 'text-white/40 hover:text-white/70'}`}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
-            </button>
-          ))}
-        </div>
+      {/* All sections */}
+      <div className="container mx-auto px-6 mt-12 pb-20 space-y-16">
 
-        <AnimatePresence mode="wait">
-          {tab === 'synopsis' && (
-            <motion.div key="synopsis" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pb-12">
-              <p className="text-white/70 text-base leading-relaxed max-w-2xl mb-6">{overview || 'Aucune description disponible.'}</p>
-              {directors.length > 0 && (
-                <div className="flex flex-wrap gap-6">
-                  <div>
-                    <p className="text-white/30 text-xs uppercase tracking-widest mb-1">Réalisateur</p>
-                    <p className="text-white font-medium">{directors.map(d => d.name).join(', ')}</p>
+        {/* Synopsis + Informations */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12">
+          {/* Left: Synopsis + Genres */}
+          <div className="space-y-10">
+            {/* Synopsis */}
+            <div>
+              <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-5">
+                <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+                Synopsis
+              </h2>
+              <p className="text-white/70 text-base leading-relaxed max-w-2xl">
+                {overview || 'Aucune description disponible.'}
+              </p>
+            </div>
+
+            {/* Genres */}
+            {genres.length > 0 && (
+              <div>
+                <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-4">
+                  <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+                  Genres
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {genres.map((g: any) => (
+                    <span key={g.id} className="px-4 py-1.5 rounded-full text-sm text-white/80 font-medium"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      {g.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Informations */}
+          <div>
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-5">
+              <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+              Informations
+            </h2>
+            <div className="space-y-2">
+              {releaseDate && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex items-center gap-2.5 text-white/40 text-sm">
+                    <Calendar className="w-4 h-4" />
+                    Sortie
                   </div>
-                  {genres.length > 0 && (
-                    <div>
-                      <p className="text-white/30 text-xs uppercase tracking-widest mb-1">Genres</p>
-                      <p className="text-white font-medium">{genres.map((g: any) => g.name).join(', ')}</p>
-                    </div>
-                  )}
+                  <span className="text-white font-bold text-sm">{formatYear(releaseDate)}</span>
                 </div>
               )}
-            </motion.div>
-          )}
-
-          {tab === 'casting' && (
-            <motion.div key="casting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pb-12">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                {cast.map((actor: any) => (
-                  <div key={actor.id} className="text-center group">
-                    <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-2 bg-white/5">
-                      <Image src={getTMDBProfileUrl(actor.profile_path)} alt={actor.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                    </div>
-                    <p className="text-white text-xs font-semibold truncate">{actor.name}</p>
-                    <p className="text-white/40 text-xs truncate">{actor.character}</p>
+              {runtime && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex items-center gap-2.5 text-white/40 text-sm">
+                    <Clock className="w-4 h-4" />
+                    Durée
                   </div>
-                ))}
+                  <span className="text-white font-bold text-sm">{formatRuntime(runtime)}</span>
+                </div>
+              )}
+              {type === 'series' && totalSeasons > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex items-center gap-2.5 text-white/40 text-sm">
+                    <Tv className="w-4 h-4" />
+                    Saisons
+                  </div>
+                  <span className="text-white font-bold text-sm">{totalSeasons}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center gap-2.5 text-white/40 text-sm">
+                  <Film className="w-4 h-4" />
+                  Langue
+                </div>
+                <span className="text-white font-bold text-sm">
+                  {(details as any)?.original_language === 'fr' ? 'Français' :
+                   (details as any)?.original_language === 'en' ? 'Anglais' :
+                   (details as any)?.original_language === 'es' ? 'Espagnol' :
+                   (details as any)?.original_language === 'ja' ? 'Japonais' :
+                   (details as any)?.original_language?.toUpperCase() || 'N/A'}
+                </span>
               </div>
-            </motion.div>
-          )}
+              {voteAverage > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex items-center gap-2.5 text-white/40 text-sm">
+                    <Star className="w-4 h-4" />
+                    Note TMDB
+                  </div>
+                  <span className="text-white font-bold text-sm">{voteAverage.toFixed(1)} / 10</span>
+                </div>
+              )}
+              {directors.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex items-center gap-2.5 text-white/40 text-sm">
+                    <User className="w-4 h-4" />
+                    Réalisateur
+                  </div>
+                  <span className="text-white font-bold text-sm text-right max-w-[160px] truncate">{directors.map(d => d.name).join(', ')}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-          {tab === 'similaires' && (
-            <motion.div key="similaires" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pb-12">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                {similar.map((item: any) => {
-                  const t = item.title || item.name
-                  const d = item.release_date || item.first_air_date
-                  return (
-                    <Link key={item.id} href={`/watch/${type}/${item.id}`}>
-                      <div className="cursor-pointer group">
-                        <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-2 bg-white/5">
-                          <Image src={getTMDBPosterUrl(item.poster_path)} alt={t} fill className="object-cover group-hover:opacity-80 group-hover:scale-105 transition-all duration-300" />
-                        </div>
-                        <p className="text-white text-xs font-semibold truncate">{t}</p>
-                        <p className="text-white/40 text-xs">{formatYear(d)}</p>
+        {/* Casting */}
+        {cast.length > 0 && (
+          <div>
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-6">
+              <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+              Casting · {cast.length} acteurs
+            </h2>
+            <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
+              {cast.map((actor: any) => (
+                <div key={actor.id} className="flex-shrink-0 w-[110px] group">
+                  <div className="relative w-[110px] h-[140px] rounded-2xl overflow-hidden mb-3 bg-white/5"
+                    style={{ border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                    <Image src={getTMDBProfileUrl(actor.profile_path)} alt={actor.name} fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)' }} />
+                  </div>
+                  <p className="text-white text-xs font-semibold leading-tight mb-0.5 truncate">{actor.name}</p>
+                  <p className="text-white/35 text-xs truncate italic">{actor.character}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Films similaires */}
+        {similar.length > 0 && (
+          <div>
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-6">
+              <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+              {type === 'series' ? 'Séries similaires' : 'Films similaires'}
+            </h2>
+            <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
+              {similar.slice(0, 12).map((item: any) => {
+                const t = item.title || item.name
+                const d = item.release_date || item.first_air_date
+                const vote = item.vote_average
+                const genreNames = (item.genre_ids || []).slice(0, 1).map((id: number) => {
+                  const map: Record<number, string> = { 28: 'Action', 12: 'Aventure', 16: 'Animation', 35: 'Comédie', 80: 'Crime', 99: 'Documentaire', 18: 'Drame', 10751: 'Famille', 14: 'Fantasy', 36: 'Histoire', 27: 'Horreur', 10402: 'Musique', 9648: 'Mystère', 10749: 'Romance', 878: 'Science-Fiction', 10770: 'Téléfilm', 53: 'Thriller', 10752: 'Guerre', 37: 'Western' }
+                  return map[id] || ''
+                }).filter(Boolean)
+                return (
+                  <Link key={item.id} href={`/watch/${type}/${item.id}`}>
+                    <div className="flex-shrink-0 w-[155px] cursor-pointer group">
+                      <div className="relative w-[155px] h-[220px] rounded-2xl overflow-hidden mb-3 bg-white/5"
+                        style={{ border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                        <Image src={getTMDBPosterUrl(item.poster_path)} alt={t} fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)' }} />
+                        {vote > 0 && (
+                          <div className="absolute bottom-2.5 left-2.5 text-left">
+                            <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wider">Note</p>
+                            <p className="text-white text-base font-bold leading-tight">{vote.toFixed(1)}</p>
+                          </div>
+                        )}
                       </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      <p className="text-white text-xs font-bold leading-tight mb-1 line-clamp-2">{t}</p>
+                      <div className="flex items-center gap-2">
+                        {d && <span className="text-white/30 text-[11px] font-semibold">{formatYear(d)}</span>}
+                        {genreNames.length > 0 && <span className="text-white/30 text-[11px] font-semibold uppercase tracking-wide">{genreNames[0]}</span>}
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
