@@ -48,6 +48,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
   const details = data?.details as TMDBMovieDetails | TMDBSeriesDetails | undefined
   const credits = data?.credits as TMDBCredits | undefined
   const similar = (data?.similar || []) as any[]
+  const collection = (data?.collection || null) as { id: number; name: string; parts: { id: number; title: string; poster_path: string | null; release_date: string; vote_average: number }[] } | null
   const episodes = (data?.seasonData?.episodes || []) as TMDBEpisode[]
 
   const movieDetails = type === 'movie' ? details as TMDBMovieDetails : null
@@ -395,6 +396,62 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                   <p className="text-white/35 text-xs truncate italic">{actor.character}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Saga / Collection */}
+        {collection && collection.parts.length > 1 && (
+          <div>
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-6">
+              <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+              {collection.name} · {collection.parts.length} films
+            </h2>
+            <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
+              {collection.parts.map((item) => {
+                const isCurrent = item.id === tmdbId
+                return (
+                  <Link key={item.id} href={`/watch/movie/${item.id}`}>
+                    <div className="flex-shrink-0 w-[155px] cursor-pointer group">
+                      <div
+                        className="relative w-[155px] h-[220px] rounded-2xl overflow-hidden mb-3"
+                        style={{
+                          border: isCurrent ? '2px solid rgb(239,68,68)' : '1px solid rgba(255,255,255,0.08)',
+                          boxShadow: isCurrent ? '0 0 20px rgba(239,68,68,0.3)' : '0 8px 24px rgba(0,0,0,0.4)',
+                          background: 'rgba(255,255,255,0.05)',
+                        }}
+                      >
+                        <Image
+                          src={getTMDBPosterUrl(item.poster_path)}
+                          alt={item.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)' }} />
+
+                        {/* EN COURS badge */}
+                        {isCurrent && (
+                          <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-bold text-white uppercase tracking-wide"
+                            style={{ background: 'rgb(239,68,68)', boxShadow: '0 2px 8px rgba(239,68,68,0.5)' }}>
+                            En cours
+                          </div>
+                        )}
+
+                        {item.vote_average > 0 && (
+                          <div className="absolute bottom-2.5 left-2.5">
+                            <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wider">Note</p>
+                            <p className="text-white text-base font-bold leading-tight">{item.vote_average.toFixed(1)}</p>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-white text-xs font-bold leading-tight mb-1 line-clamp-2">{item.title}</p>
+                      {item.release_date && (
+                        <span className="text-white/30 text-[11px] font-semibold">{formatYear(item.release_date)}</span>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         )}
