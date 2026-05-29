@@ -24,11 +24,6 @@ interface TMDBItem {
   genre_ids: number[]
 }
 
-interface AdminRecommendationsProps {
-  existingMovieIds: number[]
-  existingSeriesIds: number[]
-}
-
 const GENRE_MAP: Record<number, string> = {
   28: 'Action', 12: 'Aventure', 16: 'Animation', 35: 'Comédie', 80: 'Crime',
   99: 'Documentaire', 18: 'Drame', 10751: 'Famille', 14: 'Fantasy', 27: 'Horreur',
@@ -43,7 +38,7 @@ const CATEGORIES = [
   { id: 'upcoming', label: 'À venir', icon: Calendar, color: 'text-green-400', desc: 'Prochaines sorties films' },
 ]
 
-export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: AdminRecommendationsProps) {
+export function AdminRecommendations() {
   const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie')
   const [category, setCategory] = useState('trending')
   const [items, setItems] = useState<TMDBItem[]>([])
@@ -52,6 +47,20 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
   const [addedIds, setAddedIds] = useState<number[]>([])
   const [urlPromptId, setUrlPromptId] = useState<number | null>(null)
   const [urlInput, setUrlInput] = useState('')
+  const [existingMovieIds, setExistingMovieIds] = useState<number[]>([])
+  const [existingSeriesIds, setExistingSeriesIds] = useState<number[]>([])
+
+  useEffect(() => {
+    fetch('/api/auth/admin/tmdb-recommendations?catalog=1')
+      .then(r => r.json())
+      .then(d => {
+        setExistingMovieIds(d.movieIds || [])
+        setExistingSeriesIds(d.seriesIds || [])
+      })
+      .catch(() => {})
+  }, [])
+
+  const existingIds = mediaType === 'movie' ? existingMovieIds : existingSeriesIds
 
   const fetchRecommendations = useCallback(async () => {
     setLoading(true)
@@ -105,7 +114,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
@@ -118,9 +126,7 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        {/* Media type toggle */}
         <div className="flex p-1 rounded-xl gap-1" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <button
             onClick={() => setMediaType('movie')}
@@ -136,7 +142,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
           </button>
         </div>
 
-        {/* Category tabs */}
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.filter(c => !(c.id === 'upcoming' && mediaType === 'tv')).map(cat => {
             const Icon = cat.icon
@@ -157,7 +162,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
           })}
         </div>
 
-        {/* Refresh */}
         <button
           onClick={fetchRecommendations}
           disabled={loading}
@@ -168,7 +172,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
         </button>
       </div>
 
-      {/* Category description */}
       {(() => {
         const cat = CATEGORIES.find(c => c.id === category)
         if (!cat) return null
@@ -182,7 +185,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
         )
       })()}
 
-      {/* Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
           <div className="flex flex-col items-center gap-3">
@@ -236,14 +238,12 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
 
-                    {/* Note badge */}
                     <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold"
                       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
                       <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                       <span className="text-white">{item.vote_average.toFixed(1)}</span>
                     </div>
 
-                    {/* Already in catalog */}
                     {alreadyIn && (
                       <div className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center"
                         style={{ background: 'rgba(34,197,94,0.9)' }}>
@@ -251,7 +251,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                       </div>
                     )}
 
-                    {/* Add button / URL prompt */}
                     {!alreadyIn && (
                       <div className="absolute bottom-0 inset-x-0 p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
                         {urlPromptId === item.id ? (
@@ -298,10 +297,7 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
                             style={{ background: 'rgba(220,38,38,0.9)', backdropFilter: 'blur(8px)' }}
                           >
-                            {isAdding
-                              ? <Loader2 className="w-4 h-4 animate-spin" />
-                              : <><Plus className="w-4 h-4" /> Ajouter</>
-                            }
+                            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Ajouter</>}
                           </button>
                         )}
                       </div>
@@ -316,7 +312,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                     ))}
                   </div>
 
-                  {/* Popularity bar */}
                   <div className="mt-2 h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                     <div className="h-full rounded-full" style={{
                       width: `${Math.min((item.popularity / 300) * 100, 100)}%`,
