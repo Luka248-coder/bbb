@@ -50,9 +50,8 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
   const [loading, setLoading] = useState(false)
   const [addingId, setAddingId] = useState<number | null>(null)
   const [addedIds, setAddedIds] = useState<number[]>([])
-  const [videoUrls, setVideoUrls] = useState<Record<number, string>>({})
-
-  const existingIds = mediaType === 'movie' ? existingMovieIds : existingSeriesIds
+  const [urlPromptId, setUrlPromptId] = useState<number | null>(null)
+  const [urlInput, setUrlInput] = useState('')
 
   const fetchRecommendations = useCallback(async () => {
     setLoading(true)
@@ -67,8 +66,10 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
 
   useEffect(() => { fetchRecommendations() }, [fetchRecommendations])
 
-  const addItem = async (item: TMDBItem) => {
+  const addItem = async (item: TMDBItem, videoUrl?: string) => {
     setAddingId(item.id)
+    setUrlPromptId(null)
+    setUrlInput('')
     try {
       const isMovie = mediaType === 'movie'
       const tmdbData = {
@@ -91,7 +92,7 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
         body: JSON.stringify({
           type: isMovie ? 'movie' : 'series',
           tmdbData,
-          videoUrl: videoUrls[item.id] || null
+          videoUrl: videoUrl || null
         }),
       })
       if (res.ok) setAddedIds(prev => [...prev, item.id])
@@ -250,20 +251,52 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                       </div>
                     )}
 
-                    {/* Add button on hover */}
+                    {/* Add button / URL prompt */}
                     {!alreadyIn && (
-                      <div className="absolute bottom-0 inset-x-0 p-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
-                        <button
-                          onClick={() => addItem(item)}
-                          disabled={isAdding}
-                          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
-                          style={{ background: 'rgba(220,38,38,0.9)', backdropFilter: 'blur(8px)' }}
-                        >
-                          {isAdding
-                            ? <Loader2 className="w-4 h-4 animate-spin" />
-                            : <><Plus className="w-4 h-4" /> Ajouter</>
-                          }
-                        </button>
+                      <div className="absolute bottom-0 inset-x-0 p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+                        {urlPromptId === item.id ? (
+                          <div className="flex flex-col gap-1.5" onClick={e => e.stopPropagation()}>
+                            <input
+                              autoFocus
+                              value={urlInput}
+                              onChange={e => setUrlInput(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') addItem(item, urlInput)
+                                if (e.key === 'Escape') { setUrlPromptId(null); setUrlInput('') }
+                              }}
+                              placeholder="https://... (optionnel)"
+                              className="w-full text-[11px] px-2.5 py-1.5 rounded-lg outline-none text-white placeholder-white/30"
+                              style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+                            />
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => addItem(item, urlInput)}
+                                disabled={isAdding}
+                                className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold text-white active:scale-95 transition-all"
+                                style={{ background: 'rgba(220,38,38,0.9)' }}
+                              >
+                                {isAdding ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3" /> Confirmer</>}
+                              </button>
+                              <button
+                                onClick={() => { setUrlPromptId(null); setUrlInput('') }}
+                                className="px-2.5 py-1.5 rounded-lg text-[11px] text-white/50 hover:text-white transition-all"
+                                style={{ background: 'rgba(255,255,255,0.08)' }}
+                              >✕</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => mediaType === 'movie' ? (setUrlPromptId(item.id), setUrlInput('')) : addItem(item)}
+                            disabled={isAdding}
+                            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
+                            style={{ background: 'rgba(220,38,38,0.9)', backdropFilter: 'blur(8px)' }}
+                          >
+                            {isAdding
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <><Plus className="w-4 h-4" /> Ajouter</>
+                            }
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
