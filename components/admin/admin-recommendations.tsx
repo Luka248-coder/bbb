@@ -1,32 +1,308 @@
-import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
-import { AdminRecommendations } from '@/components/admin/admin-recommendations'
-import { Loading } from '@/components/loading'
+'use client'
 
-export const metadata = {
-  title: 'Recommandations - Administration - StreamSelf',
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Sparkles, Film, Tv, Star, TrendingUp, Trophy, RefreshCw,
+  Plus, Check, Loader2, ChevronRight, Calendar, Users,
+  Filter
+} from 'lucide-react'
+import Image from 'next/image'
+
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
+const TMDB_BASE = 'https://api.themoviedb.org/3'
+const IMG_BASE = 'https://image.tmdb.org/t/p/w342'
+
+interface TMDBItem {
+  id: number
+  title?: string
+  name?: string
+  poster_path: string | null
+  vote_average: number
+  vote_count: number
+  popularity: number
+  release_date?: string
+  first_air_date?: string
+  overview: string
+  genre_ids: number[]
+  media_type?: 'movie' | 'tv'
 }
 
-async function RecommendationsContent() {
-  const supabase = await createClient()
-  const { data: movies } = await supabase.from('movies').select('tmdb_id')
-  const { data: series } = await supabase.from('series').select('tmdb_id')
-
-  const existingMovieIds = (movies || []).map(m => m.tmdb_id)
-  const existingSeriesIds = (series || []).map(s => s.tmdb_id)
-
-  return (
-    <AdminRecommendations
-      existingMovieIds={existingMovieIds}
-      existingSeriesIds={existingSeriesIds}
-    />
-  )
+interface AdminRecommendationsProps {
+  existingMovieIds: number[]
+  existingSeriesIds: number[]
 }
 
-export default function AdminRecommendationsPage() {
+const GENRE_MAP: Record<number, string> = {
+  28: 'Action', 12: 'Aventure', 16: 'Animation', 35: 'Comédie', 80: 'Crime',
+  99: 'Documentaire', 18: 'Drame', 10751: 'Famille', 14: 'Fantasy', 27: 'Horreur',
+  9648: 'Mystère', 10749: 'Romance', 878: 'Sci-Fi', 53: 'Thriller', 37: 'Western',
+  10759: 'Action/Aventure', 10762: 'Enfants', 10763: 'Actualités', 10764: 'Réalité',
+  10765: 'Sci-Fi/Fantasy', 10766: 'Soap', 10767: 'Talk Show', 10768: 'Guerre'
+}
+
+const CATEGORIES = [
+  { id: 'trending', label: 'Tendances', icon: TrendingUp, color: 'text-orange-400', desc: 'Les plus populaires du moment' },
+  { id: 'top_rated', label: 'Mieux notés', icon: Trophy, color: 'text-yellow-400', desc: 'Notes TMDB les plus élevées' },
+  { id: 'popular', label: 'Populaires', icon: Users, color: 'text-blue-400', desc: 'Les plus vus en ce moment' },
+  { id: 'upcoming', label: 'À venir', icon: Calendar, color: 'text-green-400', desc: 'Prochaines sorties films' },
+]
+
+export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: AdminRecommendationsProps) {
+  const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie')
+  const [category, setCategory] = useState('trending')
+  const [items, setItems] = useState<TMDBItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [addingId, setAddingId] = useState<number | null>(null)
+  const [addedIds, setAddedIds] = useState<number[]>([])
+  const [videoUrls, setVideoUrls] = useState<Record<number, string>>({})
+
+  const existingIds = mediaType === 'movie' ? existingMovieIds : existingSeriesIds
+
+  const fetchRecommendations = useCallback(async () => {
+    setLoading(true)
+    setItems([])
+    try {
+      let url = ''
+      if (category === 'trending') {
+        url = `${TMDB_BASE}/trending/${mediaType}/week?api_key=${TMDB_API_KEY}&language=fr-FR`
+      } else if (category === 'top_rated') {
+        url = `${TMDB_BASE}/${mediaType}/top_rated?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`
+      } else if (category === 'popular') {
+        url = `${TMDB_BASE}/${mediaType}/popular?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`
+      } else if (category === 'upcoming') {
+        url = `${TMDB_BASE}/movie/upcoming?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`
+      }
+      const res = await fetch(url)
+      const data = await res.json()
+      setItems((data.results || []).slice(0, 20))
+    } catch {}
+    setLoading(false)
+  }, [mediaType, category])
+
+  useEffect(() => { fetchRecommendations() }, [fetchRecommendations])
+
+  const addItem = async (item: TMDBItem) => {
+    setAddingId(item.id)
+    try {
+      const isMovie = mediaType === 'movie'
+      const tmdbData = {
+        id: item.id,
+        title: isMovie ? item.title : item.name,
+        name: item.name,
+        overview: item.overview,
+        poster_path: item.poster_path,
+        backdrop_path: null,
+        release_date: item.release_date,
+        first_air_date: item.first_air_date,
+        vote_average: item.vote_average,
+        vote_count: item.vote_count,
+        genre_ids: item.genre_ids,
+        popularity: item.popularity,
+      }
+      const res = await fetch('/api/auth/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: mediaType === 'movie' ? 'movie' : 'series',
+          tmdbData,
+          videoUrl: videoUrls[item.id] || null
+        }),
+      })
+      if (res.ok) setAddedIds(prev => [...prev, item.id])
+    } catch {}
+    setAddingId(null)
+  }
+
+  const isExisting = (id: number) => existingIds.includes(id) || addedIds.includes(id)
+
+  const formatDate = (d?: string) => d ? new Date(d).getFullYear() : ''
+
   return (
-    <Suspense fallback={<Loading />}>
-      <RecommendationsContent />
-    </Suspense>
+    <div className="p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-purple-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Recommandations TMDB</h1>
+            <p className="text-sm text-muted-foreground">Films et séries populaires à ajouter à votre catalogue</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        {/* Media type toggle */}
+        <div className="flex p-1 rounded-xl gap-1" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <button
+            onClick={() => setMediaType('movie')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mediaType === 'movie' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}
+          >
+            <Film className="w-4 h-4" /> Films
+          </button>
+          <button
+            onClick={() => setMediaType('tv')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mediaType === 'tv' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}
+          >
+            <Tv className="w-4 h-4" /> Séries
+          </button>
+        </div>
+
+        {/* Category tabs */}
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.filter(c => !(c.id === 'upcoming' && mediaType === 'tv')).map(cat => {
+            const Icon = cat.icon
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
+                  category === cat.id
+                    ? 'bg-white/10 border-white/20 text-white'
+                    : 'border-transparent text-muted-foreground hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${cat.color}`} />
+                {cat.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Refresh */}
+        <button
+          onClick={fetchRecommendations}
+          disabled={loading}
+          className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-white border border-white/08 hover:border-white/15 transition-all"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Actualiser
+        </button>
+      </div>
+
+      {/* Category description */}
+      {(() => {
+        const cat = CATEGORIES.find(c => c.id === category)
+        if (!cat) return null
+        const Icon = cat.icon
+        return (
+          <div className="flex items-center gap-2 mb-6 px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <Icon className={`w-4 h-4 ${cat.color}`} />
+            <p className="text-sm text-muted-foreground">{cat.desc} — {mediaType === 'movie' ? 'Films' : 'Séries'}</p>
+            {!loading && <span className="ml-auto text-xs text-muted-foreground">{items.filter(i => !isExisting(i.id)).length} à ajouter</span>}
+          </div>
+        )
+      })()}
+
+      {/* Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground text-sm">Chargement des recommandations…</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+          <AnimatePresence mode="popLayout">
+            {items.map((item, i) => {
+              const label = item.title || item.name || ''
+              const date = formatDate(item.release_date || item.first_air_date)
+              const alreadyIn = isExisting(item.id)
+              const isAdding = addingId === item.id
+              const genres = item.genre_ids.slice(0, 2).map(id => GENRE_MAP[id]).filter(Boolean)
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="group relative flex flex-col"
+                >
+                  {/* Poster */}
+                  <div className="relative aspect-[2/3] rounded-2xl overflow-hidden mb-3"
+                    style={{
+                      border: alreadyIn ? '2px solid rgba(34,197,94,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                      background: 'rgba(255,255,255,0.04)'
+                    }}>
+                    {item.poster_path ? (
+                      <Image
+                        src={`${IMG_BASE}${item.poster_path}`}
+                        alt={label}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="200px"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Film className="w-10 h-10 text-white/10" />
+                      </div>
+                    )}
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
+
+                    {/* Note badge */}
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold"
+                      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-white">{item.vote_average.toFixed(1)}</span>
+                    </div>
+
+                    {/* Already in catalog badge */}
+                    {alreadyIn && (
+                      <div className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center"
+                        style={{ background: 'rgba(34,197,94,0.9)', backdropFilter: 'blur(8px)' }}>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+
+                    {/* Add button on hover */}
+                    {!alreadyIn && (
+                      <div className="absolute bottom-0 inset-x-0 p-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+                        <button
+                          onClick={() => addItem(item)}
+                          disabled={isAdding}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
+                          style={{ background: 'rgba(220,38,38,0.9)', backdropFilter: 'blur(8px)' }}
+                        >
+                          {isAdding
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <><Plus className="w-4 h-4" /> Ajouter</>
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <p className="text-white text-xs font-semibold leading-tight mb-1 line-clamp-2">{label}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {date && <span className="text-white/30 text-[11px] font-medium">{date}</span>}
+                    {genres.map(g => (
+                      <span key={g} className="text-[10px] text-white/25 uppercase tracking-wide">{g}</span>
+                    ))}
+                  </div>
+
+                  {/* Popularity bar */}
+                  <div className="mt-2 h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-full rounded-full" style={{
+                      width: `${Math.min((item.popularity / 300) * 100, 100)}%`,
+                      background: 'linear-gradient(90deg, rgba(220,38,38,0.6), rgba(220,38,38,0.3))'
+                    }} />
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
   )
 }
