@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Film, Tv, Users, MessageSquare,
-  Settings, Home, LogOut, Bell, Headphones as HeadphonesIcon, Zap,
+  Settings, Home, LogOut, Bell, Headphones as HeadphonesIcon, Zap, Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/auth'
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/movies', label: 'Films', icon: Film },
   { href: '/admin/series', label: 'Séries', icon: Tv },
+  { href: '/admin/recommendations', label: 'Recommandations', icon: Sparkles },
   { href: '/admin/users', label: 'Utilisateurs', icon: Users },
   { href: '/admin/requests', label: 'Demandes', icon: MessageSquare },
   { href: '/admin/support', label: 'Support', icon: HeadphonesIcon },
