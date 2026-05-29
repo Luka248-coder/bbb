@@ -319,6 +319,28 @@ export function getTMDBProfileUrl(path: string | null, size: 'w45' | 'w185' | 'h
   return `https://image.tmdb.org/t/p/${size}${path}`
 }
 
+// Get logo (title treatment image) for a movie or series
+export async function getContentLogo(type: 'movie' | 'tv', tmdbId: number): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `${TMDB_BASE_URL}/${type}/${tmdbId}/images?api_key=${TMDB_API_KEY}&include_image_language=fr,en,null`,
+      { next: { revalidate: 3600 } }
+    )
+    if (!response.ok) return null
+    const data = await response.json()
+    const logos: { file_path: string; iso_639_1: string | null; vote_average: number }[] = data.logos || []
+    if (logos.length === 0) return null
+    // Prefer French, then English, then language-neutral
+    const fr = logos.filter(l => l.iso_639_1 === 'fr').sort((a, b) => b.vote_average - a.vote_average)[0]
+    const en = logos.filter(l => l.iso_639_1 === 'en').sort((a, b) => b.vote_average - a.vote_average)[0]
+    const neutral = logos.filter(l => !l.iso_639_1).sort((a, b) => b.vote_average - a.vote_average)[0]
+    const best = fr || en || neutral || logos[0]
+    return best ? `https://image.tmdb.org/t/p/w500${best.file_path}` : null
+  } catch {
+    return null
+  }
+}
+
 // Get directors from credits
 export function getDirectors(credits: TMDBCredits | null): TMDBCrewMember[] {
   if (!credits) return []
