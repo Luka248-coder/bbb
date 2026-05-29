@@ -4,13 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Film, Tv, Star, TrendingUp, Trophy, RefreshCw,
-  Plus, Check, Loader2, ChevronRight, Calendar, Users,
-  Filter
+  Plus, Check, Loader2, Calendar, Users,
 } from 'lucide-react'
 import Image from 'next/image'
 
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
-const TMDB_BASE = 'https://api.themoviedb.org/3'
 const IMG_BASE = 'https://image.tmdb.org/t/p/w342'
 
 interface TMDBItem {
@@ -25,7 +22,6 @@ interface TMDBItem {
   first_air_date?: string
   overview: string
   genre_ids: number[]
-  media_type?: 'movie' | 'tv'
 }
 
 interface AdminRecommendationsProps {
@@ -37,8 +33,7 @@ const GENRE_MAP: Record<number, string> = {
   28: 'Action', 12: 'Aventure', 16: 'Animation', 35: 'Comédie', 80: 'Crime',
   99: 'Documentaire', 18: 'Drame', 10751: 'Famille', 14: 'Fantasy', 27: 'Horreur',
   9648: 'Mystère', 10749: 'Romance', 878: 'Sci-Fi', 53: 'Thriller', 37: 'Western',
-  10759: 'Action/Aventure', 10762: 'Enfants', 10763: 'Actualités', 10764: 'Réalité',
-  10765: 'Sci-Fi/Fantasy', 10766: 'Soap', 10767: 'Talk Show', 10768: 'Guerre'
+  10759: 'Action/Aventure', 10762: 'Enfants', 10765: 'Sci-Fi/Fantasy', 10768: 'Guerre'
 }
 
 const CATEGORIES = [
@@ -63,19 +58,9 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
     setLoading(true)
     setItems([])
     try {
-      let url = ''
-      if (category === 'trending') {
-        url = `${TMDB_BASE}/trending/${mediaType}/week?api_key=${TMDB_API_KEY}&language=fr-FR`
-      } else if (category === 'top_rated') {
-        url = `${TMDB_BASE}/${mediaType}/top_rated?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`
-      } else if (category === 'popular') {
-        url = `${TMDB_BASE}/${mediaType}/popular?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`
-      } else if (category === 'upcoming') {
-        url = `${TMDB_BASE}/movie/upcoming?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`
-      }
-      const res = await fetch(url)
+      const res = await fetch(`/api/auth/admin/tmdb-recommendations?category=${category}&type=${mediaType}`)
       const data = await res.json()
-      setItems((data.results || []).slice(0, 20))
+      setItems(data.results || [])
     } catch {}
     setLoading(false)
   }, [mediaType, category])
@@ -104,7 +89,7 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: mediaType === 'movie' ? 'movie' : 'series',
+          type: isMovie ? 'movie' : 'series',
           tmdbData,
           videoUrl: videoUrls[item.id] || null
         }),
@@ -115,7 +100,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
   }
 
   const isExisting = (id: number) => existingIds.includes(id) || addedIds.includes(id)
-
   const formatDate = (d?: string) => d ? new Date(d).getFullYear() : ''
 
   return (
@@ -176,7 +160,7 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
         <button
           onClick={fetchRecommendations}
           disabled={loading}
-          className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-white border border-white/08 hover:border-white/15 transition-all"
+          className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-white border border-white/10 hover:border-white/20 transition-all"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Actualiser
@@ -205,6 +189,11 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
             <p className="text-muted-foreground text-sm">Chargement des recommandations…</p>
           </div>
         </div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <Sparkles className="w-10 h-10 text-white/10" />
+          <p className="text-muted-foreground text-sm">Aucun résultat</p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
           <AnimatePresence mode="popLayout">
@@ -223,7 +212,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                   transition={{ delay: i * 0.03 }}
                   className="group relative flex flex-col"
                 >
-                  {/* Poster */}
                   <div className="relative aspect-[2/3] rounded-2xl overflow-hidden mb-3"
                     style={{
                       border: alreadyIn ? '2px solid rgba(34,197,94,0.5)' : '1px solid rgba(255,255,255,0.08)',
@@ -244,21 +232,20 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                       </div>
                     )}
 
-                    {/* Overlay */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
 
                     {/* Note badge */}
                     <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold"
-                      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+                      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
                       <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                       <span className="text-white">{item.vote_average.toFixed(1)}</span>
                     </div>
 
-                    {/* Already in catalog badge */}
+                    {/* Already in catalog */}
                     {alreadyIn && (
                       <div className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center"
-                        style={{ background: 'rgba(34,197,94,0.9)', backdropFilter: 'blur(8px)' }}>
+                        style={{ background: 'rgba(34,197,94,0.9)' }}>
                         <Check className="w-3.5 h-3.5 text-white" />
                       </div>
                     )}
@@ -281,7 +268,6 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                     )}
                   </div>
 
-                  {/* Info */}
                   <p className="text-white text-xs font-semibold leading-tight mb-1 line-clamp-2">{label}</p>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {date && <span className="text-white/30 text-[11px] font-medium">{date}</span>}
