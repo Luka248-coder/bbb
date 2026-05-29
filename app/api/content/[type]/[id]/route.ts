@@ -9,7 +9,8 @@ import {
   getSimilarMovies,
   getSimilarSeries,
   getSeasonDetails,
-  getCollection
+  getCollection,
+  getContentLogo
 } from '@/lib/tmdb'
 
 export async function GET(
@@ -27,18 +28,18 @@ export async function GET(
 
   try {
     if (type === 'movie') {
-      const [details, credits, videos, similar] = await Promise.all([
+      const [details, credits, videos, similar, logo] = await Promise.all([
         getMovieDetails(tmdbId),
         getMovieCredits(tmdbId),
         getMovieVideos(tmdbId),
-        getSimilarMovies(tmdbId)
+        getSimilarMovies(tmdbId),
+        getContentLogo('movie', tmdbId)
       ])
 
       if (!details) {
         return NextResponse.json({ error: 'Movie not found' }, { status: 404 })
       }
 
-      // Fetch collection (saga) if the movie belongs to one
       const collection = details.belongs_to_collection
         ? await getCollection(details.belongs_to_collection.id)
         : null
@@ -48,14 +49,16 @@ export async function GET(
         credits,
         videos: videos.filter(v => v.site === 'YouTube'),
         similar: similar.slice(0, 12),
-        collection
+        collection,
+        logo
       })
     } else if (type === 'series') {
-      const [details, credits, videos, similar] = await Promise.all([
+      const [details, credits, videos, similar, logo] = await Promise.all([
         getSeriesDetails(tmdbId),
         getSeriesCredits(tmdbId),
         getSeriesVideos(tmdbId),
-        getSimilarSeries(tmdbId)
+        getSimilarSeries(tmdbId),
+        getContentLogo('tv', tmdbId)
       ])
 
       if (!details) {
@@ -73,7 +76,8 @@ export async function GET(
         credits,
         videos: videos.filter(v => v.site === 'YouTube'),
         similar: similar.slice(0, 12),
-        seasonData
+        seasonData,
+        logo
       })
     }
 
