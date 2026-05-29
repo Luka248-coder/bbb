@@ -286,7 +286,14 @@ export function AdminRecommendations({ existingMovieIds, existingSeriesIds }: Ad
                           </div>
                         ) : (
                           <button
-                            onClick={() => mediaType === 'movie' ? (setUrlPromptId(item.id), setUrlInput('')) : addItem(item)}
+                            onClick={() => {
+                              if (mediaType === 'movie') {
+                                setUrlPromptId(item.id)
+                                setUrlInput('')
+                              } else {
+                                addItem(item)
+                              }
+                            }}
                             disabled={isAdding}
                             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
                             style={{ background: 'rgba(220,38,38,0.9)', backdropFilter: 'blur(8px)' }}
