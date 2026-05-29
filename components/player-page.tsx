@@ -49,6 +49,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
   const credits = data?.credits as TMDBCredits | undefined
   const similar = (data?.similar || []) as any[]
   const collection = (data?.collection || null) as { id: number; name: string; parts: { id: number; title: string; poster_path: string | null; release_date: string; vote_average: number }[] } | null
+  const logo = (data?.logo || null) as string | null
   const episodes = (data?.seasonData?.episodes || []) as TMDBEpisode[]
 
   const movieDetails = type === 'movie' ? details as TMDBMovieDetails : null
@@ -186,10 +187,23 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               )}
             </div>
 
-            {/* Title */}
-            <h1 className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight tracking-tight">
-              {title}
-            </h1>
+            {/* Title or Logo */}
+            {logo ? (
+              <div className="mb-4">
+                <Image
+                  src={logo}
+                  alt={title}
+                  width={380}
+                  height={160}
+                  className="object-contain object-left max-h-[140px] w-auto drop-shadow-2xl"
+                  style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6))' }}
+                />
+              </div>
+            ) : (
+              <h1 className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight tracking-tight">
+                {title}
+              </h1>
+            )}
 
             {/* Synopsis preview */}
             <p className="text-white/60 text-base leading-relaxed mb-6 max-w-xl">
