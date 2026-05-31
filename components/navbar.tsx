@@ -95,7 +95,6 @@ export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -163,7 +162,6 @@ export function Navbar() {
           setIsScrolled(window.scrollY > 20)
           const scrollTop = window.scrollY
           const docHeight = document.documentElement.scrollHeight - window.innerHeight
-          setScrollProgress(docHeight > 0 ? (scrollTop / docHeight) * 100 : 0)
           ticking = false
         })
         ticking = true
@@ -294,21 +292,8 @@ export function Navbar() {
       )}
       style={isScrolled ? { background: 'rgba(12,12,14,0.82)', backdropFilter: 'blur(20px)' } : {}}
       >
-        {/* Scroll progress line */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] overflow-hidden rounded-t-2xl">
-          <motion.div
-            className="h-full"
-            style={{
-              width: `${scrollProgress}%`,
-              background: 'linear-gradient(to right, #991b1b, #ef4444, #f97316)',
-              boxShadow: '0 0 8px rgba(239,68,68,0.6)',
-            }}
-            transition={{ type: 'spring', stiffness: 60, damping: 20, mass: 0.3 }}
-          />
-        </div>
-
         <div className="w-full px-5 md:px-6">
-          <div className="flex items-center justify-between h-[58px] gap-4 -mt-2">
+          <div className="flex items-center justify-between h-[68px] gap-6">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 mr-2 -ml-2">
