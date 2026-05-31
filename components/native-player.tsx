@@ -288,6 +288,26 @@ export function NativePlayer({
   const currentSeasonRef = useRef(initialSeason)
   const currentEpisodeRef = useRef(initialEpisode)
   const titleRef = useRef(initialTitle)
+  const resumeTimeRef = useRef(0)
+
+  // Fetch saved progress on mount and store resume time
+  useEffect(() => {
+    if (!userId || !tmdbId) return
+    fetch(`/api/watch-history?user_id=${userId}`)
+      .then(r => r.json())
+      .then((data: any[]) => {
+        if (!Array.isArray(data)) return
+        const match = data.find(item =>
+          item.content_id === tmdbId &&
+          item.content_type === type &&
+          (type === 'movie' || (item.season === (initialSeason ?? null) && item.episode === (initialEpisode ?? null)))
+        )
+        if (match && match.progress > 0 && match.progress < 98) {
+          resumeTimeRef.current = match.progress // store as % to apply after duration known
+        }
+      })
+      .catch(() => {})
+  }, [userId, tmdbId, type, initialSeason, initialEpisode])
 
   // Keep refs in sync so the save function always has latest values
   useEffect(() => { currentSeasonRef.current = currentSeason }, [currentSeason])
@@ -476,6 +496,11 @@ export function NativePlayer({
     const onMeta = () => {
       setDuration(v.duration)
       durationRef.current = v.duration
+      // Resume from saved progress
+      if (resumeTimeRef.current > 0 && v.duration > 0) {
+        v.currentTime = (resumeTimeRef.current / 100) * v.duration
+        resumeTimeRef.current = 0
+      }
       // Disable all text tracks by default
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
