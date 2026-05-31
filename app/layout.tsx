@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SessionProvider } from '@/components/session-provider'
+import { MovieDrawerProvider } from '@/components/movie-drawer'
 import './globals.css'
 import { GridBackground } from '@/components/grid-background'
 
@@ -21,9 +22,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.variable} font-sans antialiased`}>
         <GridBackground />
         <SessionProvider>
-          <div className="relative" style={{zIndex:1}}>
-            {children}
-          </div>
+          <MovieDrawerProvider>
+            <div className="relative" style={{zIndex:1}}>
+              {children}
+            </div>
+          </MovieDrawerProvider>
         </SessionProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
