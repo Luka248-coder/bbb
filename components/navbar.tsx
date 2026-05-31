@@ -285,29 +285,30 @@ export function Navbar() {
   }
 
   return (
-    <header
-      className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-500 pt-3',
+    <header className="fixed top-0 left-0 right-0 z-50 pt-3 transition-all duration-500">
+      <div className={cn(
+        'relative transition-all duration-500',
         isScrolled
-          ? 'bg-black/60 backdrop-blur-xl border-b border-white/[0.06]'
-          : 'bg-transparent'
+          ? 'mx-4 md:mx-8 rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+          : 'mx-0 rounded-none'
       )}
-    >
-      {/* Scroll progress line */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-transparent">
-        <motion.div
-          className="h-full"
-          style={{
-            width: `${scrollProgress}%`,
-            background: 'linear-gradient(to right, #991b1b, #ef4444, #f97316)',
-            boxShadow: '0 0 8px rgba(239,68,68,0.6)',
-          }}
-          transition={{ type: 'spring', stiffness: 60, damping: 20, mass: 0.3 }}
-        />
-      </div>
+      style={isScrolled ? { background: 'rgba(12,12,14,0.82)', backdropFilter: 'blur(20px)' } : {}}
+      >
+        {/* Scroll progress line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] overflow-hidden rounded-t-2xl">
+          <motion.div
+            className="h-full"
+            style={{
+              width: `${scrollProgress}%`,
+              background: 'linear-gradient(to right, #991b1b, #ef4444, #f97316)',
+              boxShadow: '0 0 8px rgba(239,68,68,0.6)',
+            }}
+            transition={{ type: 'spring', stiffness: 60, damping: 20, mass: 0.3 }}
+          />
+        </div>
 
-      <div className="w-full px-5 md:px-8">
-        <div className="flex items-center justify-between h-[58px] gap-4 -mt-2">
+        <div className="w-full px-5 md:px-6">
+          <div className="flex items-center justify-between h-[58px] gap-4 -mt-2">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 mr-2 -ml-2">
@@ -869,6 +870,7 @@ export function Navbar() {
             </button>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Mobile bottom sheet */}
