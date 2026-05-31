@@ -8,17 +8,18 @@ import { getSession } from '@/lib/auth'
 
 interface WatchPageProps {
   params: Promise<{ type: string; id: string }>
-  searchParams: Promise<{ season?: string; episode?: string; play?: string }>
+  searchParams: Promise<{ season?: string; episode?: string; play?: string; from?: string }>
 }
 
 async function WatchContent({
-  type, id, season, episode, play,
+  type, id, season, episode, play, from,
 }: {
   type: 'movie' | 'series'
   id: string
   season: number
   episode: number
   play: boolean
+  from?: string
 }) {
   const tmdbId = parseInt(id)
   const user = await getSession()
@@ -43,12 +44,16 @@ async function WatchContent({
     poster = series?.poster_path ? getPosterUrl(series.poster_path) : null
   }
 
+  const backUrl = from
+    ? decodeURIComponent(from)
+    : type === 'series' ? `/watch/series/${id}?season=${season}&episode=${episode}` : '/'
+
   if (play) {
     return (
       <NativePlayer
         videoUrl={playerUrl}
         title={title}
-        backUrl={`/watch/${type}/${id}${type === 'series' ? `?season=${season}&episode=${episode}` : ''}`}
+        backUrl={backUrl}
         type={type}
         tmdbId={tmdbId}
         seriesDbId={seriesDbId}
@@ -82,10 +87,11 @@ export default async function WatchPage({ params, searchParams }: WatchPageProps
   const season = parseInt(search.season || '1')
   const episode = parseInt(search.episode || '1')
   const play = search.play === '1'
+  const from = search.from
 
   return (
     <Suspense fallback={<Loading />}>
-      <WatchContent type={type as 'movie'|'series'} id={id} season={season} episode={episode} play={play} />
+      <WatchContent type={type as 'movie'|'series'} id={id} season={season} episode={episode} play={play} from={from} />
     </Suspense>
   )
 }
