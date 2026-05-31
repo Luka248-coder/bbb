@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
+import { useDrawer } from '@/components/movie-drawer'
 
 interface Notification {
   id: string
@@ -92,6 +93,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
 
 export function Navbar() {
   const { user } = useSession()
+  const { openDrawer } = useDrawer()
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
@@ -377,10 +379,14 @@ export function Navbar() {
                       const isMovie = result.media_type === 'movie'
                       const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
                       return (
-                        <Link key={`${result.media_type}-${result.id}`}
-                          href={`/watch/${result.media_type}/${result.id}`}
-                          onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery('') }}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0"
+                        <button key={`${result.media_type}-${result.id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false)
+                            setSearchResults([])
+                            setSearchQuery('')
+                            openDrawer(isMovie ? 'movie' : 'series', result.id)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0"
                         >
                           <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
                             {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
@@ -393,7 +399,7 @@ export function Navbar() {
                             </div>
                           </div>
                           <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                        </Link>
+                        </button>
                       )
                     })}
                   </motion.div>
