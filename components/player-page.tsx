@@ -108,19 +108,35 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
   const synopsisShort = overview.length > 200 ? overview.slice(0, 200) + '...' : overview
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={isDrawer ? '' : 'min-h-screen bg-background'}>
       {/* Hero section */}
-      <div className="relative w-full overflow-hidden" style={{ minHeight: '560px' }}>
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ minHeight: isDrawer ? '460px' : '560px', borderRadius: isDrawer ? '24px 24px 0 0' : undefined }}
+      >
         {/* Backdrop */}
         {backdropPath && (
           <div className="absolute inset-0">
             <Image
               src={`https://image.tmdb.org/t/p/original${backdropPath}`}
-              alt={title} fill className="object-cover object-top"
+              alt={title} fill className="object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60" />
+            {isDrawer ? (
+              <>
+                {/* Drawer mode: subtle left+bottom gradients only */}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)' }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,10,12,0.98) 0%, rgba(10,10,12,0.5) 30%, transparent 60%)' }} />
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60" />
+              </>
+            )}
           </div>
+        )}
+        {!backdropPath && isDrawer && (
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgb(20,10,10), rgb(10,10,12))' }} />
         )}
 
         {/* Navbar — masqué en mode drawer */}
@@ -130,7 +146,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           </div>
         )}
 
-        {/* Back button — masqué en mode drawer (la croix du drawer suffit) */}
+        {/* Back button — masqué en mode drawer */}
         {!isDrawer && (
           <div className="relative container mx-auto px-6 pt-8 mt-16">
             <Link href="/">
@@ -142,77 +158,43 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           </div>
         )}
 
-        <div className="relative container mx-auto px-6 py-12 pt-6 flex items-center gap-10" style={{marginTop: isDrawer ? '40px' : '16px'}}>
-          {/* Tilted poster */}
-          <motion.div
-            initial={{ opacity: 0, x: -30, rotate: -6 }}
-            animate={{ opacity: 1, x: 0, rotate: -4 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="hidden md:block flex-shrink-0 relative"
-            style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0))' }}
-          >
-            {/* Rating badge */}
-            <div className="absolute -top-3 -right-3 z-10 w-12 h-12 bg-zinc-900 rounded-full border-2 border-yellow-500/30 flex flex-col items-center justify-center shadow-xl">
-              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-              <span className="text-yellow-400 font-bold text-xs">{voteAverage.toFixed(1)}</span>
-            </div>
-            <Image
-              src={getTMDBPosterUrl(posterPath, 'w342')}
-              alt={title}
-              width={180}
-              height={270}
-              className="rounded-2xl"
-              style={{ transform: 'rotate(-4deg)' }}
-            />
-          </motion.div>
-
-          {/* Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex-1 max-w-2xl"
-          >
-            {/* Meta */}
+        {isDrawer ? (
+          /* ── DRAWER HERO: infos en bas du backdrop, plein cadre ── */
+          <div className="absolute bottom-0 left-0 right-0 px-8 pb-8 pt-20 z-10">
+            {/* Meta row */}
             <div className="flex items-center gap-3 mb-3">
               <span className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full uppercase tracking-wider">
                 {type === 'movie' ? 'Film' : 'Série'}
               </span>
-              {releaseDate && <span className="text-white/50 text-sm">{formatYear(releaseDate)}</span>}
+              {releaseDate && <span className="text-white/60 text-sm">{formatYear(releaseDate)}</span>}
               {runtime && (
                 <>
                   <span className="text-white/30">·</span>
-                  <span className="text-white/50 text-sm">{formatRuntime(runtime)}</span>
+                  <span className="text-white/60 text-sm">{formatRuntime(runtime)}</span>
                 </>
               )}
               {seriesDetails && (
                 <>
                   <span className="text-white/30">·</span>
-                  <span className="text-white/50 text-sm">{totalSeasons} saison{totalSeasons > 1 ? 's' : ''}</span>
+                  <span className="text-white/60 text-sm">{totalSeasons} saison{totalSeasons > 1 ? 's' : ''}</span>
                 </>
               )}
             </div>
 
             {/* Title or Logo */}
             {logo ? (
-              <div className="mb-4">
-                <Image
-                  src={logo}
-                  alt={title}
-                  width={380}
-                  height={160}
-                  className="object-contain object-left max-h-[140px] w-auto drop-shadow-2xl"
-                  style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6))' }}
-                />
-              </div>
+              <Image src={logo} alt={title} width={340} height={140}
+                className="object-contain object-left max-h-[120px] w-auto mb-4 drop-shadow-2xl"
+                style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.8))' }}
+              />
             ) : (
-              <h1 className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-2xl">
                 {title}
               </h1>
             )}
 
-            {/* Synopsis preview */}
-            <p className="text-white/60 text-base leading-relaxed mb-6 max-w-xl">
+            {/* Synopsis */}
+            <p className="text-white/70 text-sm leading-relaxed mb-5 max-w-xl">
               {showFullSynopsis ? overview : synopsisShort}
               {overview.length > 200 && (
                 <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
@@ -221,9 +203,20 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               )}
             </p>
 
+            {/* Genres */}
+            {genres.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-5">
+                {genres.map((g: any) => (
+                  <span key={g.id} className="px-3 py-1 rounded-full text-xs text-white/70"
+                    style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    {g.name}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Regarder */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}`)}
                 className="flex items-center gap-2.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold px-6 py-3 rounded-xl transition-all duration-150 shadow-lg shadow-red-900/40"
@@ -231,39 +224,104 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                 <Play className="w-5 h-5 fill-white" />
                 <span className="text-base tracking-wide">Regarder</span>
               </button>
-
-              {/* Favoris */}
               <button
                 onClick={toggleFavorite}
                 disabled={togglingFav}
-                className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl border border-white/10 transition-all duration-150"
+                className="flex items-center gap-2 bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm"
               >
-                {togglingFav
-                  ? <Loader2 className="w-5 h-5 animate-spin" />
-                  : isFavorite
-                    ? <Check className="w-5 h-5 text-green-400" />
-                    : <Plus className="w-5 h-5" />
-                }
+                {togglingFav ? <Loader2 className="w-5 h-5 animate-spin" /> : isFavorite ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
                 <span className="text-sm">{isFavorite ? 'Ajouté' : 'Ma liste'}</span>
               </button>
-
-              {/* Share */}
               <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title, url: location.href })
-                  } else {
-                    navigator.clipboard?.writeText(location.href)
-                  }
-                }}
-                className="flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-white w-12 h-12 rounded-xl border border-white/10 transition-all duration-150"
+                onClick={() => { if (navigator.share) { navigator.share({ title, url: location.href }) } else { navigator.clipboard?.writeText(location.href) } }}
+                className="flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 text-white w-12 h-12 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm"
                 title="Partager"
               >
                 <Share2 className="w-5 h-5" />
               </button>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        ) : (
+          /* ── PAGE HERO: layout original avec poster tilted ── */
+          <div className="relative container mx-auto px-6 py-12 pt-6 flex items-center gap-10" style={{marginTop: '16px'}}>
+            {/* Tilted poster */}
+            <motion.div
+              initial={{ opacity: 0, x: -30, rotate: -6 }}
+              animate={{ opacity: 1, x: 0, rotate: -4 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="hidden md:block flex-shrink-0 relative"
+              style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0))' }}
+            >
+              <div className="absolute -top-3 -right-3 z-10 w-12 h-12 bg-zinc-900 rounded-full border-2 border-yellow-500/30 flex flex-col items-center justify-center shadow-xl">
+                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                <span className="text-yellow-400 font-bold text-xs">{voteAverage.toFixed(1)}</span>
+              </div>
+              <Image src={getTMDBPosterUrl(posterPath, 'w342')} alt={title} width={180} height={270}
+                className="rounded-2xl" style={{ transform: 'rotate(-4deg)' }} />
+            </motion.div>
+
+            {/* Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex-1 max-w-2xl"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full uppercase tracking-wider">
+                  {type === 'movie' ? 'Film' : 'Série'}
+                </span>
+                {releaseDate && <span className="text-white/50 text-sm">{formatYear(releaseDate)}</span>}
+                {runtime && (<><span className="text-white/30">·</span><span className="text-white/50 text-sm">{formatRuntime(runtime)}</span></>)}
+                {seriesDetails && (<><span className="text-white/30">·</span><span className="text-white/50 text-sm">{totalSeasons} saison{totalSeasons > 1 ? 's' : ''}</span></>)}
+              </div>
+
+              {logo ? (
+                <div className="mb-4">
+                  <Image src={logo} alt={title} width={380} height={160}
+                    className="object-contain object-left max-h-[140px] w-auto drop-shadow-2xl"
+                    style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6))' }} />
+                </div>
+              ) : (
+                <h1 className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight tracking-tight">{title}</h1>
+              )}
+
+              <p className="text-white/60 text-base leading-relaxed mb-6 max-w-xl">
+                {showFullSynopsis ? overview : synopsisShort}
+                {overview.length > 200 && (
+                  <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
+                    {showFullSynopsis ? 'Moins' : 'Plus'}
+                  </button>
+                )}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}`)}
+                  className="flex items-center gap-2.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold px-6 py-3 rounded-xl transition-all duration-150 shadow-lg shadow-red-900/40"
+                >
+                  <Play className="w-5 h-5 fill-white" />
+                  <span className="text-base tracking-wide">Regarder</span>
+                </button>
+                <button
+                  onClick={toggleFavorite}
+                  disabled={togglingFav}
+                  className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl border border-white/10 transition-all duration-150"
+                >
+                  {togglingFav ? <Loader2 className="w-5 h-5 animate-spin" /> : isFavorite ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
+                  <span className="text-sm">{isFavorite ? 'Ajouté' : 'Ma liste'}</span>
+                </button>
+                <button
+                  onClick={() => { if (navigator.share) { navigator.share({ title, url: location.href }) } else { navigator.clipboard?.writeText(location.href) } }}
+                  className="flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-white w-12 h-12 rounded-xl border border-white/10 transition-all duration-150"
+                  title="Partager"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
 
       {/* Series episode list */}
