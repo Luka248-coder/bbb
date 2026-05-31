@@ -14,6 +14,8 @@ interface EpisodeListProps {
   totalSeasons: number
   tmdbId: number
   onSeasonChange: (season: number) => void
+  onClose?: () => void
+  isDrawer?: boolean
 }
 
 function formatRuntime(mins: number) {
@@ -116,17 +118,23 @@ export function EpisodeList({
   totalSeasons,
   tmdbId,
   onSeasonChange,
+  onClose,
+  isDrawer = false,
 }: EpisodeListProps) {
   const router = useRouter()
   const [seasonOpen, setSeasonOpen] = useState(false)
   const [hoveredEp, setHoveredEp] = useState<number | null>(null)
 
   const playEpisode = (ep: TMDBEpisode) => {
-    router.push(`/watch/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}&play=1`)
+    const from = encodeURIComponent(window.location.pathname + window.location.search)
+    if (isDrawer && onClose) onClose()
+    router.push(`/watch/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}&play=1${isDrawer ? `&from=${from}` : ''}`)
   }
 
   const selectEpisode = (ep: TMDBEpisode) => {
-    router.push(`/watch/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}`)
+    const from = encodeURIComponent(window.location.pathname + window.location.search)
+    if (isDrawer && onClose) onClose()
+    router.push(`/watch/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}${isDrawer ? `&from=${from}` : ''}`)
   }
 
   const isCurrentEp = (ep: TMDBEpisode) =>
@@ -187,7 +195,7 @@ export function EpisodeList({
               transition={{ delay: index * 0.03, duration: 0.3 }}
               onMouseEnter={() => setHoveredEp(ep.episode_number)}
               onMouseLeave={() => setHoveredEp(null)}
-              onClick={() => !future && selectEpisode(ep)}
+              onClick={() => !future && playEpisode(ep)}
               className={`group relative flex gap-0 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border ${
                 isCurrent
                   ? 'border-primary/40 bg-primary/5'
@@ -217,8 +225,8 @@ export function EpisodeList({
                   </div>
                 )}
 
-                {/* Overlay on hover */}
-                <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered && !future ? 'opacity-100' : 'opacity-0'}`}>
+                {/* Overlay — visible au hover sur desktop, toujours visible sur mobile */}
+                <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered && !future ? 'opacity-100' : 'opacity-0 md:opacity-0'} ${!future ? 'max-md:opacity-100' : ''}`}>
                   <motion.div
                     initial={{ scale: 0.8 }}
                     animate={{ scale: isHovered && !future ? 1 : 0.8 }}
