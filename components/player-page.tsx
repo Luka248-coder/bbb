@@ -150,7 +150,12 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
         {!isDrawer && (
           <div className="relative container mx-auto px-6 pt-8 mt-16">
             <button
-              onClick={() => router.back()}
+              onClick={() => {
+                const params = new URLSearchParams(window.location.search)
+                const from = params.get('from')
+                if (from) router.push(decodeURIComponent(from))
+                else router.back()
+              }}
               className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-white/10 active:scale-95">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
               Retour
@@ -220,7 +225,8 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               <button
                 onClick={() => {
                   if (onClose) onClose()
-                  router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}`)
+                  const from = encodeURIComponent(window.location.pathname + window.location.search)
+                  router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}&from=${from}`)
                 }}
                 className="flex items-center gap-2.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold px-6 py-3 rounded-xl transition-all duration-150 shadow-lg shadow-red-900/40"
               >
