@@ -386,7 +386,7 @@ export function Navbar() {
                             setSearchQuery('')
                             openDrawer(isMovie ? 'movie' : 'series', result.id)
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0"
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left appearance-none bg-transparent outline-none cursor-pointer"
                         >
                           <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
                             {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
