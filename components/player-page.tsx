@@ -165,9 +165,9 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
 
         {isDrawer ? (
           /* ── DRAWER HERO: infos en bas du backdrop, plein cadre ── */
-          <div className="absolute bottom-0 left-0 right-0 pl-16 pr-8 pb-8 pt-20 z-10">
+          <div className="absolute bottom-0 left-0 right-0 px-5 md:pl-16 md:pr-8 pb-6 pt-20 z-10">
             {/* Meta row */}
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               <span className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full uppercase tracking-wider">
                 {type === 'movie' ? 'Film' : 'Série'}
               </span>
@@ -188,18 +188,18 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
 
             {/* Title or Logo */}
             {logo ? (
-              <Image src={logo} alt={title} width={340} height={140}
-                className="object-contain object-left max-h-[120px] w-auto mb-4 drop-shadow-2xl"
+              <Image src={logo} alt={title} width={300} height={120}
+                className="object-contain object-left max-h-[90px] w-auto mb-3 drop-shadow-2xl"
                 style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.8))' }}
               />
             ) : (
-              <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-2xl">
+              <h1 className="text-3xl md:text-5xl font-black text-white mb-3 leading-tight tracking-tight drop-shadow-2xl">
                 {title}
               </h1>
             )}
 
-            {/* Synopsis */}
-            <p className="text-white/70 text-sm leading-relaxed mb-5 max-w-xl">
+            {/* Synopsis — masqué sur mobile pour gagner de la place */}
+            <p className="hidden md:block text-white/70 text-sm leading-relaxed mb-4 max-w-xl">
               {showFullSynopsis ? overview : synopsisShort}
               {overview.length > 200 && (
                 <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
@@ -208,12 +208,12 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               )}
             </p>
 
-            {/* Genres + Buttons row */}
-            <div className="flex items-center justify-between gap-4">
+            {/* Genres + Boutons */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               {/* Genres */}
               {genres.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {genres.map((g: any) => (
+                <div className="flex flex-wrap gap-1.5">
+                  {genres.slice(0, 3).map((g: any) => (
                     <span key={g.id} className="px-3 py-1 rounded-full text-xs text-white/70"
                       style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
                       {g.name}
@@ -222,15 +222,15 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                 </div>
               )}
 
-              {/* Action buttons — poussés à droite */}
-              <div className="flex items-center gap-3 ml-auto flex-shrink-0">
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 md:ml-auto">
                 <button
                   onClick={toggleFavorite}
                   disabled={togglingFav}
-                  className="flex items-center gap-2 bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm"
+                  className="flex items-center gap-2 bg-zinc-800/90 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-4 py-2.5 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm text-sm"
                 >
-                  {togglingFav ? <Loader2 className="w-5 h-5 animate-spin" /> : isFavorite ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
-                  <span className="text-sm">{isFavorite ? 'Ajouté' : 'Ma liste'}</span>
+                  {togglingFav ? <Loader2 className="w-4 h-4 animate-spin" /> : isFavorite ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4" />}
+                  <span>{isFavorite ? 'Ajouté' : 'Ma liste'}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -238,10 +238,10 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                     const from = encodeURIComponent(window.location.pathname + window.location.search)
                     router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}&from=${from}`)
                   }}
-                  className="flex items-center gap-2.5 bg-white hover:bg-white/90 active:scale-95 text-black font-bold px-6 py-3 rounded-xl transition-all duration-150 shadow-lg"
+                  className="flex items-center gap-2 bg-white hover:bg-white/90 active:scale-95 text-black font-bold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-lg text-sm"
                 >
-                  <Play className="w-5 h-5 fill-black" />
-                  <span className="text-base tracking-wide">Regarder</span>
+                  <Play className="w-4 h-4 fill-black" />
+                  <span>Regarder</span>
                 </button>
               </div>
             </div>
