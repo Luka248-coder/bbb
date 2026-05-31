@@ -366,6 +366,8 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               setCurrentEpisode(1)
               router.push(`/watch/series/${tmdbId}?season=${v}&episode=1`)
             }}
+            onClose={onClose}
+            isDrawer={isDrawer}
           />
         </div>
       )}
