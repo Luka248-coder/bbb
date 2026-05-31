@@ -28,11 +28,13 @@ interface PlayerPageProps {
   initialEpisode?: number
   playerUrl: string
   userId?: string | null
+  isDrawer?: boolean
+  onClose?: () => void
 }
 
 type TabType = 'synopsis' | 'casting' | 'similaires'
 
-export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId }: PlayerPageProps) {
+export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId, isDrawer = false, onClose }: PlayerPageProps) {
   const router = useRouter()
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
@@ -121,22 +123,26 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           </div>
         )}
 
-        {/* Navbar */}
-        <div className="relative z-10">
-          <Navbar />
-        </div>
+        {/* Navbar — masqué en mode drawer */}
+        {!isDrawer && (
+          <div className="relative z-10">
+            <Navbar />
+          </div>
+        )}
 
-        {/* Back button */}
-        <div className="relative container mx-auto px-6 pt-8 mt-16">
-          <Link href="/">
-            <button className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-white/10 active:scale-95">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-              Retour
-            </button>
-          </Link>
-        </div>
+        {/* Back button — masqué en mode drawer (la croix du drawer suffit) */}
+        {!isDrawer && (
+          <div className="relative container mx-auto px-6 pt-8 mt-16">
+            <Link href="/">
+              <button className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-white/10 active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                Retour
+              </button>
+            </Link>
+          </div>
+        )}
 
-        <div className="relative container mx-auto px-6 py-12 pt-6 flex items-center gap-10" style={{marginTop: '16px'}}>
+        <div className="relative container mx-auto px-6 py-12 pt-6 flex items-center gap-10" style={{marginTop: isDrawer ? '40px' : '16px'}}>
           {/* Tilted poster */}
           <motion.div
             initial={{ opacity: 0, x: -30, rotate: -6 }}
