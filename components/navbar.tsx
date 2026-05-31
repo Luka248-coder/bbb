@@ -318,38 +318,59 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-0.5">
-            <LayoutGroup id="navbar">
-              {navLinks.map(link => {
-                const isActive = pathname === link.href
-                return (
-                  <Link key={link.href} href={link.href} className="relative select-none">
-                    {isActive && (
-                      <motion.div
-                        layoutId="nav-active-bg"
-                        className="absolute inset-0 rounded-full"
-                        style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.07)' }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                      />
-                    )}
-                    <div className={cn(
-                      'relative z-10 px-4 py-2.5 rounded-full text-[13px] font-semibold transition-colors duration-200',
-                      isActive ? 'text-white' : 'text-white/40 hover:text-white/80'
-                    )}>
-                      {link.label}
+          <nav className="hidden md:flex items-center">
+            <div
+              className="flex items-center gap-1 px-1.5 py-1.5 rounded-2xl"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <LayoutGroup id="navbar">
+                {navLinks.map(link => {
+                  const isActive = pathname === link.href
+                  const Icon = link.icon
+                  const isRoulette = link.href === '/roulette'
+                  return (
+                    <Link key={link.href} href={link.href} className="relative select-none">
                       {isActive && (
                         <motion.div
-                          layoutId="nav-underline"
-                          className="absolute bottom-1 left-4 right-4 h-[2px] rounded-full"
-                          style={{ background: 'linear-gradient(to right, #f97316, #dc2626)' }}
-                          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                          layoutId="nav-pill"
+                          className="absolute inset-0 rounded-xl"
+                          style={{
+                            background: isRoulette
+                              ? 'linear-gradient(135deg, rgba(249,115,22,0.25), rgba(220,38,38,0.25))'
+                              : 'rgba(255,255,255,0.10)',
+                            border: isRoulette
+                              ? '1px solid rgba(249,115,22,0.35)'
+                              : '1px solid rgba(255,255,255,0.12)',
+                            boxShadow: isRoulette
+                              ? '0 2px 12px rgba(249,115,22,0.15)'
+                              : '0 2px 8px rgba(0,0,0,0.3)',
+                          }}
+                          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                         />
                       )}
-                    </div>
-                  </Link>
-                )
-              })}
-            </LayoutGroup>
+                      <div className={cn(
+                        'relative z-10 flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200',
+                        isActive
+                          ? isRoulette ? 'text-orange-400' : 'text-white'
+                          : 'text-white/35 hover:text-white/70'
+                      )}>
+                        <Icon className={cn(
+                          'w-3.5 h-3.5 flex-shrink-0 transition-all duration-200',
+                          isActive
+                            ? isRoulette ? 'text-orange-400' : 'text-white'
+                            : 'text-white/30 group-hover:text-white/50'
+                        )} />
+                        <span className="leading-none">{link.label}</span>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </LayoutGroup>
+            </div>
           </nav>
 
           <div className="flex-1" />
