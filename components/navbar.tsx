@@ -334,8 +334,8 @@ export function Navbar() {
                     )}
                     <div
                       className={cn(
-                        'relative z-10 px-[18px] py-[9px] rounded-lg transition-colors duration-150',
-                        'uppercase tracking-[0.16em] text-[17px] font-bold',
+                        'relative z-10 px-[14px] py-[7px] rounded-lg transition-colors duration-150',
+                        'uppercase tracking-[0.14em] text-[13px] font-bold',
                         isActive ? 'text-white' : 'text-white/38 hover:text-white/65'
                       )}
                       style={{ fontFamily: "var(--font-barlow-condensed)" }}
