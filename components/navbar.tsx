@@ -305,33 +305,23 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <LayoutGroup id="navbar">
-              {navLinks.map(link => {
-                const isActive = pathname === link.href
-                return (
-                  <Link key={link.href} href={link.href} className="relative select-none">
-                    {isActive && (
-                      <motion.div
-                        layoutId="nav-active"
-                        className="absolute inset-0 rounded-lg"
-                        style={{ background: 'rgba(255,255,255,0.10)' }}
-                        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                      />
+            {navLinks.map(link => {
+              const isActive = pathname === link.href
+              return (
+                <Link key={link.href} href={link.href} className="relative select-none">
+                  <div
+                    className={cn(
+                      'relative z-10 px-[14px] py-[7px] rounded-lg transition-colors duration-150',
+                      'uppercase tracking-[0.14em] text-[13px] font-bold',
+                      isActive ? 'text-white bg-white/10' : 'text-white/38 hover:text-white/65'
                     )}
-                    <div
-                      className={cn(
-                        'relative z-10 px-[14px] py-[7px] rounded-lg transition-colors duration-150',
-                        'uppercase tracking-[0.14em] text-[13px] font-bold',
-                        isActive ? 'text-white' : 'text-white/38 hover:text-white/65'
-                      )}
-                      style={{ fontFamily: "var(--font-barlow-condensed)" }}
-                    >
-                      {link.label}
-                    </div>
-                  </Link>
-                )
-              })}
-            </LayoutGroup>
+                    style={{ fontFamily: "var(--font-barlow-condensed)" }}
+                  >
+                    {link.label}
+                  </div>
+                </Link>
+              )
+            })}
           </nav>
 
           <div className="flex-1" />
