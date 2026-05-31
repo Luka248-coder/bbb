@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Play, Film, Tv } from 'lucide-react'
 import { useSession } from '@/components/session-provider'
+import { useDrawer } from '@/components/movie-drawer'
 
 interface WatchItem {
   id: string
@@ -22,6 +22,7 @@ interface WatchItem {
 
 export function ContinueWatching() {
   const { user } = useSession()
+  const { openDrawer } = useDrawer()
   const [items, setItems] = useState<WatchItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -66,10 +67,6 @@ export function ContinueWatching() {
         style={{ paddingLeft: 'max(1rem, calc((100% - 80rem) / 2 + 1rem))', paddingRight: '1rem' }}
       >
         {items.map((item, i) => {
-          const href = item.content_type === 'movie'
-            ? `/watch/movie/${item.content_id}`
-            : `/watch/series/${item.content_id}?season=${item.season ?? 1}&episode=${item.episode ?? 1}`
-
           return (
             <motion.div
               key={item.id}
@@ -78,7 +75,10 @@ export function ContinueWatching() {
               transition={{ delay: i * 0.05 }}
               className="flex-shrink-0 w-40 md:w-48 group"
             >
-              <Link href={href}>
+              <button
+                onClick={() => openDrawer(item.content_type, item.content_id)}
+                className="w-full text-left appearance-none bg-transparent outline-none cursor-pointer"
+              >
                 <div className="relative overflow-hidden rounded-xl bg-zinc-800 aspect-[2/3]">
                   {item.poster_url ? (
                     <Image
@@ -124,7 +124,7 @@ export function ContinueWatching() {
                 <div className="mt-2 px-1">
                   <p className="text-white/90 text-sm font-semibold truncate">{item.title}</p>
                 </div>
-              </Link>
+              </button>
             </motion.div>
           )
         })}
