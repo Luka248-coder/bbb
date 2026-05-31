@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -56,9 +57,9 @@ function SeasonModal({
 
   if (!open) return null
 
-  return (
+  const content = (
     <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -83,7 +84,7 @@ function SeasonModal({
         </div>
 
         {/* Liste scrollable */}
-        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(70vh - 60px)', WebkitOverflowScrolling: 'touch' }}>
+        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(70vh - 60px)', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
             <button
               key={s}
@@ -109,6 +110,8 @@ function SeasonModal({
       </motion.div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null
 }
 
 export function EpisodeList({
