@@ -78,7 +78,26 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
       }).catch(() => {})
   }, [userId, tmdbId, type])
 
-  const toggleFavorite = async () => {
+  const [watchProgress, setWatchProgress] = useState<number>(0)
+  const [resumeSeason, setResumeSeason] = useState<number | null>(null)
+  const [resumeEpisode, setResumeEpisode] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!userId || !tmdbId) return
+    fetch(`/api/watch-history?user_id=${userId}`)
+      .then(r => r.json())
+      .then((data: any[]) => {
+        if (!Array.isArray(data)) return
+        const match = data.find(item => item.content_id === tmdbId && item.content_type === type && !item.finished)
+        if (match && match.progress > 0 && match.progress < 98) {
+          setWatchProgress(match.progress)
+          if (type === 'series' && match.season && match.episode) {
+            setResumeSeason(match.season)
+            setResumeEpisode(match.episode)
+          }
+        }
+      }).catch(() => {})
+  }, [userId, tmdbId, type])
     if (!userId) { alert('Connectez-vous pour ajouter aux favoris'); return }
     setTogglingFav(true)
     try {
@@ -236,12 +255,14 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                   onClick={() => {
                     if (onClose) onClose()
                     const from = encodeURIComponent(window.location.pathname + window.location.search)
-                    router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}&from=${from}`)
+                    const season = resumeSeason ?? currentSeason
+                    const episode = resumeEpisode ?? currentEpisode
+                    router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${season}&episode=${episode}` : ''}&from=${from}`)
                   }}
                   className="flex items-center gap-2 bg-white hover:bg-white/90 active:scale-95 text-black font-bold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-lg text-sm"
                 >
                   <Play className="w-4 h-4 fill-black" />
-                  <span>Regarder</span>
+                  <span>{watchProgress > 0 ? 'Reprendre' : 'Regarder'}</span>
                 </button>
               </div>
             </div>
