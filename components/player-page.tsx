@@ -165,7 +165,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
 
         {isDrawer ? (
           /* ── DRAWER HERO: infos en bas du backdrop, plein cadre ── */
-          <div className="absolute bottom-0 left-0 right-0 px-8 pb-8 pt-20 z-10">
+          <div className="absolute bottom-0 left-0 right-0 pl-16 pr-8 pb-8 pt-20 z-10">
             {/* Meta row */}
             <div className="flex items-center gap-3 mb-3">
               <span className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full uppercase tracking-wider">
@@ -208,46 +208,42 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               )}
             </p>
 
-            {/* Genres */}
-            {genres.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-5">
-                {genres.map((g: any) => (
-                  <span key={g.id} className="px-3 py-1 rounded-full text-xs text-white/70"
-                    style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    {g.name}
-                  </span>
-                ))}
-              </div>
-            )}
+            {/* Genres + Buttons row */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Genres */}
+              {genres.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {genres.map((g: any) => (
+                    <span key={g.id} className="px-3 py-1 rounded-full text-xs text-white/70"
+                      style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                      {g.name}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  if (onClose) onClose()
-                  const from = encodeURIComponent(window.location.pathname + window.location.search)
-                  router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}&from=${from}`)
-                }}
-                className="flex items-center gap-2.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold px-6 py-3 rounded-xl transition-all duration-150 shadow-lg shadow-red-900/40"
-              >
-                <Play className="w-5 h-5 fill-white" />
-                <span className="text-base tracking-wide">Regarder</span>
-              </button>
-              <button
-                onClick={toggleFavorite}
-                disabled={togglingFav}
-                className="flex items-center gap-2 bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm"
-              >
-                {togglingFav ? <Loader2 className="w-5 h-5 animate-spin" /> : isFavorite ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
-                <span className="text-sm">{isFavorite ? 'Ajouté' : 'Ma liste'}</span>
-              </button>
-              <button
-                onClick={() => { if (navigator.share) { navigator.share({ title, url: location.href }) } else { navigator.clipboard?.writeText(location.href) } }}
-                className="flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 text-white w-12 h-12 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm"
-                title="Partager"
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
+              {/* Action buttons — poussés à droite */}
+              <div className="flex items-center gap-3 ml-auto flex-shrink-0">
+                <button
+                  onClick={toggleFavorite}
+                  disabled={togglingFav}
+                  className="flex items-center gap-2 bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl border border-white/10 transition-all duration-150 backdrop-blur-sm"
+                >
+                  {togglingFav ? <Loader2 className="w-5 h-5 animate-spin" /> : isFavorite ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
+                  <span className="text-sm">{isFavorite ? 'Ajouté' : 'Ma liste'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (onClose) onClose()
+                    const from = encodeURIComponent(window.location.pathname + window.location.search)
+                    router.push(`/watch/${type}/${tmdbId}?play=1${type === 'series' ? `&season=${currentSeason}&episode=${currentEpisode}` : ''}&from=${from}`)
+                  }}
+                  className="flex items-center gap-2.5 bg-white hover:bg-white/90 active:scale-95 text-black font-bold px-6 py-3 rounded-xl transition-all duration-150 shadow-lg"
+                >
+                  <Play className="w-5 h-5 fill-black" />
+                  <span className="text-base tracking-wide">Regarder</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : (
