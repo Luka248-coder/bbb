@@ -98,6 +98,8 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
         }
       }).catch(() => {})
   }, [userId, tmdbId, type])
+
+  const toggleFavorite = async () => {
     if (!userId) { alert('Connectez-vous pour ajouter aux favoris'); return }
     setTogglingFav(true)
     try {
