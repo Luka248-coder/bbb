@@ -77,13 +77,15 @@ export function MovieDrawerProvider({ children }: { children: React.ReactNode })
             {/* Drawer */}
             <motion.div
               key="drawer"
-              initial={{ y: '100%', borderRadius: '24px 24px 0 0' }}
-              animate={{ y: '4vh', borderRadius: '24px 24px 0 0' }}
-              exit={{ y: '100%', borderRadius: '24px 24px 0 0' }}
+              initial={{ y: '100%', borderRadius: '24px' }}
+              animate={{ y: '4vh', borderRadius: '24px' }}
+              exit={{ y: '100%', borderRadius: '24px' }}
               transition={{ type: 'spring', stiffness: 320, damping: 38, mass: 0.8 }}
-              className="fixed inset-x-0 bottom-0 z-[91] overflow-hidden"
+              className="fixed bottom-0 z-[91] overflow-hidden"
               style={{
-                height: '96vh',
+                left: '3vw',
+                right: '3vw',
+                height: '94vh',
                 background: 'rgb(10,10,12)',
                 boxShadow: '0 -24px 80px rgba(0,0,0,0.8)',
               }}
