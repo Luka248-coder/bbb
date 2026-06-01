@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMovieVideoUrl, getEpisodeVideoUrl } from '@/lib/fastflux'
+import {
+  getMovieDetails,
+  getSeriesDetails,
+  getMovieCredits,
+  getSeriesCredits,
+  getSimilarMovies,
+  getSimilarSeries,
+  getSeasonDetails,
+  getContentLogo,
+  getCollection,
+} from '@/lib/tmdb'
 
 export async function GET(
   request: NextRequest,
@@ -8,52 +18,54 @@ export async function GET(
   const { type, id } = params
   const tmdbId = parseInt(id)
 
-  console.log(`[API Content] Requête reçue → Type: ${type} | ID: ${tmdbId}`)
-
   if (!tmdbId || isNaN(tmdbId)) {
     return NextResponse.json({ error: 'ID invalide' }, { status: 400 })
   }
 
+  const url = new URL(request.url)
+  const season = parseInt(url.searchParams.get('season') || '1')
+
   try {
-    let videoUrl: string | null = null
-
     if (type === 'movie' || type === 'films') {
-      console.log(`[API Content] Mode FILM`)
-      videoUrl = await getMovieVideoUrl(tmdbId)
-    } 
-    else if (type === 'series' || type === 'tv') {
-      console.log(`[API Content] Mode SÉRIE/TV`)
-      
-      const url = new URL(request.url)
-      const season = parseInt(url.searchParams.get('season') || '1')
-      const episode = parseInt(url.searchParams.get('episode') || '1')
+      const [details, credits, similar, logo] = await Promise.all([
+        getMovieDetails(tmdbId),
+        getMovieCredits(tmdbId),
+        getSimilarMovies(tmdbId),
+        getContentLogo('movie', tmdbId),
+      ])
 
-      console.log(`[API Content] Saison ${season} | Épisode ${episode}`)
-      videoUrl = await getEpisodeVideoUrl(tmdbId, season, episode)
-    } 
-    else {
-      return NextResponse.json({ error: 'Type invalide' }, { status: 400 })
+      if (!details) {
+        return NextResponse.json({ error: 'Film introuvable' }, { status: 404 })
+      }
+
+      // Fetch collection if needed
+      let collection = null
+      if (details.belongs_to_collection?.id) {
+        collection = await getCollection(details.belongs_to_collection.id)
+      }
+
+      return NextResponse.json({ details, credits, similar, logo, collection })
     }
 
-    if (videoUrl) {
-      console.log(`[API Content] ✅ URL trouvée: ${videoUrl.substring(0, 100)}...`)
-      return NextResponse.json({ 
-        success: true, 
-        url: videoUrl 
-      })
-    } else {
-      console.log(`[API Content] ❌ Aucune URL trouvée`)
-      return NextResponse.json({ 
-        success: false,
-        error: 'Aucune source disponible',
-        message: 'Le contenu n\'est pas encore disponible sur nos serveurs.' 
-      }, { status: 404 })
+    if (type === 'series' || type === 'tv') {
+      const [details, credits, similar, logo, seasonData] = await Promise.all([
+        getSeriesDetails(tmdbId),
+        getSeriesCredits(tmdbId),
+        getSimilarSeries(tmdbId),
+        getContentLogo('tv', tmdbId),
+        getSeasonDetails(tmdbId, season),
+      ])
+
+      if (!details) {
+        return NextResponse.json({ error: 'Série introuvable' }, { status: 404 })
+      }
+
+      return NextResponse.json({ details, credits, similar, logo, seasonData })
     }
+
+    return NextResponse.json({ error: 'Type invalide' }, { status: 400 })
   } catch (error) {
-    console.error('[API Content] Erreur serveur:', error)
-    return NextResponse.json({ 
-      success: false,
-      error: 'Erreur serveur' 
-    }, { status: 500 })
+    console.error('[API Content] Erreur:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
