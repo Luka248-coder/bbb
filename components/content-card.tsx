@@ -1,86 +1,186 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import Link from 'next/link'
 import Image from 'next/image'
-import { getPosterUrl, type Movie, type Series } from '@/lib/content-types'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Play, Star, Check, Plus, Info } from 'lucide-react'
+import { getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
+import { cn } from '@/lib/utils'
+import { useDrawer } from '@/components/movie-drawer'
+import { useState } from 'react'
 
 interface ContentCardProps {
   content: Movie | Series
   type: 'movie' | 'series'
   index?: number
   showRank?: boolean
-  logoUrl?: string | null
+  isFavorite?: boolean
+  onToggleFavorite?: () => void
 }
 
 function isMovie(item: Movie | Series): item is Movie {
   return 'title' in item
 }
 
-export function ContentCard({ content, type, index = 0, showRank = false, logoUrl }: ContentCardProps) {
-  const title = isMovie(content) ? content.title : (content as Series).name
-  const date = isMovie(content) ? content.release_date : (content as Series).first_air_date
-  const year = date ? new Date(date).getFullYear() : ''
-  const tmdbId = (content as any).tmdb_id || content.id
+export function ContentCard({
+  content, type, index = 0, showRank = false, isFavorite = false, onToggleFavorite,
+}: ContentCardProps) {
+  const title = isMovie(content) ? content.title : content.name
+  const releaseDate = isMovie(content) ? content.release_date : content.first_air_date
+  const year = releaseDate ? new Date(releaseDate).getFullYear() : ''
+  const tmdbId = content.tmdb_id || content.id
+  const rank = index + 1
+  const { openDrawer } = useDrawer()
+  const [hovered, setHovered] = useState(false)
+
+  const overview = (content as any).overview || ''
+  const shortOverview = overview.length > 80 ? overview.slice(0, 80) + '...' : overview
+  const typeLabel = type === 'movie' ? 'FILM' : 'SÉRIE'
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.3 }}
-      className="flex-shrink-0 w-[140px] md:w-[160px] group cursor-pointer"
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      className="relative group flex-shrink-0"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <Link href={`/watch/${type}/${tmdbId}`}>
-        <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 mb-2">
-          {/* Rank badge */}
-          {showRank && index !== undefined && (
-            <div className="absolute top-2 left-2 z-10 w-7 h-7 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center text-white text-xs font-black border border-white/10">
-              {index + 1}
-            </div>
-          )}
-
-          {/* Poster */}
-          <Image
-            src={getPosterUrl(content.poster_path)}
-            alt={title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="180px"
-          />
-
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white fill-white ml-0.5" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Rating */}
-          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-white/70 text-[10px] font-bold">
-            ★ {content.vote_average?.toFixed(1)}
-          </div>
+      {/* Rank number */}
+      {showRank && (
+        <div
+          className="absolute -left-3 bottom-4 z-10 leading-none pointer-events-none select-none font-black text-primary/30"
+          style={{ fontSize: '8rem', lineHeight: 1, WebkitTextStroke: '2px currentColor', fontFamily: 'Arial Black, sans-serif' }}
+        >
+          {rank}
         </div>
+      )}
 
-        {/* Logo or title */}
-        {logoUrl ? (
-          <div className="h-8 flex items-center">
-            <Image
-              src={logoUrl}
-              alt={title}
-              width={120}
-              height={32}
-              className="object-contain max-h-8 w-auto opacity-80 group-hover:opacity-100 transition-opacity"
-            />
-          </div>
-        ) : (
-          <>
-            <p className="text-white text-xs font-semibold truncate">{title}</p>
-            {year && <p className="text-white/30 text-xs">{year}</p>}
-          </>
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-2xl cursor-pointer bg-card transition-all duration-300',
+          showRank ? 'w-36 md:w-44 ml-8' : 'w-40 md:w-48',
+          'aspect-[2/3]',
         )}
-      </Link>
+        style={{
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: hovered ? '0 20px 48px rgba(0,0,0,0.7)' : '0 4px 16px rgba(0,0,0,0.4)',
+          transform: hovered ? 'scale(1.03)' : 'scale(1)',
+          transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+        }}
+        onClick={() => !hovered && openDrawer(type, tmdbId)}
+      >
+        {/* Poster */}
+        <Image
+          src={getPosterUrl(content.poster_path)}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 160px, 192px"
+        />
+
+        {/* Note badge — visible quand pas hover */}
+        <AnimatePresence>
+          {!hovered && (
+            <motion.div
+              key="badge"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-white"
+              style={{ background: 'rgba(20,16,0,0.75)', border: '1px solid rgba(255,200,0,0.25)', backdropFilter: 'blur(8px)' }}
+            >
+              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+              {content.vote_average?.toFixed(1) ?? 'N/A'}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Titre + année — visible quand pas hover */}
+        <AnimatePresence>
+          {!hovered && (
+            <motion.div
+              key="title-bar"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-8"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 60%, transparent)' }}
+            >
+              <p className="text-white font-black text-sm leading-tight truncate uppercase tracking-wide">{title}</p>
+              <p className="text-white/50 text-xs mt-0.5">{year}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Hover overlay */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div
+              key="hover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 flex flex-col justify-end"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 55%, rgba(0,0,0,0.15) 100%)' }}
+            >
+              {/* Meta */}
+              <div className="px-3 pb-3">
+                <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold">
+                  <span className="text-white/50">{year}</span>
+                  <span className="text-white/25">·</span>
+                  <span className="px-1.5 py-0.5 rounded text-white/70 text-[10px] font-bold tracking-wide"
+                    style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    {typeLabel}
+                  </span>
+                  <span className="text-white/25">·</span>
+                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                  <span className="text-yellow-400 font-bold">{content.vote_average?.toFixed(1)}</span>
+                </div>
+
+                {shortOverview && (
+                  <p className="text-white/65 text-[11px] leading-relaxed mb-3 line-clamp-2">{shortOverview}</p>
+                )}
+
+                {/* Buttons */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openDrawer(type, tmdbId) }}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl font-black text-black text-xs tracking-widest uppercase"
+                    style={{ background: '#fff' }}
+                  >
+                    <Play className="w-3.5 h-3.5 fill-black" />
+                    Lecture
+                  </button>
+
+                  {onToggleFavorite && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: isFavorite ? 'rgba(220,38,38,0.85)' : 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.12)' }}
+                    >
+                      {isFavorite
+                        ? <Check className="w-4 h-4 text-white" />
+                        : <Plus className="w-4 h-4 text-white" />
+                      }
+                    </button>
+                  )}
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openDrawer(type, tmdbId) }}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  >
+                    <Info className="w-4 h-4 text-white/70" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   )
 }
