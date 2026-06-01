@@ -321,24 +321,7 @@ export function NativePlayer({
   useEffect(() => { tmdbIdRef.current = tmdbId }, [tmdbId])
   useEffect(() => { typeRef.current = type }, [type])
 
-  const autoReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // 5s auto-reload up to 3 times if video hasn't started
-  useEffect(() => {
-    if (!initialLoading) {
-      if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current)
-      return
-    }
-    const reloadCount = parseInt(sessionStorage.getItem('player_reload_count') || '0')
-    if (reloadCount >= 3) return
-    autoReloadTimer.current = setTimeout(() => {
-      if (initialLoading) {
-        sessionStorage.setItem('player_reload_count', String(reloadCount + 1))
-        window.location.reload()
-      }
-    }, 5000)
-    return () => { if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current) }
-  }, [initialLoading])
 
   // 30s error timeout — dépend UNIQUEMENT de initialLoading
   // Les valeurs dynamiques (title, season, episode...) passent par des refs
@@ -513,7 +496,6 @@ export function NativePlayer({
       setBuffering(false)
       setInitialLoading(false)
       setShowError(false)
-      sessionStorage.removeItem('player_reload_count')
       if (errorTimer.current) clearTimeout(errorTimer.current)
     }
     const onProgress = () => {
