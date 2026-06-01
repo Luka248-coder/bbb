@@ -186,15 +186,68 @@ export async function searchContent(query: string): Promise<{ movies: Movie[], s
   }
 }
 
+// ─── Extraction URL depuis le sheet Purstream ───────────────────────────────
+async function extractVideoUrl(
+  purstreamId: number,
+  type: 'movie' | 'series',
+  season?: number,
+  episode?: number
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    const sheet = await res.json();
+
+    if (type === 'movie') {
+      if (sheet.sources?.length > 0) {
+        const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'));
+        const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'));
+        return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null;
+      }
+      return sheet.video_url || sheet.url || sheet.urls?.[0]?.url || sheet.rls?.[0]?.url || null;
+    } else {
+      // Séries : cherche l'épisode dans sheet.episodes
+      const seasonNum = season || 1;
+      const episodeNum = episode || 1;
+      if (sheet.episodes?.length > 0) {
+        const ep = sheet.episodes.find(
+          (e: any) => e.season === seasonNum && e.episode === episodeNum
+        );
+        if (ep) {
+          if (ep.sources?.length > 0) {
+            const mp4 = ep.sources.find((s: any) => s.url?.includes('.mp4'));
+            const m3u8 = ep.sources.find((s: any) => s.url?.includes('.m3u8'));
+            return mp4?.url || m3u8?.url || ep.sources[0]?.url || null;
+          }
+          return ep.video_url || null;
+        }
+      }
+      // Fallback global sources
+      if (sheet.sources?.length > 0) {
+        const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'));
+        const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'));
+        return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null;
+      }
+      return sheet.video_url || sheet.url || sheet.urls?.[0]?.url || null;
+    }
+  } catch (err) {
+    console.error('[extractVideoUrl]', err);
+    return null;
+  }
+}
+
 export async function getMovieVideoUrl(tmdbId: number, titleOverride?: string): Promise<string | null> {
   const movie = await getMovieById(tmdbId);
   if (movie?.video_url) return movie.video_url;
 
-  const title = titleOverride || movie?.title || '';
+  const title = titleOverride || movie?.title || movie?.original_title || '';
   const purstreamId = await purstream_searchId(title, 'movie', tmdbId);
   if (!purstreamId) return null;
 
-  return purstream_getMovieUrl(purstreamId);
+  return extractVideoUrl(purstreamId, 'movie');
 }
 
 export async function getEpisodeVideoUrl(
@@ -208,5 +261,5 @@ export async function getEpisodeVideoUrl(
   const purstreamId = await purstream_searchId(title, 'series', tmdbId);
   if (!purstreamId) return null;
 
-  return purstream_getEpisodeUrl(purstreamId, season, episode);
+  return extractVideoUrl(purstreamId, 'series', season, episode);
 }
