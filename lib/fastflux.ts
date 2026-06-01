@@ -7,7 +7,7 @@ export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/conte
 
 const PURSTREAM_BASE = 'https://api.purstream.ac/api/v1'
 
-// ─── Helpers Purstream améliorés ────────────────────────────────────────────────────────
+// ─── Helpers Purstream ────────────────────────────────────────────────────────
 
 async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbId?: number): Promise<number | null> {
   try {
@@ -26,27 +26,42 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
       return null
     }
 
-    const results: any[] = await res.json()
+    const responseData = await res.json()
+    
+    // Extraction de la structure imbriquée de Purstream
+    let results: any[] = []
 
-    if (!Array.isArray(results) || results.length === 0) {
-      console.log(`[Purstream] Aucun résultat`)
+    if (responseData?.data?.items?.movies?.items) {
+      results = responseData.data.items.movies.items
+    } else if (responseData?.data?.items?.series?.items) {
+      results = responseData.data.items.series.items
+    } else if (responseData?.data?.items) {
+      results = Array.isArray(responseData.data.items) ? responseData.data.items : []
+    } else if (Array.isArray(responseData)) {
+      results = responseData
+    }
+
+    if (results.length === 0) {
+      console.log(`[Purstream] Aucun résultat trouvé`)
       return null
     }
 
-    // 1. Priorité TMDB ID
+    console.log(`[Purstream] ${results.length} résultats trouvés`)
+
+    // 1. Priorité : correspondance par TMDB ID
     if (tmdbId) {
       const byTmdb = results.find(r => 
         String(r.tmdb_id) === String(tmdbId) || String(r.id) === String(tmdbId)
       )
       if (byTmdb?.id) {
-        console.log(`[Purstream] ✅ Match TMDB: ${byTmdb.id}`)
+        console.log(`[Purstream] ✅ Match TMDB ID: ${byTmdb.id}`)
         return byTmdb.id
       }
     }
 
     const normTitle = title.toLowerCase().trim().replace(/[:]/g, '')
 
-    // 2. Match intelligent par titre
+    // 2. Match intelligent par titre + type
     for (const item of results) {
       const itemTitle = (item.title || item.name || '').toLowerCase().trim()
       const itemType = (item.type || item.media_type || '').toLowerCase()
@@ -61,13 +76,13 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
         normTitle.includes(itemTitle) ||
         itemTitle.replace(/[:]/g, '') === normTitle.replace(/[:]/g, '')
       )) {
-        console.log(`[Purstream] ✅ Match titre: ${item.id}`)
+        console.log(`[Purstream] ✅ Match titre trouvé: ${item.id} → "${itemTitle}"`)
         return item.id
       }
     }
 
-    // 3. Fallback
-    console.log(`[Purstream] ⚠️ Fallback premier résultat`)
+    // 3. Fallback : premier résultat
+    console.log(`[Purstream] ⚠️ Aucun match parfait → fallback sur: ${results[0]?.title || results[0]?.name}`)
     return results[0]?.id || null
 
   } catch (err) {
@@ -82,11 +97,15 @@ async function purstream_getMovieUrl(purstreamId: number): Promise<string | null
       headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
       next: { revalidate: 1800 },
     })
-    if (!res.ok) return null
+
+    if (!res.ok) {
+      console.log(`[Purstream Sheet] Erreur HTTP ${res.status}`)
+      return null
+    }
 
     const sheet = await res.json()
 
-    if (sheet.sources?.length > 0) {
+    if (sheet.sources && Array.isArray(sheet.sources) && sheet.sources.length > 0) {
       const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'))
       const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'))
       return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
@@ -105,24 +124,26 @@ async function purstream_getEpisodeUrl(purstreamId: number, season: number, epis
       headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
       next: { revalidate: 1800 },
     })
+
     if (!res.ok) return null
 
     const sheet = await res.json()
 
-    if (sheet.episodes?.length > 0) {
+    // Recherche dans les épisodes
+    if (sheet.episodes && Array.isArray(sheet.episodes)) {
       const ep = sheet.episodes.find((e: any) => e.season === season && e.episode === episode)
       if (ep) {
-        if (ep.sources?.length > 0) {
+        if (ep.sources && Array.isArray(ep.sources) && ep.sources.length > 0) {
           const mp4 = ep.sources.find((s: any) => s.url?.includes('.mp4'))
           const m3u8 = ep.sources.find((s: any) => s.url?.includes('.m3u8'))
           return mp4?.url || m3u8?.url || ep.sources[0]?.url || null
         }
-        return ep.video_url || null
+        return ep.video_url || ep.url || null
       }
     }
 
-    // Fallback global
-    if (sheet.sources?.length > 0) {
+    // Fallback sources globales
+    if (sheet.sources && Array.isArray(sheet.sources) && sheet.sources.length > 0) {
       const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'))
       const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'))
       return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
@@ -135,7 +156,7 @@ async function purstream_getEpisodeUrl(purstreamId: number, season: number, epis
   }
 }
 
-// ─── Fonctions existantes (inchangées) ──────────────────────────────────────────────────────
+// ─── Fonctions Publiques ──────────────────────────────────────────────────────
 
 export async function getMovies(): Promise<Movie[]> {
   try {
@@ -278,7 +299,9 @@ export async function getEpisodeVideoUrl(
     }
   } catch {}
 
+  // Fallback si série pas dans la BDD
   if (titleFallback) {
+    console.log(`[Purstream Episode Direct] "${titleFallback}"`)
     const purstreamId = await purstream_searchId(titleFallback, 'series', tmdbId)
     if (!purstreamId) return null
     return purstream_getEpisodeUrl(purstreamId, season, episode)
