@@ -32,33 +32,34 @@ async function WatchContent({
   let seriesName: string | null = null
 
   if (type === 'movie') {
-    // Essaye d'abord la BDD, récupère le titre depuis TMDB si nécessaire
     const movie = await getMovieById(tmdbId)
     title = movie?.title || 'Film'
+    console.log('[Watch] Movie from DB:', movie?.tmdb_id, '| video_url:', movie?.video_url)
 
     if (movie?.video_url) {
       playerUrl = movie.video_url
     } else {
-      // Pas de video_url en BDD → récupère le titre TMDB pour Purstream
       let titleForPurstream = movie?.title || movie?.original_title
       if (!titleForPurstream) {
         const tmdbDetails = await getMovieDetails(tmdbId).catch(() => null)
         titleForPurstream = tmdbDetails?.title || tmdbDetails?.original_title || ''
         if (tmdbDetails?.title) title = tmdbDetails.title
+        console.log('[Watch] TMDB title fallback:', titleForPurstream)
       }
+      console.log('[Watch] Calling Purstream for movie:', tmdbId, titleForPurstream)
       playerUrl = await getMovieVideoUrl(tmdbId, titleForPurstream || undefined)
+      console.log('[Watch] Purstream result:', playerUrl)
     }
 
     poster = movie?.poster_path ? getPosterUrl(movie.poster_path) : null
-    // Si pas de poster en BDD, on laisse null (PlayerPage gère le fallback via TMDB)
 
   } else {
     const series = await getSeriesById(tmdbId)
     seriesDbId = series?.id
     seriesName = series?.name || null
     title = `${series?.name || 'Série'} — S${String(season).padStart(2,'0')}E${String(episode).padStart(2,'0')}`
+    console.log('[Watch] Series from DB:', series?.tmdb_id, '| name:', series?.name)
 
-    // Récupère le titre depuis TMDB si la série n'est pas en BDD
     let titleForPurstream = series?.name || series?.original_name
     if (!titleForPurstream) {
       const tmdbDetails = await getSeriesDetails(tmdbId).catch(() => null)
@@ -67,9 +68,12 @@ async function WatchContent({
         seriesName = tmdbDetails.name
         title = `${tmdbDetails.name} — S${String(season).padStart(2,'0')}E${String(episode).padStart(2,'0')}`
       }
+      console.log('[Watch] TMDB series name fallback:', titleForPurstream)
     }
 
+    console.log('[Watch] Calling Purstream for series:', tmdbId, titleForPurstream, 'S'+season+'E'+episode)
     playerUrl = await getEpisodeVideoUrl(tmdbId, season, episode, titleForPurstream || undefined)
+    console.log('[Watch] Purstream result:', playerUrl)
     poster = series?.poster_path ? getPosterUrl(series.poster_path) : null
   }
 
