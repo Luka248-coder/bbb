@@ -9,48 +9,61 @@ const PURSTREAM_BASE = 'https://api.purstream.ac/api/v1'
 
 // ─── Recherche Purstream ────────────────────────────────────────────────────────
 async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbId?: number): Promise<number | null> {
-  try {
-    console.log(`[Purstream Search] "${title}" | Type: ${type} | TMDB: ${tmdbId}`);
-
-    const res = await fetch(`${PURSTREAM_BASE}/search-bar/search/${encodeURIComponent(title)}`, {
-      headers: { 
-        Accept: 'application/json', 
-        'User-Agent': 'Mozilla/5.0' 
-      },
-      next: { revalidate: 1800 },
-    });
-
-    if (!res.ok) return null;
-
-    const responseData = await res.json();
-    let results: any[] = [];
-
-    if (responseData?.data?.items?.movies?.items) {
-      results = responseData.data.items.movies.items;
-    } else if (responseData?.data?.items?.series?.items) {
-      results = responseData.data.items.series.items;
-    } else if (Array.isArray(responseData)) {
-      results = responseData;
+  // Essai 1 : endpoint direct par tmdbId (pas de recherche nécessaire)
+  if (tmdbId) {
+    const endpoints = [
+      `${PURSTREAM_BASE}/media/tmdb/${tmdbId}`,
+      `${PURSTREAM_BASE}/media/tmdb/${type === 'movie' ? 'movie' : 'tv'}/${tmdbId}`,
+      `${PURSTREAM_BASE}/content/tmdb/${tmdbId}`,
+    ];
+    for (const url of endpoints) {
+      try {
+        const r = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' });
+        if (r.ok) {
+          const d = await r.json();
+          const id = d?.data?.items?.id || d?.data?.id || d?.id;
+          if (id) { console.log(`[Purstream] ✅ tmdbId lookup: ${url} → id ${id}`); return id; }
+        }
+      } catch {}
     }
-
-    if (results.length === 0) return null;
-
-    // Match par TMDB ID
-    if (tmdbId) {
-      const match = results.find(r => 
-        String(r.tmdbId || r.tmdb_id || r.id) === String(tmdbId)
-      );
-      if (match?.id) {
-        console.log(`[Purstream Search] ✅ Match TMDB: ${match.id}`);
-        return match.id;
-      }
-    }
-
-    return results[0]?.id || null;
-  } catch (err) {
-    console.error('[Purstream Search Error]', err);
-    return null;
   }
+
+  // Essai 2 : recherche par titre avec plusieurs endpoints
+  const searchEndpoints = [
+    `${PURSTREAM_BASE}/search/${encodeURIComponent(title)}`,
+    `${PURSTREAM_BASE}/search-bar/search/${encodeURIComponent(title)}`,
+    `${PURSTREAM_BASE}/media/search?q=${encodeURIComponent(title)}`,
+    `${PURSTREAM_BASE}/content/search?title=${encodeURIComponent(title)}`,
+  ];
+
+  for (const url of searchEndpoints) {
+    try {
+      const r = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' });
+      console.log(`[Purstream Search] ${url} → ${r.status}`);
+      if (!r.ok) continue;
+
+      const d = await r.json();
+      let results: any[] = [];
+      if (d?.data?.items?.movies?.items) results = [...d.data.items.movies.items, ...(d.data.items.series?.items || [])];
+      else if (d?.data?.items?.series?.items) results = d.data.items.series.items;
+      else if (d?.data?.items) results = Array.isArray(d.data.items) ? d.data.items : [];
+      else if (Array.isArray(d)) results = d;
+      else if (d?.results) results = d.results;
+
+      if (results.length === 0) continue;
+
+      if (tmdbId) {
+        const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId));
+        if (match?.id) { console.log(`[Purstream] ✅ search match: ${match.id}`); return match.id; }
+      }
+      if (results[0]?.id) { console.log(`[Purstream] ✅ first result: ${results[0].id}`); return results[0].id; }
+    } catch (err) {
+      console.error(`[Purstream Search Error] ${url}:`, err);
+    }
+  }
+
+  console.error(`[Purstream] ❌ Not found: "${title}" tmdbId=${tmdbId}`);
+  return null;
 }
 
 // ─── Récupération URL Vidéo ─────────────────────────────────────────────────────
