@@ -5,6 +5,101 @@ import type { Movie, Series, Episode } from '@/lib/content-types'
 export type { Movie, Series, Episode } from '@/lib/content-types'
 export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/content-types'
 
+const PURSTREAM_BASE = 'https://api.purstream.ac/api/v1'
+
+// ─── Helpers Purstream ────────────────────────────────────────────────────────
+
+async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbId?: number): Promise<number | null> {
+  try {
+    const res = await fetch(`${PURSTREAM_BASE}/search-bar/search/${encodeURIComponent(title)}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return null
+    const results: any[] = await res.json()
+    if (!Array.isArray(results) || results.length === 0) return null
+
+    // Priorité : correspondance tmdb_id
+    if (tmdbId) {
+      const byTmdb = results.find(r => String(r.tmdb_id) === String(tmdbId))
+      if (byTmdb?.id) return byTmdb.id
+    }
+
+    // Correspondance titre + type
+    const norm = title.toLowerCase().trim()
+    const isMovie = type === 'movie'
+    const byTitle = results.find(r => {
+      const rTitle = (r.title || r.name || '').toLowerCase().trim()
+      const rType = r.type?.toLowerCase() || ''
+      const typeOk = isMovie
+        ? rType === 'movie' || rType === 'film'
+        : rType === 'series' || rType === 'tv' || rType === 'show'
+      return rTitle === norm && typeOk
+    })
+    if (byTitle?.id) return byTitle.id
+
+    // Fallback premier résultat
+    return results[0]?.id || null
+  } catch {
+    return null
+  }
+}
+
+async function purstream_getMovieUrl(purstreamId: number): Promise<string | null> {
+  try {
+    const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return null
+    const sheet = await res.json()
+
+    if (sheet.sources && Array.isArray(sheet.sources) && sheet.sources.length > 0) {
+      const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'))
+      const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'))
+      return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
+    }
+    return sheet.video_url || sheet.url || null
+  } catch {
+    return null
+  }
+}
+
+async function purstream_getEpisodeUrl(purstreamId: number, season: number, episode: number): Promise<string | null> {
+  try {
+    const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return null
+    const sheet = await res.json()
+
+    if (sheet.episodes && Array.isArray(sheet.episodes)) {
+      const ep = sheet.episodes.find((e: any) => e.season === season && e.episode === episode)
+      if (ep) {
+        if (ep.sources && ep.sources.length > 0) {
+          const mp4 = ep.sources.find((s: any) => s.url?.includes('.mp4'))
+          const m3u8 = ep.sources.find((s: any) => s.url?.includes('.m3u8'))
+          return mp4?.url || m3u8?.url || ep.sources[0]?.url || null
+        }
+        return ep.video_url || null
+      }
+    }
+
+    // Fallback source globale
+    if (sheet.sources && Array.isArray(sheet.sources) && sheet.sources.length > 0) {
+      const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'))
+      const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'))
+      return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+// ─── Fonctions publiques ──────────────────────────────────────────────────────
+
 export async function getMovies(): Promise<Movie[]> {
   try {
     const supabase = await createClient()
@@ -101,25 +196,73 @@ export async function searchContent(query: string): Promise<{ movies: Movie[], s
   }
 }
 
-export async function getMovieVideoUrl(tmdbId: number): Promise<string | null> {
+/**
+ * Récupère l'URL vidéo d'un film.
+ * 1. Cherche dans la BDD (catalog interne)
+ * 2. Si absent ou sans video_url, tente Purstream comme fallback
+ */
+export async function getMovieVideoUrl(tmdbId: number, titleFallback?: string): Promise<string | null> {
+  // 1. BDD
   const movie = await getMovieById(tmdbId)
-  return movie?.video_url || null
+  if (movie?.video_url) return movie.video_url
+
+  // 2. Fallback Purstream
+  const title = titleFallback || movie?.title || movie?.original_title
+  if (!title) return null
+
+  console.log(`[Purstream] Film introuvable en BDD, tentative Purstream: "${title}"`)
+  const purstreamId = await purstream_searchId(title, 'movie', tmdbId)
+  if (!purstreamId) return null
+
+  return purstream_getMovieUrl(purstreamId)
 }
 
-export async function getEpisodeVideoUrl(tmdbId: number, season: number, episode: number): Promise<string | null> {
+/**
+ * Récupère l'URL vidéo d'un épisode.
+ * 1. Cherche dans la BDD (episodes)
+ * 2. Si absent, tente Purstream comme fallback
+ */
+export async function getEpisodeVideoUrl(
+  tmdbId: number,
+  season: number,
+  episode: number,
+  titleFallback?: string
+): Promise<string | null> {
+  // 1. BDD
   try {
     const series = await getSeriesById(tmdbId)
-    if (!series) return null
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from('episodes')
-      .select('video_url')
-      .eq('series_id', series.id)
-      .eq('season_number', season)
-      .eq('episode_number', episode)
-      .single()
-    return data?.video_url || null
+    if (series) {
+      const supabase = await createClient()
+      const { data } = await supabase
+        .from('episodes')
+        .select('video_url')
+        .eq('series_id', series.id)
+        .eq('season_number', season)
+        .eq('episode_number', episode)
+        .single()
+
+      if (data?.video_url) return data.video_url
+
+      // 2. Fallback Purstream
+      const title = titleFallback || series.name || series.original_name
+      if (!title) return null
+
+      console.log(`[Purstream] Épisode S${season}E${episode} introuvable, tentative Purstream: "${title}"`)
+      const purstreamId = await purstream_searchId(title, 'series', tmdbId)
+      if (!purstreamId) return null
+
+      return purstream_getEpisodeUrl(purstreamId, season, episode)
+    }
   } catch {
-    return null
+    // Série pas dans la BDD du tout
   }
+
+  // Série inconnue localement → Purstream direct
+  if (titleFallback) {
+    const purstreamId = await purstream_searchId(titleFallback, 'series', tmdbId)
+    if (!purstreamId) return null
+    return purstream_getEpisodeUrl(purstreamId, season, episode)
+  }
+
+  return null
 }
