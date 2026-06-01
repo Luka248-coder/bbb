@@ -191,27 +191,30 @@ function NativePlayer({
 
         const sheet = await sheetRes.json()
 
+        // Structure réelle: { data: { items: { urls: [{url, name}], seasons: [...] } } }
+        const items = sheet?.data?.items ?? sheet
         let url: string | null = null
 
         if (isMovie) {
-          if (sheet.sources?.length) {
-            const premium = sheet.sources.find((s: any) => s.url?.includes('premium') || s.url?.includes('cdn') || !s.url?.includes('free'))
-            url = premium?.url || 
-                  sheet.sources.find((s: any) => s.url?.includes('.mp4'))?.url ||
-                  sheet.sources.find((s: any) => s.url?.includes('.m3u8'))?.url ||
-                  sheet.sources[0]?.url
-          }
-          url = url || sheet.stream_url || sheet.video_url || sheet.url
+          url = items.urls?.[0]?.url || items.video_url || items.url || null
         } else {
-          const ep = sheet.episodes?.find((e: any) => e.season === currentSeason && e.episode === currentEpisode)
-          if (ep?.sources?.length) {
-            const premium = ep.sources.find((s: any) => s.url?.includes('premium') || s.url?.includes('cdn') || !s.url?.includes('free'))
-            url = premium?.url || 
-                  ep.sources.find((s: any) => s.url?.includes('.mp4'))?.url ||
-                  ep.sources.find((s: any) => s.url?.includes('.m3u8'))?.url ||
-                  ep.sources[0]?.url
+          // Cherche dans seasons[].episodes[]
+          const sNum = currentSeason || 1
+          const eNum = currentEpisode || 1
+          if (items.seasons?.length) {
+            const s = items.seasons.find((s: any) => s.number === sNum || s.season === sNum)
+            const ep = s?.episodes?.find((e: any) => e.number === eNum || e.episode === eNum)
+            url = ep?.urls?.[0]?.url || ep?.url || null
           }
-          url = url || ep?.video_url
+          // Fallback: episodes plat
+          if (!url && items.episodes?.length) {
+            const ep = items.episodes.find((e: any) =>
+              (e.season === sNum || e.seasonNumber === sNum) &&
+              (e.episode === eNum || e.number === eNum)
+            )
+            url = ep?.urls?.[0]?.url || ep?.url || null
+          }
+          if (!url) url = items.urls?.[0]?.url || null
         }
 
         if (url) {
