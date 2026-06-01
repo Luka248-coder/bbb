@@ -771,7 +771,7 @@ export function NativePlayer({
           <div className="space-y-2">
             <h2 className="text-white font-bold text-2xl tracking-tight">Contenu non disponible</h2>
             <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
-              Ce contenu n'a pas encore été ajouté par l'administrateur. Revenez plus tard.
+              Ce contenu n'est pas encore disponible sur nos sources. Revenez plus tard.
             </p>
           </div>
 
