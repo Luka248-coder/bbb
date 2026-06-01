@@ -58,35 +58,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ videoUrl: null, error: `Search failed: ${searchRes.status}` })
     }
 
-    const searchData: PurstreamSearchResult[] = await searchRes.json()
+    const searchJson = await searchRes.json()
 
-    if (!Array.isArray(searchData) || searchData.length === 0) {
+    // Structure réelle Purstream: { data: { items: { movies: { items: [] }, series: { items: [] } } } }
+    let results: PurstreamSearchResult[] = []
+    const si = searchJson?.data?.items
+    if (si) {
+      const movieItems = si.movies?.items || si.movie?.items || []
+      const seriesItems = si.series?.items || si.serie?.items || []
+      results = type === 'movie' ? [...movieItems, ...seriesItems] : [...seriesItems, ...movieItems]
+    } else if (Array.isArray(searchJson)) {
+      results = searchJson
+    }
+
+    if (results.length === 0) {
       return NextResponse.json({ videoUrl: null, error: 'Not found on Purstream' })
     }
 
-    // 2. Trouver le bon résultat : priorité au tmdb_id, sinon correspondance titre + type
+    // 2. Trouver le bon résultat : priorité au tmdb_id
     let match: PurstreamSearchResult | undefined
 
     if (tmdbId) {
-      match = searchData.find(r => String(r.tmdb_id) === tmdbId)
+      match = results.find(r => String(r.tmdbId || r.tmdb_id) === tmdbId)
     }
 
     if (!match) {
       const normalizedTitle = title.toLowerCase().trim()
-      const isMovie = type === 'movie'
-      match = searchData.find(r => {
-        const rTitle = (r.title || r.name || '').toLowerCase().trim()
-        const rType = r.type?.toLowerCase()
-        const typeMatch = isMovie
-          ? rType === 'movie' || rType === 'film'
-          : rType === 'series' || rType === 'tv' || rType === 'show'
-        return rTitle === normalizedTitle && typeMatch
-      })
+      match = results.find(r => (r.title || r.name || '').toLowerCase().trim() === normalizedTitle)
     }
 
     // Fallback : premier résultat
     if (!match) {
-      match = searchData[0]
+      match = results[0]
     }
 
     if (!match?.id) {
@@ -109,46 +112,43 @@ export async function GET(request: NextRequest) {
     const sheet: PurstreamSheet = await sheetRes.json()
 
     // 4. Extraire l'URL vidéo
+    // Structure réelle: { data: { items: { urls: [{url, name}], seasons: [...] } } }
+    const items = sheet?.data?.items ?? sheet
     let videoUrl: string | null = null
 
     if (type === 'movie') {
-      // Films : cherche une source MP4/M3U8 directe
-      if (sheet.sources && Array.isArray(sheet.sources) && sheet.sources.length > 0) {
-        // Préfère MP4, sinon M3U8
-        const mp4 = sheet.sources.find(s => s.url?.includes('.mp4'))
-        const m3u8 = sheet.sources.find(s => s.url?.includes('.m3u8'))
-        videoUrl = mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
-      } else if (sheet.video_url) {
-        videoUrl = sheet.video_url
-      } else if (sheet.url) {
-        videoUrl = sheet.url
+      if (items.urls?.length > 0) {
+        videoUrl = items.urls[0].url
+      } else {
+        videoUrl = items.video_url || items.url || null
       }
     } else {
-      // Séries : cherche l'épisode spécifique
       const seasonNum = parseInt(season || '1')
       const episodeNum = parseInt(episode || '1')
 
-      if (sheet.episodes && Array.isArray(sheet.episodes)) {
-        const ep = sheet.episodes.find(
-          e => e.season === seasonNum && e.episode === episodeNum
-        )
-        if (ep) {
-          if (ep.sources && ep.sources.length > 0) {
-            const mp4 = ep.sources.find(s => s.url?.includes('.mp4'))
-            const m3u8 = ep.sources.find(s => s.url?.includes('.m3u8'))
-            videoUrl = mp4?.url || m3u8?.url || ep.sources[0]?.url || null
-          } else if (ep.video_url) {
-            videoUrl = ep.video_url
-          }
+      // Structure: items.seasons[{number, episodes:[{number, urls:[]}]}]
+      if (items.seasons?.length > 0) {
+        const s = items.seasons.find((s: any) => s.number === seasonNum || s.season === seasonNum)
+        if (s?.episodes?.length > 0) {
+          const ep = s.episodes.find((e: any) => e.number === episodeNum || e.episode === episodeNum)
+          if (ep?.urls?.length > 0) videoUrl = ep.urls[0].url
+          else if (ep?.url) videoUrl = ep.url
         }
       }
 
-      // Fallback : source globale de la série (parfois les séries courtes ont une seule source)
-      if (!videoUrl && sheet.sources && Array.isArray(sheet.sources)) {
-        const mp4 = sheet.sources.find(s => s.url?.includes('.mp4'))
-        const m3u8 = sheet.sources.find(s => s.url?.includes('.m3u8'))
-        videoUrl = mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
+      // Structure plate: items.episodes[{season, episode, urls:[]}]
+      if (!videoUrl && items.episodes?.length > 0) {
+        const ep = items.episodes.find(
+          (e: any) => (e.season === seasonNum || e.seasonNumber === seasonNum) &&
+                      (e.episode === episodeNum || e.number === episodeNum)
+        )
+        if (ep?.urls?.length > 0) videoUrl = ep.urls[0].url
+        else if (ep?.url) videoUrl = ep.url
       }
+
+      // Fallback: urls global
+      if (!videoUrl && items.urls?.length > 0) videoUrl = items.urls[0].url
+      if (!videoUrl) videoUrl = items.video_url || items.url || null
     }
 
     return NextResponse.json({ videoUrl, purstreamId })
