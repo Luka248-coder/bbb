@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
@@ -28,10 +28,38 @@ const ROW_CONFIG: Record<string, { color: string; href: string }> = {
 
 export function ContentRow({ title, content, type, showRank = false, accentColor, viewAllHref }: ContentRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [logos, setLogos] = useState<Record<number, string | null>>({})
 
   const config = ROW_CONFIG[title]
   const color = accentColor ?? config?.color ?? '#e53935'
   const href = viewAllHref ?? config?.href ?? (type === 'movie' ? '/movies' : '/series')
+
+  // Fetch logos pour les items visibles (les 10 premiers)
+  useEffect(() => {
+    const visible = content.slice(0, 10)
+    const mediaType = type === 'movie' ? 'movie' : 'tv'
+
+    Promise.all(
+      visible.map(async (item) => {
+        const tmdbId = (item as any).tmdb_id || item.id
+        try {
+          const res = await fetch(
+            `/api/content/${mediaType}/${tmdbId}`,
+            { cache: 'force-cache' }
+          )
+          if (!res.ok) return { id: item.id, logo: null }
+          const data = await res.json()
+          return { id: item.id, logo: data.logo ?? null }
+        } catch {
+          return { id: item.id, logo: null }
+        }
+      })
+    ).then((results) => {
+      const map: Record<number, string | null> = {}
+      results.forEach(({ id, logo }) => { map[id] = logo })
+      setLogos(map)
+    })
+  }, [content, type])
 
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return
@@ -107,6 +135,7 @@ export function ContentRow({ title, content, type, showRank = false, accentColor
               type={type}
               index={index}
               showRank={showRank}
+              logoUrl={logos[item.id]}
             />
           ))}
         </div>
