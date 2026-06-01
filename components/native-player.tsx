@@ -314,6 +314,28 @@ export function NativePlayer({
   useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
   useEffect(() => { titleRef.current = title }, [title])
 
+  // ─── Fallback Purstream côté client si videoUrl est null ─────────────────────
+  const [purstreamLoading, setPurstreamLoading] = useState(!initialVideoUrl && !!tmdbId)
+  useEffect(() => {
+    if (videoUrl || !tmdbId) return
+    setPurstreamLoading(true)
+    const contentTitle = seriesName || title
+    const params = new URLSearchParams({
+      tmdb_id: String(tmdbId),
+      type,
+      title: contentTitle,
+      ...(type === 'series' ? { season: String(currentSeason), episode: String(currentEpisode) } : {}),
+    })
+    fetch(`/api/purstream?${params}`)
+      .then(r => r.json())
+      .then((data: { videoUrl: string | null }) => {
+        if (data.videoUrl) setVideoUrl(data.videoUrl)
+      })
+      .catch(() => {})
+      .finally(() => setPurstreamLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tmdbId, type])
+
   // Refs pour le timer d'erreur — capturent les valeurs sans recréer le timer
   const tmdbIdRef = useRef(tmdbId)
   const typeRef = useRef(type)
@@ -743,6 +765,16 @@ export function NativePlayer({
 
   const progress = duration ? (currentTime / duration) * 100 : 0
 
+  // ─── Purstream loading ───────────────────────────────────────────────────────
+  if (!videoUrl && purstreamLoading) {
+    return (
+      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-zinc-400 animate-spin mb-4" />
+        <p className="text-zinc-500 text-sm">Recherche de la source vidéo…</p>
+      </div>
+    )
+  }
+
   // ─── No video ────────────────────────────────────────────────────────────────
   if (!videoUrl) {
     return (
@@ -771,7 +803,7 @@ export function NativePlayer({
           <div className="space-y-2">
             <h2 className="text-white font-bold text-2xl tracking-tight">Contenu non disponible</h2>
             <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
-              Ce contenu n'est pas encore disponible sur nos sources. Revenez plus tard.
+              Ce contenu n'a pas encore été ajouté par l'administrateur. Revenez plus tard.
             </p>
           </div>
 
