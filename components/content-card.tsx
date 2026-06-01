@@ -1,148 +1,86 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ContentCard } from '@/components/content-card'
-import type { Movie, Series } from '@/lib/content-types'
+import Link from 'next/link'
+import Image from 'next/image'
+import { getPosterUrl, type Movie, type Series } from '@/lib/content-types'
 
-interface ContentRowProps {
-  title: string
-  content: (Movie | Series)[]
+interface ContentCardProps {
+  content: Movie | Series
   type: 'movie' | 'series'
+  index?: number
   showRank?: boolean
-  accentColor?: string
-  viewAllHref?: string
+  logoUrl?: string | null
 }
 
-const ROW_CONFIG: Record<string, { color: string; href: string }> = {
-  'Nouveautés Films':            { color: '#e53935', href: '/movies?sort=new' },
-  'Nouveautés Séries':           { color: '#7c3aed', href: '/series?sort=new' },
-  'Top 10 Films de la semaine':  { color: '#f59e0b', href: '/movies?sort=top' },
-  'Top 10 Séries de la semaine': { color: '#06b6d4', href: '/series?sort=top' },
-  'Films populaires':            { color: '#10b981', href: '/movies?sort=popular' },
-  'Séries populaires':           { color: '#ec4899', href: '/series?sort=popular' },
+function isMovie(item: Movie | Series): item is Movie {
+  return 'title' in item
 }
 
-export function ContentRow({ title, content, type, showRank = false, accentColor, viewAllHref }: ContentRowProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [logos, setLogos] = useState<Record<number, string | null>>({})
-
-  const config = ROW_CONFIG[title]
-  const color = accentColor ?? config?.color ?? '#e53935'
-  const href = viewAllHref ?? config?.href ?? (type === 'movie' ? '/movies' : '/series')
-
-  // Fetch logos pour les items visibles (les 10 premiers)
-  useEffect(() => {
-    const visible = content.slice(0, 10)
-    const mediaType = type === 'movie' ? 'movie' : 'tv'
-
-    Promise.all(
-      visible.map(async (item) => {
-        const tmdbId = (item as any).tmdb_id || item.id
-        try {
-          const res = await fetch(
-            `/api/content/${mediaType}/${tmdbId}`,
-            { cache: 'force-cache' }
-          )
-          if (!res.ok) return { id: item.id, logo: null }
-          const data = await res.json()
-          return { id: item.id, logo: data.logo ?? null }
-        } catch {
-          return { id: item.id, logo: null }
-        }
-      })
-    ).then((results) => {
-      const map: Record<number, string | null> = {}
-      results.forEach(({ id, logo }) => { map[id] = logo })
-      setLogos(map)
-    })
-  }, [content, type])
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (!scrollRef.current) return
-    const scrollAmount = scrollRef.current.clientWidth * 0.8
-    scrollRef.current.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
-    })
-  }
-
-  if (content.length === 0) return null
+export function ContentCard({ content, type, index = 0, showRank = false, logoUrl }: ContentCardProps) {
+  const title = isMovie(content) ? content.title : (content as Series).name
+  const date = isMovie(content) ? content.release_date : (content as Series).first_air_date
+  const year = date ? new Date(date).getFullYear() : ''
+  const tmdbId = (content as any).tmdb_id || content.id
 
   return (
-    <section className="relative py-6">
-      <div className="px-4 mb-4 flex items-center justify-between" style={{ paddingLeft: "max(1rem, calc((100% - 80rem) / 2 + 1rem))", paddingRight: "max(1rem, calc((100% - 80rem) / 2 + 1rem))" }}>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          className="flex items-center gap-2"
-        >
-          <div
-            className="w-[3px] rounded-full self-stretch"
-            style={{
-              background: `linear-gradient(to bottom, ${color}, transparent)`,
-              minHeight: '2rem',
-            }}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03, duration: 0.3 }}
+      className="flex-shrink-0 w-[140px] md:w-[160px] group cursor-pointer"
+    >
+      <Link href={`/watch/${type}/${tmdbId}`}>
+        <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 mb-2">
+          {/* Rank badge */}
+          {showRank && index !== undefined && (
+            <div className="absolute top-2 left-2 z-10 w-7 h-7 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center text-white text-xs font-black border border-white/10">
+              {index + 1}
+            </div>
+          )}
+
+          {/* Poster */}
+          <Image
+            src={getPosterUrl(content.poster_path)}
+            alt={title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="180px"
           />
-          <h2 className="text-2xl md:text-3xl font-black text-white">
-            {title}
-          </h2>
-        </motion.div>
 
-        <Link href={href}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-center w-8 h-8 border border-white/20 text-white/60 hover:text-white hover:border-white/50 transition-all rounded-full cursor-pointer"
-          >
-            <ArrowUpRight className="w-4 h-4" />
-          </motion.div>
-        </Link>
-      </div>
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white fill-white ml-0.5" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
 
-      <div className="relative group">
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm hover:bg-background"
-          onClick={() => scroll('left')}
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm hover:bg-background"
-          onClick={() => scroll('right')}
-        >
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-
-        <div
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto hide-scrollbar pb-4"
-          style={{ paddingLeft: "max(1rem, calc((100% - 80rem) / 2 + 1rem))", paddingRight: "1rem" }}
-        >
-          {content.map((item, index) => (
-            <ContentCard
-              key={`${type}-${item.id}-${index}`}
-              content={item}
-              type={type}
-              index={index}
-              showRank={showRank}
-              logoUrl={logos[item.id]}
-            />
-          ))}
+          {/* Rating */}
+          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-white/70 text-[10px] font-bold">
+            ★ {content.vote_average?.toFixed(1)}
+          </div>
         </div>
 
-        <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-      </div>
-    </section>
+        {/* Logo or title */}
+        {logoUrl ? (
+          <div className="h-8 flex items-center">
+            <Image
+              src={logoUrl}
+              alt={title}
+              width={120}
+              height={32}
+              className="object-contain max-h-8 w-auto opacity-80 group-hover:opacity-100 transition-opacity"
+            />
+          </div>
+        ) : (
+          <>
+            <p className="text-white text-xs font-semibold truncate">{title}</p>
+            {year && <p className="text-white/30 text-xs">{year}</p>}
+          </>
+        )}
+      </Link>
+    </motion.div>
   )
 }
