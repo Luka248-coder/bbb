@@ -187,6 +187,7 @@ export async function searchContent(query: string): Promise<{ movies: Movie[], s
 }
 
 // ─── Extraction URL depuis le sheet Purstream ───────────────────────────────
+// Structure réelle : { data: { items: { urls: [{url, name}], ... } } }
 async function extractVideoUrl(
   purstreamId: number,
   type: 'movie' | 'series',
@@ -199,39 +200,45 @@ async function extractVideoUrl(
       next: { revalidate: 3600 },
     });
     if (!res.ok) return null;
-    const sheet = await res.json();
+    const json = await res.json();
+
+    // La vraie structure : json.data.items
+    const items = json?.data?.items ?? json;
 
     if (type === 'movie') {
-      if (sheet.sources?.length > 0) {
-        const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'));
-        const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'));
-        return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null;
+      // urls est un tableau de { url, name }
+      if (items.urls?.length > 0) {
+        return items.urls[0].url;
       }
-      return sheet.video_url || sheet.url || sheet.urls?.[0]?.url || sheet.rls?.[0]?.url || null;
+      return items.video_url || items.url || null;
     } else {
-      // Séries : cherche l'épisode dans sheet.episodes
+      // Séries : cherche dans items.seasons[].episodes[]
       const seasonNum = season || 1;
       const episodeNum = episode || 1;
-      if (sheet.episodes?.length > 0) {
-        const ep = sheet.episodes.find(
-          (e: any) => e.season === seasonNum && e.episode === episodeNum
-        );
-        if (ep) {
-          if (ep.sources?.length > 0) {
-            const mp4 = ep.sources.find((s: any) => s.url?.includes('.mp4'));
-            const m3u8 = ep.sources.find((s: any) => s.url?.includes('.m3u8'));
-            return mp4?.url || m3u8?.url || ep.sources[0]?.url || null;
-          }
-          return ep.video_url || null;
+
+      // Structure possible : items.seasons[{number, episodes:[{number, urls:[]}]}]
+      if (items.seasons?.length > 0) {
+        const s = items.seasons.find((s: any) => s.number === seasonNum || s.season === seasonNum);
+        if (s?.episodes?.length > 0) {
+          const ep = s.episodes.find((e: any) => e.number === episodeNum || e.episode === episodeNum);
+          if (ep?.urls?.length > 0) return ep.urls[0].url;
+          if (ep?.url) return ep.url;
         }
       }
-      // Fallback global sources
-      if (sheet.sources?.length > 0) {
-        const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'));
-        const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'));
-        return mp4?.url || m3u8?.url || sheet.sources[0]?.url || null;
+
+      // Structure plate : items.episodes[{season, episode, urls:[]}]
+      if (items.episodes?.length > 0) {
+        const ep = items.episodes.find(
+          (e: any) => (e.season === seasonNum || e.seasonNumber === seasonNum) &&
+                      (e.episode === episodeNum || e.episodeNumber === episodeNum || e.number === episodeNum)
+        );
+        if (ep?.urls?.length > 0) return ep.urls[0].url;
+        if (ep?.url) return ep.url;
       }
-      return sheet.video_url || sheet.url || sheet.urls?.[0]?.url || null;
+
+      // Fallback : si c'est un film-like avec urls direct
+      if (items.urls?.length > 0) return items.urls[0].url;
+      return items.video_url || items.url || null;
     }
   } catch (err) {
     console.error('[extractVideoUrl]', err);
