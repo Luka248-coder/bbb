@@ -186,11 +186,12 @@ export async function searchContent(query: string): Promise<{ movies: Movie[], s
   }
 }
 
-export async function getMovieVideoUrl(tmdbId: number): Promise<string | null> {
+export async function getMovieVideoUrl(tmdbId: number, titleOverride?: string): Promise<string | null> {
   const movie = await getMovieById(tmdbId);
   if (movie?.video_url) return movie.video_url;
 
-  const purstreamId = await purstream_searchId(movie?.title || '', 'movie', tmdbId);
+  const title = titleOverride || movie?.title || '';
+  const purstreamId = await purstream_searchId(title, 'movie', tmdbId);
   if (!purstreamId) return null;
 
   return purstream_getMovieUrl(purstreamId);
@@ -199,9 +200,12 @@ export async function getMovieVideoUrl(tmdbId: number): Promise<string | null> {
 export async function getEpisodeVideoUrl(
   tmdbId: number,
   season: number,
-  episode: number
+  episode: number,
+  titleOverride?: string
 ): Promise<string | null> {
-  const purstreamId = await purstream_searchId('', 'series', tmdbId);
+  const series = await getSeriesById(tmdbId);
+  const title = titleOverride || series?.name || series?.original_name || '';
+  const purstreamId = await purstream_searchId(title, 'series', tmdbId);
   if (!purstreamId) return null;
 
   return purstream_getEpisodeUrl(purstreamId, season, episode);
