@@ -270,7 +270,7 @@ export function NativePlayer({
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
-  const [initialLoading, setInitialLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(!!initialVideoUrl)
   const [showError, setShowError] = useState(false)
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showVol, setShowVol] = useState(false)
@@ -602,7 +602,7 @@ export function NativePlayer({
           if (!url) url = items.urls?.[0]?.url || null
         }
 
-        if (url) setVideoUrl(url)
+        if (url) { setVideoUrl(url); setInitialLoading(true) }
       } catch (err) {
         console.error('[Purstream client]', err)
       } finally {
