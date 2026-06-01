@@ -197,17 +197,24 @@ async function extractVideoUrl(
   try {
     const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
       headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[extractVideoUrl] Sheet ${purstreamId} returned ${res.status}`);
+      return null;
+    }
     const json = await res.json();
+    console.log(`[extractVideoUrl] Sheet keys:`, Object.keys(json));
+    console.log(`[extractVideoUrl] json.data?.items keys:`, json?.data?.items ? Object.keys(json.data.items) : 'N/A');
 
     // La vraie structure : json.data.items
     const items = json?.data?.items ?? json;
+    console.log(`[extractVideoUrl] items.urls:`, JSON.stringify(items.urls?.slice(0,1)));
 
     if (type === 'movie') {
       // urls est un tableau de { url, name }
       if (items.urls?.length > 0) {
+        console.log(`[extractVideoUrl] ✅ URL found:`, items.urls[0].url?.substring(0, 60));
         return items.urls[0].url;
       }
       return items.video_url || items.url || null;
