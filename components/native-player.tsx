@@ -314,25 +314,91 @@ export function NativePlayer({
   useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
   useEffect(() => { titleRef.current = title }, [title])
 
-  // ─── Fallback Purstream côté client si videoUrl est null ─────────────────────
+  // ─── Fallback Purstream directement depuis le navigateur (évite le 403 serveur) ──
   const [purstreamLoading, setPurstreamLoading] = useState(!initialVideoUrl && !!tmdbId)
   useEffect(() => {
     if (videoUrl || !tmdbId) return
     setPurstreamLoading(true)
+
+    const PURSTREAM = 'https://api.purstream.ac/api/v1'
     const contentTitle = seriesName || title
-    const params = new URLSearchParams({
-      tmdb_id: String(tmdbId),
-      type,
-      title: contentTitle,
-      ...(type === 'series' ? { season: String(currentSeason), episode: String(currentEpisode) } : {}),
-    })
-    fetch(`/api/purstream?${params}`)
-      .then(r => r.json())
-      .then((data: { videoUrl: string | null }) => {
-        if (data.videoUrl) setVideoUrl(data.videoUrl)
-      })
-      .catch(() => {})
-      .finally(() => setPurstreamLoading(false))
+
+    async function fetchFromPurstream() {
+      try {
+        // 1. Recherche par titre
+        const searchRes = await fetch(
+          `${PURSTREAM}/search-bar/search/${encodeURIComponent(contentTitle)}`,
+          { headers: { Accept: 'application/json' } }
+        )
+        if (!searchRes.ok) return
+
+        const results: any[] = await searchRes.json()
+        if (!Array.isArray(results) || results.length === 0) return
+
+        // 2. Trouver le bon résultat
+        const isMovie = type === 'movie'
+        let match = results.find(r => String(r.tmdb_id) === String(tmdbId))
+        if (!match) {
+          const norm = contentTitle.toLowerCase().trim()
+          match = results.find(r => {
+            const rTitle = (r.title || r.name || '').toLowerCase().trim()
+            const rType = r.type?.toLowerCase() || ''
+            const typeOk = isMovie
+              ? rType === 'movie' || rType === 'film'
+              : rType === 'series' || rType === 'tv' || rType === 'show'
+            return rTitle === norm && typeOk
+          })
+        }
+        if (!match) {
+          match = results.find(r => {
+            const rType = r.type?.toLowerCase() || ''
+            return isMovie ? rType === 'movie' || rType === 'film' : rType === 'series' || rType === 'tv' || rType === 'show'
+          })
+        }
+        if (!match) match = results[0]
+        if (!match?.id) return
+
+        // 3. Récupérer la fiche
+        const sheetRes = await fetch(
+          `${PURSTREAM}/media/${match.id}/sheet`,
+          { headers: { Accept: 'application/json' } }
+        )
+        if (!sheetRes.ok) return
+        const sheet: any = await sheetRes.json()
+
+        // 4. Extraire l'URL
+        let url: string | null = null
+        if (isMovie) {
+          if (sheet.sources?.length) {
+            const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'))
+            const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'))
+            url = mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
+          }
+          url = url || sheet.video_url || sheet.url || null
+        } else {
+          const s = currentSeason, e = currentEpisode
+          const ep = sheet.episodes?.find((x: any) => x.season === s && x.episode === e)
+          if (ep) {
+            const mp4 = ep.sources?.find((s: any) => s.url?.includes('.mp4'))
+            const m3u8 = ep.sources?.find((s: any) => s.url?.includes('.m3u8'))
+            url = mp4?.url || m3u8?.url || ep.sources?.[0]?.url || ep.video_url || null
+          }
+          if (!url && sheet.sources?.length) {
+            const mp4 = sheet.sources.find((s: any) => s.url?.includes('.mp4'))
+            const m3u8 = sheet.sources.find((s: any) => s.url?.includes('.m3u8'))
+            url = mp4?.url || m3u8?.url || sheet.sources[0]?.url || null
+          }
+        }
+
+        if (url) setVideoUrl(url)
+      } catch {
+        // silencieux
+      } finally {
+        setPurstreamLoading(false)
+      }
+    }
+
+    fetchFromPurstream()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tmdbId, type])
 
