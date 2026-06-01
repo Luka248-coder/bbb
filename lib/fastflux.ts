@@ -56,16 +56,12 @@ async function purstream_getMovieUrl(purstreamId: number): Promise<string | null
 
     const sheet = await res.json();
 
-    // Structure actuelle de l'API
     if (sheet.urls?.length > 0) {
+      console.log(`✅ URL trouvée (urls): ${sheet.urls[0].url.substring(0, 80)}...`);
       return sheet.urls[0].url;
     }
-    if (sheet.rls?.length > 0) {
-      return sheet.rls[0].url;
-    }
-    if (sheet.sources?.length > 0) {
-      return sheet.sources[0].url;
-    }
+    if (sheet.rls?.length > 0) return sheet.rls[0].url;
+    if (sheet.sources?.length > 0) return sheet.sources[0].url;
 
     return null;
   } catch (err) {
@@ -132,6 +128,41 @@ export async function getSeriesById(tmdbId: number): Promise<Series | null> {
     return data || null;
   } catch {
     return null;
+  }
+}
+
+export async function getEpisodes(seriesId: number, seasonNumber?: number): Promise<Episode[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from('episodes')
+      .select('*')
+      .eq('series_id', seriesId)
+      .order('season_number')
+      .order('episode_number');
+    
+    if (seasonNumber !== undefined) {
+      query = query.eq('season_number', seasonNumber);
+    }
+    const { data } = await query;
+    return data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function searchContent(query: string): Promise<{ movies: Movie[], series: Series[] }> {
+  try {
+    const supabase = await createClient();
+    const search = `%${query}%`;
+    const [{ data: movies }, { data: series }] = await Promise.all([
+      supabase.from('movies').select('*').ilike('title', search),
+      supabase.from('series').select('*').ilike('name', search),
+    ]);
+    return { movies: movies || [], series: series || [] };
+  } catch (error) {
+    console.error('Error searching content:', error);
+    return { movies: [], series: [] };
   }
 }
 
