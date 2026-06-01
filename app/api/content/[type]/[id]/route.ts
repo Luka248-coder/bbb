@@ -1,71 +1,88 @@
-import { NextRequest, NextResponse } from 'next/server'
-import {
-  getMovieDetails,
-  getSeriesDetails,
-  getMovieCredits,
+import { NextResponse } from 'next/server'
+import { 
+  getMovieDetails, 
+  getSeriesDetails, 
+  getMovieCredits, 
   getSeriesCredits,
+  getMovieVideos,
+  getSeriesVideos,
   getSimilarMovies,
   getSimilarSeries,
   getSeasonDetails,
-  getContentLogo,
   getCollection,
+  getContentLogo
 } from '@/lib/tmdb'
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { type: string; id: string } }
+  request: Request,
+  { params }: { params: Promise<{ type: string; id: string }> }
 ) {
-  const { type, id } = params
+  const { type, id } = await params
   const tmdbId = parseInt(id)
+  const { searchParams } = new URL(request.url)
+  const season = searchParams.get('season')
 
-  if (!tmdbId || isNaN(tmdbId)) {
-    return NextResponse.json({ error: 'ID invalide' }, { status: 400 })
+  if (isNaN(tmdbId)) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   }
 
-  const url = new URL(request.url)
-  const season = parseInt(url.searchParams.get('season') || '1')
-
   try {
-    if (type === 'movie' || type === 'films') {
-      const [details, credits, similar, logo] = await Promise.all([
+    if (type === 'movie') {
+      const [details, credits, videos, similar, logo] = await Promise.all([
         getMovieDetails(tmdbId),
         getMovieCredits(tmdbId),
+        getMovieVideos(tmdbId),
         getSimilarMovies(tmdbId),
-        getContentLogo('movie', tmdbId),
+        getContentLogo('movie', tmdbId)
       ])
 
       if (!details) {
-        return NextResponse.json({ error: 'Film introuvable' }, { status: 404 })
+        return NextResponse.json({ error: 'Movie not found' }, { status: 404 })
       }
 
-      // Fetch collection if needed
-      let collection = null
-      if (details.belongs_to_collection?.id) {
-        collection = await getCollection(details.belongs_to_collection.id)
-      }
+      const collection = details.belongs_to_collection
+        ? await getCollection(details.belongs_to_collection.id)
+        : null
 
-      return NextResponse.json({ details, credits, similar, logo, collection })
-    }
-
-    if (type === 'series' || type === 'tv') {
-      const [details, credits, similar, logo, seasonData] = await Promise.all([
+      return NextResponse.json({
+        details,
+        credits,
+        videos: videos.filter(v => v.site === 'YouTube'),
+        similar: similar.slice(0, 12),
+        collection,
+        logo
+      })
+    } else if (type === 'series') {
+      const [details, credits, videos, similar, logo] = await Promise.all([
         getSeriesDetails(tmdbId),
         getSeriesCredits(tmdbId),
+        getSeriesVideos(tmdbId),
         getSimilarSeries(tmdbId),
-        getContentLogo('tv', tmdbId),
-        getSeasonDetails(tmdbId, season),
+        getContentLogo('tv', tmdbId)
       ])
 
       if (!details) {
-        return NextResponse.json({ error: 'Série introuvable' }, { status: 404 })
+        return NextResponse.json({ error: 'Series not found' }, { status: 404 })
       }
 
-      return NextResponse.json({ details, credits, similar, logo, seasonData })
+      let seasonData = null
+      if (season) {
+        seasonData = await getSeasonDetails(tmdbId, parseInt(season))
+      }
+
+      return NextResponse.json({
+        details,
+        credits,
+        videos: videos.filter(v => v.site === 'YouTube'),
+        similar: similar.slice(0, 12),
+        seasonData,
+        logo
+      })
     }
 
-    return NextResponse.json({ error: 'Type invalide' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
   } catch (error) {
-    console.error('[API Content] Erreur:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('Error fetching content details:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
