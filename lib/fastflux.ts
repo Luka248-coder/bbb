@@ -25,17 +25,25 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
     const responseData = await res.json();
     let results: any[] = [];
 
-    if (responseData?.data?.items?.movies?.items) results = responseData.data.items.movies.items;
-    else if (responseData?.data?.items?.series?.items) results = responseData.data.items.series.items;
-    else if (Array.isArray(responseData)) results = responseData;
+    if (responseData?.data?.items?.movies?.items) {
+      results = responseData.data.items.movies.items;
+    } else if (responseData?.data?.items?.series?.items) {
+      results = responseData.data.items.series.items;
+    } else if (Array.isArray(responseData)) {
+      results = responseData;
+    }
 
     if (results.length === 0) return null;
 
+    // Match par TMDB ID
     if (tmdbId) {
       const match = results.find(r => 
         String(r.tmdbId || r.tmdb_id || r.id) === String(tmdbId)
       );
-      if (match?.id) return match.id;
+      if (match?.id) {
+        console.log(`[Purstream Search] ✅ Match TMDB: ${match.id}`);
+        return match.id;
+      }
     }
 
     return results[0]?.id || null;
@@ -56,12 +64,17 @@ async function purstream_getMovieUrl(purstreamId: number): Promise<string | null
 
     const sheet = await res.json();
 
+    // Nouvelle structure principale
     if (sheet.urls?.length > 0) {
-      console.log(`✅ URL trouvée (urls): ${sheet.urls[0].url.substring(0, 80)}...`);
+      console.log(`✅ [Movie] URL trouvée via "urls"`);
       return sheet.urls[0].url;
     }
-    if (sheet.rls?.length > 0) return sheet.rls[0].url;
-    if (sheet.sources?.length > 0) return sheet.sources[0].url;
+    if (sheet.rls?.length > 0) {
+      return sheet.rls[0].url;
+    }
+    if (sheet.sources?.length > 0) {
+      return sheet.sources[0].url;
+    }
 
     return null;
   } catch (err) {
@@ -80,12 +93,19 @@ async function purstream_getEpisodeUrl(purstreamId: number, season: number, epis
 
     const sheet = await res.json();
 
-    if (sheet.urls?.length > 0) return sheet.urls[0].url;
-    if (sheet.rls?.length > 0) return sheet.rls[0].url;
-    if (sheet.sources?.length > 0) return sheet.sources[0].url;
+    if (sheet.urls?.length > 0) {
+      return sheet.urls[0].url;
+    }
+    if (sheet.rls?.length > 0) {
+      return sheet.rls[0].url;
+    }
+    if (sheet.sources?.length > 0) {
+      return sheet.sources[0].url;
+    }
 
     return null;
-  } catch {
+  } catch (err) {
+    console.error('[purstream_getEpisodeUrl]', err);
     return null;
   }
 }
