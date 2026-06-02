@@ -200,7 +200,6 @@ export async function searchContent(query: string): Promise<{ movies: Movie[], s
 }
 
 // ─── Extraction URL depuis le sheet Purstream ───────────────────────────────
-// Structure réelle : { data: { items: { urls: [{url, name}], ... } } }
 async function extractVideoUrl(
   purstreamId: number,
   type: 'movie' | 'series',
@@ -217,49 +216,71 @@ async function extractVideoUrl(
       return null;
     }
     const json = await res.json();
-    console.log(`[extractVideoUrl] Sheet keys:`, Object.keys(json));
-    console.log(`[extractVideoUrl] json.data?.items keys:`, json?.data?.items ? Object.keys(json.data.items) : 'N/A');
 
-    // La vraie structure : json.data.items
-    const items = json?.data?.items ?? json;
-    console.log(`[extractVideoUrl] items.urls:`, JSON.stringify(items.urls?.slice(0,1)));
+    // Log complet de la structure pour debug
+    const items = json?.data?.items ?? json?.data ?? json;
+    console.log(`[extractVideoUrl] type=${type} season=${season} ep=${episode}`);
+    console.log(`[extractVideoUrl] top-level keys:`, Object.keys(json));
+    console.log(`[extractVideoUrl] items keys:`, Object.keys(items));
+    if (items.seasons) console.log(`[extractVideoUrl] seasons count:`, items.seasons.length, '| first season:', JSON.stringify(items.seasons[0]).slice(0, 200));
+    if (items.episodes) console.log(`[extractVideoUrl] episodes count:`, items.episodes.length, '| first ep:', JSON.stringify(items.episodes[0]).slice(0, 200));
+    if (items.urls) console.log(`[extractVideoUrl] urls count:`, items.urls.length, '| first url:', JSON.stringify(items.urls[0]).slice(0, 100));
 
     if (type === 'movie') {
-      // urls est un tableau de { url, name }
-      if (items.urls?.length > 0) {
-        console.log(`[extractVideoUrl] ✅ URL found:`, items.urls[0].url?.substring(0, 60));
-        return items.urls[0].url;
-      }
-      return items.video_url || items.url || null;
-    } else {
-      // Séries : cherche dans items.seasons[].episodes[]
-      const seasonNum = season || 1;
-      const episodeNum = episode || 1;
-
-      // Structure possible : items.seasons[{number, episodes:[{number, urls:[]}]}]
-      if (items.seasons?.length > 0) {
-        const s = items.seasons.find((s: any) => s.number === seasonNum || s.season === seasonNum);
-        if (s?.episodes?.length > 0) {
-          const ep = s.episodes.find((e: any) => e.number === episodeNum || e.episode === episodeNum);
-          if (ep?.urls?.length > 0) return ep.urls[0].url;
-          if (ep?.url) return ep.url;
-        }
-      }
-
-      // Structure plate : items.episodes[{season, episode, urls:[]}]
-      if (items.episodes?.length > 0) {
-        const ep = items.episodes.find(
-          (e: any) => (e.season === seasonNum || e.seasonNumber === seasonNum) &&
-                      (e.episode === episodeNum || e.episodeNumber === episodeNum || e.number === episodeNum)
-        );
-        if (ep?.urls?.length > 0) return ep.urls[0].url;
-        if (ep?.url) return ep.url;
-      }
-
-      // Fallback : si c'est un film-like avec urls direct
       if (items.urls?.length > 0) return items.urls[0].url;
       return items.video_url || items.url || null;
     }
+
+    // ── SÉRIES ──
+    const seasonNum = season ?? 1;
+    const episodeNum = episode ?? 1;
+
+    // Format 1 : items.seasons[{number|season, episodes:[{number|episode, urls:[{url}]}]}]
+    if (items.seasons?.length > 0) {
+      const s = items.seasons.find((s: any) =>
+        Number(s.number ?? s.season ?? s.season_number) === seasonNum
+      );
+      console.log(`[extractVideoUrl] Format1 - found season:`, !!s, '| episodes:', s?.episodes?.length);
+      if (s?.episodes?.length > 0) {
+        const ep = s.episodes.find((e: any) =>
+          Number(e.number ?? e.episode ?? e.episode_number) === episodeNum
+        );
+        console.log(`[extractVideoUrl] Format1 - found ep:`, !!ep, JSON.stringify(ep)?.slice(0, 150));
+        if (ep?.urls?.length > 0) return ep.urls[0].url;
+        if (ep?.url) return ep.url;
+        if (ep?.video_url) return ep.video_url;
+      }
+    }
+
+    // Format 2 : items.episodes[{season|season_number, episode|episode_number, urls:[{url}]}]
+    if (items.episodes?.length > 0) {
+      const ep = items.episodes.find((e: any) => {
+        const s = Number(e.season ?? e.season_number ?? e.seasonNumber);
+        const n = Number(e.episode ?? e.episode_number ?? e.episodeNumber ?? e.number);
+        return s === seasonNum && n === episodeNum;
+      });
+      console.log(`[extractVideoUrl] Format2 - found ep:`, !!ep, JSON.stringify(ep)?.slice(0, 150));
+      if (ep?.urls?.length > 0) return ep.urls[0].url;
+      if (ep?.url) return ep.url;
+      if (ep?.video_url) return ep.video_url;
+    }
+
+    // Format 3 : items directement est un tableau d'épisodes
+    if (Array.isArray(items)) {
+      const ep = items.find((e: any) => {
+        const s = Number(e.season ?? e.season_number);
+        const n = Number(e.episode ?? e.episode_number ?? e.number);
+        return s === seasonNum && n === episodeNum;
+      });
+      if (ep?.urls?.length > 0) return ep.urls[0].url;
+      if (ep?.url) return ep.url;
+    }
+
+    // Format 4 : items.urls avec index basé sur l'épisode (ex: épisodes plats)
+    // NE PAS utiliser comme fallback — trop risqué de retourner le mauvais
+    console.warn(`[extractVideoUrl] ❌ Episode S${seasonNum}E${episodeNum} not found in any known structure`);
+    return null;
+
   } catch (err) {
     console.error('[extractVideoUrl]', err);
     return null;
