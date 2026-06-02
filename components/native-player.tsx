@@ -163,14 +163,12 @@ function EpisodesPanel({
                 <button
                   key={ep.id}
                   onClick={() => {
-                    if (hasVideo) {
-                      onSelectEpisode(ep.season_number, ep.episode_number, ep.video_url!, ep.title || `Épisode ${ep.episode_number}`)
-                    }
+                    // Toujours permettre le clic — Purstream fournira l'URL si absente en BDD
+                    onSelectEpisode(ep.season_number, ep.episode_number, ep.video_url || '', ep.title || `Épisode ${ep.episode_number}`)
                   }}
-                  disabled={!hasVideo}
                   className={`w-full flex gap-3 px-4 py-3 text-left transition-all ${
                     isCurrent ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-white/5 border-l-2 border-transparent'
-                  } ${!hasVideo ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  }`}
                 >
                   <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
                     {ep.still_path ? (
@@ -565,74 +563,83 @@ export function NativePlayer({
   }, [resetTimer])
 
   // ─── Purstream client-side fetch (Vercel bloque côté serveur) ────────────────
+  // Cache de la fiche Purstream pour éviter de re-fetcher search+sheet à chaque épisode
+  const purstreamSheetRef = useRef<{ id: number; items: any } | null>(null)
+
   useEffect(() => {
-    if (initialVideoUrl || !tmdbId) return  // already have URL or nothing to search
+    if (videoUrl || !tmdbId) return  // déjà une URL, rien à faire
 
     const PURSTREAM = 'https://api.purstream.ac/api/v1'
     const contentTitle = seriesName || initialTitle
 
     ;(async () => {
       try {
-        const searchRes = await fetch(
-          `${PURSTREAM}/search-bar/search/${encodeURIComponent(contentTitle)}`,
-          { headers: { Accept: 'application/json' } }
-        )
-        if (!searchRes.ok) return
+        // ── 1. Récupérer la fiche (cachée si déjà fetché) ──
+        if (!purstreamSheetRef.current) {
+          const searchRes = await fetch(
+            `${PURSTREAM}/search-bar/search/${encodeURIComponent(contentTitle)}`,
+            { headers: { Accept: 'application/json' } }
+          )
+          if (!searchRes.ok) return
 
-        const data = await searchRes.json()
-        // Structure: { data: { items: { movies: { items: [] }, series: { items: [] } } } }
-        let results: any[] = []
-        const si = data?.data?.items
-        if (si) {
-          results = [
-            ...(si.movies?.items || []),
-            ...(si.series?.items || []),
-          ]
-        } else if (Array.isArray(data)) {
-          results = data
+          const data = await searchRes.json()
+          let results: any[] = []
+          const si = data?.data?.items
+          if (si) {
+            results = [...(si.movies?.items || []), ...(si.series?.items || [])]
+          } else if (Array.isArray(data)) {
+            results = data
+          }
+          if (!results.length) return
+
+          const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId)) || results[0]
+          if (!match?.id) return
+
+          const sheetRes = await fetch(`${PURSTREAM}/media/${match.id}/sheet`, {
+            headers: { Accept: 'application/json' },
+          })
+          if (!sheetRes.ok) return
+
+          const json = await sheetRes.json()
+          const items = json?.data?.items ?? json
+          purstreamSheetRef.current = { id: match.id, items }
         }
-        if (!results.length) return
 
-        const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId)) || results[0]
-        if (!match?.id) return
-
-        const sheetRes = await fetch(`${PURSTREAM}/media/${match.id}/sheet`, {
-          headers: { Accept: 'application/json' },
-        })
-        if (!sheetRes.ok) return
-
-        const json = await sheetRes.json()
-        // Structure réelle: { data: { items: { urls: [{url, name}], seasons: [...] } } }
-        const items = json?.data?.items ?? json
+        // ── 2. Extraire l'URL selon le type / saison / épisode ──
+        const items = purstreamSheetRef.current!.items
         let url: string | null = null
 
         if (type === 'movie') {
           url = items.urls?.[0]?.url || items.video_url || items.url || null
         } else {
-          const sNum = initialSeason || 1
-          const eNum = initialEpisode || 1
+          const sNum = currentSeason || 1
+          const eNum = currentEpisode || 1
+
+          // Structure { seasons: [{ number, episodes: [{ number, urls }] }] }
           if (items.seasons?.length) {
-            const s = items.seasons.find((s: any) => s.number === sNum || s.season === sNum)
-            const ep = s?.episodes?.find((e: any) => e.number === eNum || e.episode === eNum)
+            const season = items.seasons.find((s: any) => s.number === sNum || s.season === sNum)
+            const ep = season?.episodes?.find((e: any) => e.number === eNum || e.episode === eNum)
             url = ep?.urls?.[0]?.url || ep?.url || null
           }
+          // Structure plate { episodes: [{ season, episode, urls }] }
           if (!url && items.episodes?.length) {
             const ep = items.episodes.find((e: any) =>
               (e.season === sNum || e.seasonNumber === sNum) &&
-              (e.episode === eNum || e.number === eNum)
+              (e.episode === eNum || e.number === eNum || e.episodeNumber === eNum)
             )
             url = ep?.urls?.[0]?.url || ep?.url || null
           }
+          // Fallback : première URL disponible
           if (!url) url = items.urls?.[0]?.url || null
         }
 
-        if (url) { setVideoUrl(url) }
+        if (url) setVideoUrl(url)
       } catch (err) {
         console.error('[Purstream client]', err)
       }
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tmdbId])  // run once on mount
+  }, [tmdbId, currentSeason, currentEpisode, videoUrl])  // relance à chaque changement d'épisode
 
   // Load video on mount / url change
   useEffect(() => {
@@ -811,14 +818,13 @@ export function NativePlayer({
   const nextEp = currentIdx < sortedEpisodes.length - 1 ? sortedEpisodes[currentIdx + 1] : null
 
   const goToEpisode = (ep: Episode) => {
-    if (!ep.video_url) return
-    handleSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, ep.title || `Épisode ${ep.episode_number}`)
+    handleSelectEpisode(ep.season_number, ep.episode_number, ep.video_url || '', ep.title || `Épisode ${ep.episode_number}`)
   }
 
   const handleSelectEpisode = (season: number, episode: number, url: string, episodeTitle: string) => {
     setCurrentSeason(season)
     setCurrentEpisode(episode)
-    setVideoUrl(url)
+    setVideoUrl(url || null)  // null déclenche l'effet Purstream si pas d'URL en BDD
     setTitle(episodeTitle)
     setDisplayTitle(
       type === 'series' && seriesName
