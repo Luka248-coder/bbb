@@ -24,36 +24,25 @@ interface PurstreamSearchResult {
 
 /**
  * Extrait saison/épisode depuis une URL Purstream.
- * Les URLs contiennent des segments comme /S01/E01/ ou /S1/E1/
- * Exemples :
- *   https://cdn.../S01/E05/index.m3u8
- *   https://cdn.../s01e05/video.m3u8
- *   https://cdn.../season-1/episode-5/...
+ * Couvre tous les formats connus.
  */
 function extractSeasonEpisode(url: string): { season: number; episode: number } | null {
-  // Format /S01/E05/ ou /S1/E5/
-  let m = url.match(/\/S(\d+)\/E(\d+)\//i)
-  if (m) return { season: parseInt(m[1]), episode: parseInt(m[2]) }
-
-  // Format s01e05
-  m = url.match(/s(\d+)e(\d+)/i)
-  if (m) return { season: parseInt(m[1]), episode: parseInt(m[2]) }
-
-  // Format season-1/episode-5 ou season_1/episode_5
-  m = url.match(/season[-_](\d+).*?episode[-_](\d+)/i)
-  if (m) return { season: parseInt(m[1]), episode: parseInt(m[2]) }
-
-  // Format /1/5/ (saison/épisode dans le chemin)
-  m = url.match(/\/(\d+)\/(\d+)\/[^/]*\.m3u8/i)
-  if (m) return { season: parseInt(m[1]), episode: parseInt(m[2]) }
-
+  const patterns = [
+    /\/S(\d+)\/E(\d+)\//i,           // /S01/E05/
+    /\/S(\d+)\/E(\d+)[^/]/i,         // /S01/E05.m3u8
+    /[^a-z]s(\d+)[^a-z]?e(\d+)/i,   // s01e05, s1e5
+    /season[-_](\d+).*?episode[-_](\d+)/i,
+    /saison[-_](\d+).*?episode[-_](\d+)/i,
+    /\/(\d+)x(\d+)\//i,              // /1x05/
+  ]
+  for (const re of patterns) {
+    const m = url.match(re)
+    if (m) return { season: parseInt(m[1]), episode: parseInt(m[2]) }
+  }
   return null
 }
 
-/**
- * Depuis une liste d'URLs plates, trouve celle correspondant à S/E voulu.
- */
-function findEpisodeUrl(urls: { url: string }[], season: number, episode: number): string | null {
+function findEpisodeInUrls(urls: { url: string }[], season: number, episode: number): string | null {
   for (const { url } of urls) {
     const se = extractSeasonEpisode(url)
     if (se && se.season === season && se.episode === episode) return url
@@ -84,8 +73,6 @@ export async function GET(request: NextRequest) {
     }
 
     const searchJson = await searchRes.json()
-
-    // L'API peut retourner un tableau direct ou un objet { data: { items: { movies, series } } }
     let results: PurstreamSearchResult[] = []
     const si = searchJson?.data?.items
     if (si) {
@@ -102,7 +89,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ videoUrl: null, error: 'Not found on Purstream' })
     }
 
-    // Trouver le meilleur match
     let match: PurstreamSearchResult | undefined
     if (tmdbId) {
       match = results.find(r => String(r.tmdbId || r.tmdb_id) === tmdbId)
@@ -126,38 +112,40 @@ export async function GET(request: NextRequest) {
     }
 
     const sheetRaw = await sheetRes.json()
-    // Normaliser : l'API wraps parfois dans data.items ou data
     const sheet = sheetRaw?.data?.items ?? sheetRaw?.data ?? sheetRaw
+
+    // Logger toutes les URLs pour debug (visible dans les logs Vercel)
+    const allUrls: { url: string }[] = sheet.urls || []
+    if (allUrls.length > 0) {
+      console.log(`[Purstream] "${title}" sheet urls (${allUrls.length} total):`,
+        allUrls.slice(0, 5).map((u, i) => `[${i}] ${u.url.substring(0, 100)}`)
+      )
+    }
 
     let videoUrl: string | null = null
 
     // ── 3a. FILM ──────────────────────────────────────────────────────────────
     if (type === 'movie') {
-      const urls: { url: string }[] = sheet.urls || []
-      videoUrl = urls[0]?.url || sheet.video_url || sheet.url || null
+      videoUrl = allUrls[0]?.url || sheet.video_url || sheet.url || null
     }
 
     // ── 3b. SÉRIE ─────────────────────────────────────────────────────────────
     else {
-      const urls: { url: string }[] = sheet.urls || []
-
       // Priorité 1 : structure seasons[].episodes[]
       if (sheet.seasons?.length > 0) {
         const s = sheet.seasons.find((x: any) =>
           Number(x.number ?? x.season ?? x.season_number) === season
         )
-        if (s?.episodes?.length > 0) {
-          const ep = s.episodes.find((x: any) =>
-            Number(x.number ?? x.episode ?? x.episode_number) === episode
-          )
-          if (ep) {
-            const epUrls: { url: string }[] = ep.urls || []
-            videoUrl = epUrls[0]?.url || ep.url || ep.video_url || null
-          }
+        const ep = s?.episodes?.find((x: any) =>
+          Number(x.number ?? x.episode ?? x.episode_number) === episode
+        )
+        if (ep) {
+          const epUrls: { url: string }[] = ep.urls || []
+          videoUrl = epUrls[0]?.url || ep.url || ep.video_url || null
         }
       }
 
-      // Priorité 2 : structure episodes[] plate (avec champs season/episode)
+      // Priorité 2 : episodes[] plate avec champs season/episode
       if (!videoUrl && sheet.episodes?.length > 0) {
         const ep = sheet.episodes.find((x: any) =>
           Number(x.season ?? x.season_number) === season &&
@@ -169,37 +157,43 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Priorité 3 : liste plate d'URLs — extraire S/E depuis l'URL elle-même
-      // C'est le cas principal décrit dans le flow Pur.jsx
-      if (!videoUrl && urls.length > 0) {
-        videoUrl = findEpisodeUrl(urls, season, episode)
+      // Priorité 3 : liste plate d'URLs → regex S/E dans l'URL
+      if (!videoUrl && allUrls.length > 0) {
+        videoUrl = findEpisodeInUrls(allUrls, season, episode)
 
-        // Debug : si on ne trouve pas l'épisode, logger les SEs disponibles
-        if (!videoUrl) {
-          const available = urls
-            .map(u => extractSeasonEpisode(u.url))
-            .filter(Boolean)
-            .map(se => `S${se!.season}E${se!.episode}`)
-          console.warn(
-            `[Purstream] S${season}E${episode} non trouvé dans les URLs. Disponibles: ${available.join(', ')}`
-          )
-          // Dernier recours : première URL (comportement original, peut donner le mauvais épisode)
-          // On ne le fait PAS pour éviter de servir le mauvais contenu
+        if (videoUrl) {
+          console.log(`[Purstream] ✅ Found S${season}E${episode} via URL regex: ${videoUrl.substring(0, 80)}`)
+        } else {
+          // Priorité 4 : les URLs sont ordonnées par épisode → position = index
+          // On cherche d'abord les URLs de la bonne saison, puis on prend le bon index
+          const seasonUrls = allUrls.filter(u => {
+            const se = extractSeasonEpisode(u.url)
+            // Si aucune regex ne matche → on suppose une seule saison, garder toutes
+            if (!se) return true
+            return se.season === season
+          })
+
+          // Si les URLs ont un pattern saison mais pas épisode, ou pas de pattern du tout :
+          // supposer qu'elles sont ordonnées et prendre episode-1 comme index
+          const targetIndex = episode - 1
+          if (seasonUrls[targetIndex]) {
+            videoUrl = seasonUrls[targetIndex].url
+            console.log(`[Purstream] ✅ Found S${season}E${episode} via index [${targetIndex}]: ${videoUrl.substring(0, 80)}`)
+          }
+
+          if (!videoUrl) {
+            // Log pour diagnostiquer dans Vercel
+            const parsed = allUrls.map((u, i) => {
+              const se = extractSeasonEpisode(u.url)
+              return `[${i}] ${se ? `S${se.season}E${se.episode}` : 'NO_SE'} → ${u.url.substring(0, 80)}`
+            })
+            console.warn(`[Purstream] ❌ S${season}E${episode} introuvable. URLs disponibles:\n${parsed.join('\n')}`)
+          }
         }
       }
     }
 
-    return NextResponse.json({
-      videoUrl,
-      purstreamId: match.id,
-      // Infos debug utiles
-      debug: process.env.NODE_ENV === 'development' ? {
-        sheetKeys: Object.keys(sheet),
-        hasSeasons: !!sheet.seasons?.length,
-        hasEpisodes: !!sheet.episodes?.length,
-        urlsCount: (sheet.urls || []).length,
-      } : undefined,
-    })
+    return NextResponse.json({ videoUrl, purstreamId: match.id })
 
   } catch (error) {
     console.error('[Purstream API] Error:', error)
