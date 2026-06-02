@@ -247,6 +247,7 @@ export function NativePlayer({
   const progressRef = useRef<HTMLDivElement>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
+  const resetTimerRef = useRef<(() => void) | null>(null)
 
   const [videoUrl, setVideoUrl] = useState(initialVideoUrl)
   const [title, setTitle] = useState(initialTitle)
@@ -417,6 +418,7 @@ export function NativePlayer({
     if (hideTimer.current) clearTimeout(hideTimer.current)
     hideTimer.current = setTimeout(() => setShowControls(false), 3500)
   }, [])
+  resetTimerRef.current = resetTimer
 
   // ─── HLS loader ─────────────────────────────────────────────────────────────
   const loadVideo = useCallback((url: string) => {
@@ -475,6 +477,8 @@ export function NativePlayer({
         }
         setBuffering(false)
         setInitialLoading(false)
+        setPlaying(true)
+        resetTimerRef.current?.()
       })
 
       hls.on(Hls.Events.ERROR, (_e, data) => {
@@ -510,6 +514,7 @@ export function NativePlayer({
     const onTimeUpdate = () => {
         setCurrentTime(v.currentTime)
         currentTimeRef.current = v.currentTime
+        if (!v.paused) setPlaying(true)
       }
     const onMeta = () => {
       setDuration(v.duration)
