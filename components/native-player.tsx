@@ -565,9 +565,16 @@ export function NativePlayer({
   // ─── Purstream client-side fetch (Vercel bloque côté serveur) ────────────────
   // Cache de la fiche Purstream pour éviter de re-fetcher search+sheet à chaque épisode
   const purstreamSheetRef = useRef<{ id: number; items: any } | null>(null)
+  const lastTmdbIdRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (videoUrl || !tmdbId) return  // déjà une URL, rien à faire
+
+    // Reset du cache si on change de série/film
+    if (lastTmdbIdRef.current !== tmdbId) {
+      purstreamSheetRef.current = null
+      lastTmdbIdRef.current = tmdbId
+    }
 
     const PURSTREAM = 'https://api.purstream.ac/api/v1'
     const contentTitle = seriesName || initialTitle
@@ -615,10 +622,17 @@ export function NativePlayer({
           const sNum = currentSeason || 1
           const eNum = currentEpisode || 1
 
+          console.log('[Purstream] Recherche S' + sNum + 'E' + eNum)
+          console.log('[Purstream] Structure items keys:', Object.keys(items))
+          if (items.seasons?.length) console.log('[Purstream] seasons[0] keys:', Object.keys(items.seasons[0]), '| nb saisons:', items.seasons.length)
+          if (items.episodes?.length) console.log('[Purstream] episodes[0] keys:', Object.keys(items.episodes[0]), '| ep[0]:', JSON.stringify(items.episodes[0]).slice(0, 150))
+
           // Structure { seasons: [{ number, episodes: [{ number, urls }] }] }
           if (items.seasons?.length) {
             const season = items.seasons.find((s: any) => s.number === sNum || s.season === sNum)
+            console.log('[Purstream] season trouvée:', season ? JSON.stringify(season).slice(0, 100) : 'null')
             const ep = season?.episodes?.find((e: any) => e.number === eNum || e.episode === eNum)
+            console.log('[Purstream] episode trouvé:', ep ? JSON.stringify(ep).slice(0, 150) : 'null')
             url = ep?.urls?.[0]?.url || ep?.url || null
           }
           // Structure plate { episodes: [{ season, episode, urls }] }
@@ -627,10 +641,11 @@ export function NativePlayer({
               (e.season === sNum || e.seasonNumber === sNum) &&
               (e.episode === eNum || e.number === eNum || e.episodeNumber === eNum)
             )
+            console.log('[Purstream] episode plat trouvé:', ep ? JSON.stringify(ep).slice(0, 150) : 'null')
             url = ep?.urls?.[0]?.url || ep?.url || null
           }
-          // Fallback : première URL disponible
-          if (!url) url = items.urls?.[0]?.url || null
+          // PAS de fallback urls[0] — ce serait le mauvais épisode
+          console.log('[Purstream] URL finale:', url)
         }
 
         if (url) setVideoUrl(url)
