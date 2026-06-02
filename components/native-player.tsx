@@ -270,7 +270,7 @@ export function NativePlayer({
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
-  const [initialLoading, setInitialLoading] = useState(!!initialVideoUrl)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [showError, setShowError] = useState(false)
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showVol, setShowVol] = useState(false)
@@ -321,7 +321,24 @@ export function NativePlayer({
   useEffect(() => { tmdbIdRef.current = tmdbId }, [tmdbId])
   useEffect(() => { typeRef.current = type }, [type])
 
+  const autoReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // 5s auto-reload up to 3 times if video hasn't started
+  useEffect(() => {
+    if (!initialLoading) {
+      if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current)
+      return
+    }
+    const reloadCount = parseInt(sessionStorage.getItem('player_reload_count') || '0')
+    if (reloadCount >= 3) return
+    autoReloadTimer.current = setTimeout(() => {
+      if (initialLoading) {
+        sessionStorage.setItem('player_reload_count', String(reloadCount + 1))
+        window.location.reload()
+      }
+    }, 5000)
+    return () => { if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current) }
+  }, [initialLoading])
 
   // 30s error timeout — dépend UNIQUEMENT de initialLoading
   // Les valeurs dynamiques (title, season, episode...) passent par des refs
@@ -496,6 +513,7 @@ export function NativePlayer({
       setBuffering(false)
       setInitialLoading(false)
       setShowError(false)
+      sessionStorage.removeItem('player_reload_count')
       if (errorTimer.current) clearTimeout(errorTimer.current)
     }
     const onProgress = () => {
@@ -524,38 +542,40 @@ export function NativePlayer({
     }
   }, [resetTimer])
 
-  // ─── Client-side Purstream fallback (Vercel bloque côté serveur) ────────────
-  const [purstreamLoading, setPurstreamLoading] = useState(!initialVideoUrl && !!tmdbId)
-
+  // ─── Purstream client-side fetch (Vercel bloque côté serveur) ────────────────
   useEffect(() => {
-    if (initialVideoUrl || !tmdbId) return
-    setPurstreamLoading(true)
+    if (initialVideoUrl || !tmdbId) return  // already have URL or nothing to search
 
     const PURSTREAM = 'https://api.purstream.ac/api/v1'
-    const contentTitle = seriesName || title
+    const contentTitle = seriesName || initialTitle
 
-    async function fetchFromPurstream() {
+    ;(async () => {
       try {
         const searchRes = await fetch(
           `${PURSTREAM}/search-bar/search/${encodeURIComponent(contentTitle)}`,
-          { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' } }
+          { headers: { Accept: 'application/json' } }
         )
         if (!searchRes.ok) return
 
-        const responseData = await searchRes.json()
+        const data = await searchRes.json()
+        // Structure: { data: { items: { movies: { items: [] }, series: { items: [] } } } }
         let results: any[] = []
-        if (responseData?.data?.items?.movies?.items) results = responseData.data.items.movies.items
-        else if (responseData?.data?.items?.series?.items) results = responseData.data.items.series.items
-        else if (Array.isArray(responseData)) results = responseData
-
+        const si = data?.data?.items
+        if (si) {
+          results = [
+            ...(si.movies?.items || []),
+            ...(si.series?.items || []),
+          ]
+        } else if (Array.isArray(data)) {
+          results = data
+        }
         if (!results.length) return
 
-        let match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId))
-        if (!match) match = results[0]
+        const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId)) || results[0]
         if (!match?.id) return
 
         const sheetRes = await fetch(`${PURSTREAM}/media/${match.id}/sheet`, {
-          headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }
+          headers: { Accept: 'application/json' },
         })
         if (!sheetRes.ok) return
 
@@ -567,8 +587,8 @@ export function NativePlayer({
         if (type === 'movie') {
           url = items.urls?.[0]?.url || items.video_url || items.url || null
         } else {
-          const sNum = currentSeason || 1
-          const eNum = currentEpisode || 1
+          const sNum = initialSeason || 1
+          const eNum = initialEpisode || 1
           if (items.seasons?.length) {
             const s = items.seasons.find((s: any) => s.number === sNum || s.season === sNum)
             const ep = s?.episodes?.find((e: any) => e.number === eNum || e.episode === eNum)
@@ -584,16 +604,13 @@ export function NativePlayer({
           if (!url) url = items.urls?.[0]?.url || null
         }
 
-        if (url) { setVideoUrl(url); setInitialLoading(true) }
+        if (url) setVideoUrl(url)
       } catch (err) {
         console.error('[Purstream client]', err)
-      } finally {
-        setPurstreamLoading(false)
       }
-    }
-
-    fetchFromPurstream()
-  }, [tmdbId, type, title, seriesName, currentSeason, currentEpisode, initialVideoUrl])
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tmdbId])  // run once on mount
 
   // Load video on mount / url change
   useEffect(() => {
@@ -797,15 +814,6 @@ export function NativePlayer({
   const progress = duration ? (currentTime / duration) * 100 : 0
 
   // ─── No video ────────────────────────────────────────────────────────────────
-  if (!videoUrl && purstreamLoading) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-10 h-10 text-white animate-spin" />
-        <p className="text-white/60 text-sm">Recherche de la source vidéo...</p>
-      </div>
-    )
-  }
-
   if (!videoUrl) {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center relative overflow-hidden">
@@ -869,7 +877,55 @@ export function NativePlayer({
         onClick={togglePlay}
       />
 
+      {/* STREAMSELF cinematic loading overlay */}
+      <AnimatePresence>
+        {initialLoading && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+            style={{ background: 'radial-gradient(ellipse at 70% 60%, rgba(160,10,10,0.35) 0%, rgba(20,5,5,0.7) 45%, #0a0404 100%)' }}
+          >
+            <div className="relative flex items-center justify-center mb-8">
+              {/* Cercle de fond */}
+              <div className="absolute w-16 h-16 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.06)' }} />
+              {/* Arc tournant principal */}
+              <motion.div
+                className="absolute w-16 h-16 rounded-full"
+                style={{
+                  background: 'conic-gradient(from 0deg, #e50914 0%, rgba(229,9,20,0.15) 35%, transparent 60%)',
+                  borderRadius: '50%',
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+              />
+              {/* Masque central */}
+              <div className="absolute w-[52px] h-[52px] rounded-full" style={{ background: 'rgba(6,1,1,0.95)' }} />
+              {/* Point rouge */}
+              <div className="relative w-6 h-6 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-red-600" style={{ boxShadow: '0 0 8px 2px rgba(229,9,20,0.6)' }} />
+              </div>
+            </div>
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-white/50 text-xs font-medium tracking-[0.3em] uppercase select-none"
+            >
+              STREAMSELF PRÉPARE VOTRE {type === 'series' ? 'SÉRIE' : 'FILM'}...
+            </motion.p>
 
+            {/* Back button on overlay */}
+            <Link href={backUrl} className="absolute top-5 left-5 pointer-events-auto">
+              <button className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 shadow-lg active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                Retour
+              </button>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 30s error popup */}
       <AnimatePresence>
