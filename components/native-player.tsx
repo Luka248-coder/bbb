@@ -459,6 +459,24 @@ export function NativePlayer({
         v.play().catch(() => {})
       })
 
+      // Force sync duration/time after HLS attaches (fixes 0:00 / 0:00 bug)
+      hls.on(Hls.Events.LEVEL_LOADED, () => {
+        if (v.duration && !isNaN(v.duration)) {
+          setDuration(v.duration)
+          durationRef.current = v.duration
+        }
+      })
+      hls.on(Hls.Events.FRAG_CHANGED, () => {
+        setCurrentTime(v.currentTime)
+        currentTimeRef.current = v.currentTime
+        if (v.duration && !isNaN(v.duration)) {
+          setDuration(v.duration)
+          durationRef.current = v.duration
+        }
+        setBuffering(false)
+        setInitialLoading(false)
+      })
+
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) {
           switch (data.type) {
