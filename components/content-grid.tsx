@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useDrawer } from '@/components/movie-drawer'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, LayoutGrid, List, SlidersHorizontal, X, Home, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
@@ -21,6 +22,7 @@ function isMovie(item: Movie | Series): item is Movie {
 }
 
 export function ContentGrid({ title, content, type }: ContentGridProps) {
+  const { openDrawer } = useDrawer()
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortType>('rating')
   const [view, setView] = useState<ViewType>('grid')
@@ -195,8 +197,7 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
             const tmdbId = item.tmdb_id || item.id
             return (
               <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.01 }}>
-                <Link href={`/watch/${type}/${tmdbId}`}>
-                  <div className="group cursor-pointer">
+                <div className="group cursor-pointer" onClick={() => openDrawer(type, tmdbId)}>
                     <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 mb-2">
                       <Image src={getPosterUrl(item.poster_path)} alt={title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="14vw" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -211,7 +212,7 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
                     <p className="text-white text-xs font-semibold truncate">{title}</p>
                     {year && <p className="text-white/30 text-xs">{year}</p>}
                   </div>
-                </Link>
+                </div>
               </motion.div>
             )
           })}
@@ -229,8 +230,7 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
             const genres = getGenreNames(item.genre_ids || []).slice(0, 2)
             return (
               <motion.div key={item.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.01 }}>
-                <Link href={`/watch/${type}/${tmdbId}`}>
-                  <div className="flex items-center gap-4 p-3 bg-white/5 hover:bg-white/8 border border-white/5 hover:border-white/15 rounded-xl transition-all group cursor-pointer">
+                <div className="flex items-center gap-4 p-3 bg-white/5 hover:bg-white/8 border border-white/5 hover:border-white/15 rounded-xl transition-all group cursor-pointer" onClick={() => openDrawer(type, tmdbId)}>
                     <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
                       <Image src={getPosterUrl(item.poster_path)} alt={title} fill className="object-cover" sizes="48px" />
                     </div>
@@ -245,8 +245,7 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
                       ★ {item.vote_average?.toFixed(1)}
                     </div>
                     <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0" />
-                  </div>
-                </Link>
+                </div>
               </motion.div>
             )
           })}
