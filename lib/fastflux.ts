@@ -7,6 +7,22 @@ export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/conte
 
 const PURSTREAM_BASE = 'https://api.purstream.ac/api/v1'
 
+const PURSTREAM_HEADERS = {
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Referer': 'https://purstream.ac/',
+  'Origin': 'https://purstream.ac',
+  'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
+  'sec-fetch-dest': 'empty',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-site': 'same-origin',
+  'Connection': 'keep-alive',
+}
+
 // ─── Recherche Purstream ────────────────────────────────────────────────────────
 async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbId?: number): Promise<number | null> {
   // Essai 1 : endpoint direct par tmdbId (pas de recherche nécessaire)
@@ -18,7 +34,7 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
     ];
     for (const url of endpoints) {
       try {
-        const r = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' });
+        const r = await fetch(url, { headers: PURSTREAM_HEADERS, cache: 'no-store' });
         if (r.ok) {
           const d = await r.json();
           const id = d?.data?.items?.id || d?.data?.id || d?.id;
@@ -38,7 +54,7 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
 
   for (const url of searchEndpoints) {
     try {
-      const r = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' });
+      const r = await fetch(url, { headers: PURSTREAM_HEADERS, cache: 'no-store' });
       console.log(`[Purstream Search] ${url} → ${r.status}`);
       if (!r.ok) continue;
 
@@ -70,7 +86,7 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
 async function purstream_getMovieUrl(purstreamId: number): Promise<string | null> {
   try {
     const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
-      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      headers: PURSTREAM_HEADERS,
     });
 
     if (!res.ok) return null;
@@ -99,7 +115,7 @@ async function purstream_getMovieUrl(purstreamId: number): Promise<string | null
 async function purstream_getEpisodeUrl(purstreamId: number, season: number, episode: number): Promise<string | null> {
   try {
     const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
-      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      headers: PURSTREAM_HEADERS,
     });
 
     if (!res.ok) return null;
@@ -208,7 +224,7 @@ async function extractVideoUrl(
 ): Promise<string | null> {
   try {
     const res = await fetch(`${PURSTREAM_BASE}/media/${purstreamId}/sheet`, {
-      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      headers: PURSTREAM_HEADERS,
       cache: 'no-store',
     });
     if (!res.ok) {
