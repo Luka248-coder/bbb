@@ -110,18 +110,7 @@ export function ContentCard({
               className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-10"
               style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 70%, transparent)' }}
             >
-              {logoUrl ? (
-                <div className="mb-2 flex items-end" style={{ height: '36px' }}>
-                  <img
-                    src={logoUrl}
-                    alt={title}
-                    className="max-h-full max-w-[80%] object-contain object-left drop-shadow-lg"
-                    style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))' }}
-                  />
-                </div>
-              ) : (
-                <p className="text-white font-black text-sm leading-tight truncate uppercase tracking-wide mb-1">{title}</p>
-              )}
+              <p className="text-white font-black text-sm leading-tight truncate uppercase tracking-wide mb-1">{title}</p>
               <p className="text-white/50 text-xs">{year}</p>
             </motion.div>
           )}
@@ -141,6 +130,16 @@ export function ContentCard({
             >
               {/* Meta */}
               <div className="px-3 pb-3">
+                {logoUrl && (
+                  <div className="mb-2" style={{ height: '32px' }}>
+                    <img
+                      src={logoUrl}
+                      alt={title}
+                      className="h-full max-w-[75%] object-contain object-left"
+                      style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.9)) brightness(1.1)' }}
+                    />
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold">
                   <span className="text-white/50">{year}</span>
                   <span className="text-white/25">·</span>
