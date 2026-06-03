@@ -327,6 +327,21 @@ export function NativePlayer({
   const titleRef = useRef(initialTitle)
   const resumeTimeRef = useRef(0)
 
+  const syncVideoState = useCallback((video: HTMLVideoElement) => {
+    const nextTime = Number.isFinite(video.currentTime) ? video.currentTime : 0
+    const nextDuration = Number.isFinite(video.duration) ? video.duration : 0
+
+    setCurrentTime(nextTime)
+    currentTimeRef.current = nextTime
+
+    if (nextDuration > 0) {
+      setDuration(nextDuration)
+      durationRef.current = nextDuration
+    }
+
+    setPlaying(!video.paused && !video.ended)
+  }, [])
+
   useEffect(() => {
     if (!userId || !tmdbId) return
     fetch(`/api/watch-history?user_id=${userId}`)
@@ -552,33 +567,35 @@ export function NativePlayer({
     const v = videoRef.current
     if (!v) return
 
+    syncVideoState(v)
+
     const onTimeUpdate = () => {
-        setCurrentTime(v.currentTime)
-        currentTimeRef.current = v.currentTime
-        if (!v.paused) setPlaying(true)
-      }
+      syncVideoState(v)
+    }
     const onMeta = () => {
-      setDuration(v.duration)
-      durationRef.current = v.duration
+      syncVideoState(v)
       if (resumeTimeRef.current > 0 && v.duration > 0) {
         v.currentTime = (resumeTimeRef.current / 100) * v.duration
         resumeTimeRef.current = 0
+        syncVideoState(v)
       }
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
       }
     }
-    const onPlay = () => { setPlaying(true); resetTimer() }
+    const onPlay = () => { syncVideoState(v); resetTimer() }
     const onPlaying = () => {
-      setPlaying(true)
+      syncVideoState(v)
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
       resetTimer()
     }
-    const onPause = () => { setPlaying(false); setShowControls(true) }
+    const onPause = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
+    const onEnded = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
     const onWaiting = () => setBuffering(true)
     const onCanPlay = () => {
+      syncVideoState(v)
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
@@ -594,14 +611,17 @@ export function NativePlayer({
         setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100)
       }
     }
+    const syncInterval = window.setInterval(() => syncVideoState(v), 250)
 
     v.addEventListener('timeupdate', onTimeUpdate)
     v.addEventListener('loadedmetadata', onMeta)
     v.addEventListener('play', onPlay)
     v.addEventListener('playing', onPlaying)
     v.addEventListener('pause', onPause)
+    v.addEventListener('ended', onEnded)
     v.addEventListener('waiting', onWaiting)
     v.addEventListener('canplay', onCanPlay)
+    v.addEventListener('durationchange', onMeta)
     v.addEventListener('progress', onProgress)
 
     return () => {
@@ -610,12 +630,15 @@ export function NativePlayer({
       v.removeEventListener('play', onPlay)
       v.removeEventListener('playing', onPlaying)
       v.removeEventListener('pause', onPause)
+      v.removeEventListener('ended', onEnded)
       v.removeEventListener('waiting', onWaiting)
       v.removeEventListener('canplay', onCanPlay)
+      v.removeEventListener('durationchange', onMeta)
       v.removeEventListener('progress', onProgress)
+      window.clearInterval(syncInterval)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
-  }, [resetTimer, clearErrorTimer])
+  }, [videoUrl, resetTimer, clearErrorTimer, syncVideoState])
 
   // ─── Purstream client-side fetch (Vercel bloque côté serveur) ────────────────
   useEffect(() => {
