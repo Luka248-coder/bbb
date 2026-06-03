@@ -142,7 +142,17 @@ export async function GET(request: NextRequest) {
 
       // Format 3 (CLEF) : liste plate d'URLs → parseEpisodes avec regex S/E
       if (!videoUrl && allUrls.length > 0) {
-        const parsed = parseEpisodes(allUrls)
+        // Trier allUrls par S/E avant tout traitement
+        const sortedUrls = [...allUrls].sort((a, b) => {
+          const seA = extractSeasonEpisode(a.url)
+          const seB = extractSeasonEpisode(b.url)
+          if (!seA && !seB) return 0
+          if (!seA) return 1
+          if (!seB) return -1
+          return seA.season - seB.season || seA.episode - seB.episode
+        })
+
+        const parsed = parseEpisodes(sortedUrls)
         const found = parsed.find(e => e.season === season && e.episode === episode)
         if (found) {
           videoUrl = found.url
@@ -151,19 +161,19 @@ export async function GET(request: NextRequest) {
 
         // Format 4 : fallback par index si aucun pattern S/E dans les URLs
         if (!videoUrl) {
-          const withSE = allUrls.filter(u => extractSeasonEpisode(u.url) !== null)
+          const withSE = sortedUrls.filter(u => extractSeasonEpisode(u.url) !== null)
           if (withSE.length === 0) {
             // URLs sans pattern → supposer une saison, index = épisode - 1
             const idx = episode - 1
-            if (allUrls[idx]) {
-              videoUrl = allUrls[idx].url
+            if (sortedUrls[idx]) {
+              videoUrl = sortedUrls[idx].url
               console.log(`[Purstream] ✅ no-SE index fallback E${episode} [${idx}]`)
             }
           } else {
-            // Filtrer par saison, puis indexer
-            const seasonUrls = allUrls.filter(u => {
+            // Filtrer par saison (triée), puis indexer
+            const seasonUrls = withSE.filter(u => {
               const se = extractSeasonEpisode(u.url)
-              return !se || se.season === season
+              return se?.season === season
             })
             const idx = episode - 1
             if (seasonUrls[idx]) {
@@ -173,7 +183,7 @@ export async function GET(request: NextRequest) {
           }
 
           if (!videoUrl) {
-            const preview = allUrls.slice(0, 6).map((u, i) => {
+            const preview = sortedUrls.slice(0, 6).map((u, i) => {
               const se = extractSeasonEpisode(u.url)
               return `[${i}] ${se ? `S${se.season}E${se.episode}` : 'NO_SE'} → ${u.url.substring(0, 80)}`
             })
