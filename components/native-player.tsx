@@ -79,9 +79,9 @@ function EpisodesPanel({
       }
       // Fallback : TMDB
       try {
-        const r = await fetch(`/api/content/[type]/${tmdbId}`)
+        const r = await fetch(`/api/content/series/${tmdbId}`)
         const d = await r.json()
-        const totalSeasons: number = d?.number_of_seasons || 1
+        const totalSeasons: number = d?.details?.number_of_seasons || 1
         const all: Episode[] = []
         for (let s = 1; s <= totalSeasons; s++) {
           const sr = await fetch(
@@ -873,9 +873,9 @@ export function NativePlayer({
 
     async function loadEpisodesFromTmdb() {
       try {
-        const res = await fetch(`/api/content/[type]/${tmdbId}`)
+        const res = await fetch(`/api/content/${type}/${tmdbId}`)
         const d = await res.json()
-        const seasons: number = d?.number_of_seasons || 1
+        const seasons: number = d?.details?.number_of_seasons || 1
         const fakeEpisodes: Episode[] = []
         for (let s = 1; s <= seasons; s++) {
           const sr = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${s}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || ''}&language=fr-FR`)
