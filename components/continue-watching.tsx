@@ -25,6 +25,7 @@ export function ContinueWatching() {
   const { openDrawer } = useDrawer()
   const [items, setItems] = useState<WatchItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [logos, setLogos] = useState<Record<number, string | null>>({})
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
