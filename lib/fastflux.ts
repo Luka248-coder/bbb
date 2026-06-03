@@ -314,34 +314,13 @@ export async function getEpisodeVideoUrl(
   tmdbId: number,
   season: number,
   episode: number,
-  _titleOverride?: string
+  titleOverride?: string
 ): Promise<string | null> {
-  try {
-    const apiUrl = `https://secret-cine-stream-flow.base44.app/api/series/${tmdbId}/${season}/${episode}`
-    console.log(`[EpisodeURL] Fetching: ${apiUrl}`)
+  const series = await getSeriesById(tmdbId)
+  const title = titleOverride || series?.name || series?.original_name || ''
 
-    // Attendre 1.3s pour laisser l'API générer le lien
-    await new Promise(resolve => setTimeout(resolve, 1300))
+  const purstreamId = await purstream_searchId(title, 'series', tmdbId)
+  if (!purstreamId) return null
 
-    const res = await fetch(apiUrl, { cache: 'no-store' })
-    if (!res.ok) {
-      console.error(`[EpisodeURL] API returned ${res.status}`)
-      return null
-    }
-
-    const text = await res.text()
-    // L'URL est sur la première ligne
-    const firstLine = text.split('\n')[0].trim()
-
-    if (!firstLine || !firstLine.startsWith('http')) {
-      console.error(`[EpisodeURL] No valid URL in response: ${text.substring(0, 100)}`)
-      return null
-    }
-
-    console.log(`[EpisodeURL] ✅ S${season}E${episode} → ${firstLine.substring(0, 80)}`)
-    return firstLine
-  } catch (err) {
-    console.error('[EpisodeURL] Error:', err)
-    return null
-  }
+  return extractVideoUrl(purstreamId, 'series', season, episode)
 }
