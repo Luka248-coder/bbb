@@ -15,6 +15,7 @@ interface ContentCardProps {
   showRank?: boolean
   isFavorite?: boolean
   onToggleFavorite?: () => void
+  logoUrl?: string | null
 }
 
 function isMovie(item: Movie | Series): item is Movie {
@@ -23,6 +24,7 @@ function isMovie(item: Movie | Series): item is Movie {
 
 export function ContentCard({
   content, type, index = 0, showRank = false, isFavorite = false, onToggleFavorite,
+  logoUrl,
 }: ContentCardProps) {
   const title = isMovie(content) ? content.title : content.name
   const releaseDate = isMovie(content) ? content.release_date : content.first_air_date
@@ -58,7 +60,7 @@ export function ContentCard({
       <div
         className={cn(
           'relative overflow-hidden rounded-2xl cursor-pointer bg-card transition-all duration-300',
-          showRank ? 'w-36 md:w-44 ml-8' : 'w-40 md:w-48',
+          showRank ? 'w-40 md:w-52 ml-8' : 'w-44 md:w-56',
           'aspect-[2/3]',
         )}
         style={{
@@ -105,11 +107,22 @@ export function ContentCard({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.15 }}
-              className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-8"
-              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 60%, transparent)' }}
+              className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-10"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 70%, transparent)' }}
             >
-              <p className="text-white font-black text-sm leading-tight truncate uppercase tracking-wide">{title}</p>
-              <p className="text-white/50 text-xs mt-0.5">{year}</p>
+              {logoUrl ? (
+                <div className="mb-2 flex items-end" style={{ height: '36px' }}>
+                  <img
+                    src={logoUrl}
+                    alt={title}
+                    className="max-h-full max-w-[80%] object-contain object-left drop-shadow-lg"
+                    style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))' }}
+                  />
+                </div>
+              ) : (
+                <p className="text-white font-black text-sm leading-tight truncate uppercase tracking-wide mb-1">{title}</p>
+              )}
+              <p className="text-white/50 text-xs">{year}</p>
             </motion.div>
           )}
         </AnimatePresence>

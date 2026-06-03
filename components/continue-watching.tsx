@@ -33,6 +33,18 @@ export function ContinueWatching() {
       .then(data => {
         const unfinished = (Array.isArray(data) ? data : []).filter((i: WatchItem) => !i.finished && i.progress > 0)
         setItems(unfinished)
+        Promise.all(unfinished.map(async (item: WatchItem) => {
+          try {
+            const r = await fetch(`/api/content/${item.content_type === 'movie' ? 'movie' : 'tv'}/${item.content_id}`, { cache: 'force-cache' })
+            if (!r.ok) return { id: item.content_id, logo: null }
+            const d = await r.json()
+            return { id: item.content_id, logo: d.logo ?? null }
+          } catch { return { id: item.content_id, logo: null } }
+        })).then(results => {
+          const map: Record<number, string | null> = {}
+          results.forEach(({ id, logo }: { id: number; logo: string | null }) => { map[id] = logo })
+          setLogos(map)
+        })
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -73,7 +85,7 @@ export function ContinueWatching() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="flex-shrink-0 w-40 md:w-48 group"
+              className="flex-shrink-0 w-44 md:w-56 group"
             >
               <button
                 onClick={() => openDrawer(item.content_type, item.content_id)}
@@ -122,7 +134,18 @@ export function ContinueWatching() {
                 </div>
 
                 <div className="mt-2 px-1">
-                  <p className="text-white/90 text-sm font-semibold truncate">{item.title}</p>
+                  {logos[item.content_id] ? (
+                    <div className="mb-1" style={{ height: '28px' }}>
+                      <img
+                        src={logos[item.content_id]!}
+                        alt={item.title}
+                        className="h-full max-w-full object-contain object-left"
+                        style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9)) brightness(1.1)' }}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-white/90 text-sm font-semibold truncate">{item.title}</p>
+                  )}
                 </div>
               </button>
             </motion.div>
