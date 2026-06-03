@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -273,7 +272,6 @@ export function NativePlayer({
   poster = null,
   seriesName = null,
 }: NativePlayerProps) {
-  const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -925,78 +923,24 @@ export function NativePlayer({
     return `/watch/series/${tmdbId}?${params.toString()}`
   }
 
-  const goToEpisode = async (ep: Episode) => {
-    const episodeTitle = ep.title || `Épisode ${ep.episode_number}`
-    if (ep.video_url) {
-      handleSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, episodeTitle)
-      return
-    }
-    handleSelectEpisodeFromApi(ep.season_number, ep.episode_number, episodeTitle)
-  }
-
-  const handleSelectEpisodeFromApi = async (season: number, episode: number, episodeTitle: string) => {
-    // Stop any running error timer immediately
+  const navigateToEpisode = (season: number, episode: number) => {
     clearErrorTimer()
     setShowError(false)
     setFetchingEpisode(true)
     setShowEpisodes(false)
-    setCurrentSeason(season)
-    setCurrentEpisode(episode)
-    setDisplayTitle(
-      type === 'series' && seriesName
-        ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
-        : episodeTitle
-    )
-    router.replace(getEpisodePlayUrl(season, episode), { scroll: false })
-
-    try {
-      const params = new URLSearchParams({
-        tmdb_id: String(tmdbId),
-        type: 'series',
-        season: String(season),
-        episode: String(episode),
-        title: seriesName || '',
-      })
-      const res = await fetch(`/api/purstream?${params}`, { cache: 'no-store' })
-      const data = await res.json()
-      setFetchingEpisode(false)
-      if (data.videoUrl) {
-        // setVideoUrl triggers useEffect → loadVideo → startErrorTimer
-        // Force reload even if same URL as previous episode
-        if (videoUrl === data.videoUrl) {
-          loadVideo(data.videoUrl)
-        } else {
-          setVideoUrl(data.videoUrl)
-        }
-      } else {
-        setShowError(true)
-        setBuffering(false)
-      }
-    } catch {
-      setFetchingEpisode(false)
-      setShowError(true)
-      setBuffering(false)
-    }
+    window.location.assign(getEpisodePlayUrl(season, episode))
   }
 
-  const handleSelectEpisode = (season: number, episode: number, url: string, episodeTitle: string) => {
-    clearErrorTimer()
-    setShowError(false)
-    setCurrentSeason(season)
-    setCurrentEpisode(episode)
-    setTitle(episodeTitle)
-    setDisplayTitle(
-      type === 'series' && seriesName
-        ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
-        : episodeTitle
-    )
-    setShowEpisodes(false)
-    router.replace(getEpisodePlayUrl(season, episode), { scroll: false })
-    if (videoUrl === url) {
-      loadVideo(url)
-    } else {
-      setVideoUrl(url)
-    }
+  const goToEpisode = (ep: Episode) => {
+    navigateToEpisode(ep.season_number, ep.episode_number)
+  }
+
+  const handleSelectEpisodeFromApi = (season: number, episode: number, _episodeTitle: string) => {
+    navigateToEpisode(season, episode)
+  }
+
+  const handleSelectEpisode = (season: number, episode: number, _url: string, _episodeTitle: string) => {
+    navigateToEpisode(season, episode)
   }
 
   const progress = duration ? (currentTime / duration) * 100 : 0
