@@ -47,14 +47,224 @@ function EpisodesPanel({
   currentEpisode,
   onClose,
   onSelectEpisode,
+  onSelectEpisodeApi,
 }: {
-  seriesDbId: number
+  seriesDbId?: number
   tmdbId: number
   currentSeason: number
   currentEpisode: number
   onClose: () => void
   onSelectEpisode: (season: number, episode: number, url: string, title: string) => void
+  onSelectEpisodeApi: (season: number, episode: number, title: string) => void
 }) {
+  const [episodes, setEpisodes] = useState<Episode[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedSeason, setSelectedSeason] = useState(currentSeason)
+  const [showSeasonPicker, setShowSeasonPicker] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      // Essai 1 : épisodes DB
+      if (seriesDbId) {
+        try {
+          const r = await fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
+          const data: Episode[] = await r.json()
+          if (data && data.length > 0) {
+            setEpisodes(data)
+            setLoading(false)
+            return
+          }
+        } catch {}
+      }
+      // Fallback : TMDB
+      try {
+        const r = await fetch(`/api/content/[type]/${tmdbId}`)
+        const d = await r.json()
+        const totalSeasons: number = d?.number_of_seasons || 1
+        const all: Episode[] = []
+        for (let s = 1; s <= totalSeasons; s++) {
+          const sr = await fetch(
+            `https://api.themoviedb.org/3/tv/${tmdbId}/season/${s}?language=fr-FR`,
+            { headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_TOKEN || ''}` } }
+          )
+          if (!sr.ok) continue
+          const sd = await sr.json()
+          for (const ep of (sd.episodes || [])) {
+            all.push({
+              id: ep.id,
+              series_id: 0,
+              season_number: ep.season_number,
+              episode_number: ep.episode_number,
+              title: ep.name || `Épisode ${ep.episode_number}`,
+              overview: ep.overview,
+              still_path: ep.still_path,
+              runtime: ep.runtime,
+              video_url: null,
+            } as any)
+          }
+        }
+        setEpisodes(all)
+      } catch {}
+      setLoading(false)
+    }
+    load()
+  }, [seriesDbId, tmdbId])
+
+  const seasons = [...new Set(episodes.map(e => e.season_number))].sort((a, b) => a - b)
+  const filteredEps = episodes.filter(e => e.season_number === selectedSeason)
+
+  return (
+    <motion.div
+      initial={{ x: '100%' }}
+      animate={{ x: 0 }}
+      exit={{ x: '100%' }}
+      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      className="absolute inset-y-0 right-0 w-full sm:w-96 bg-zinc-950/95 backdrop-blur-xl flex flex-col z-50 border-l border-white/5"
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="px-5 pt-6 pb-4 border-b border-white/10">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+              <List className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-white font-bold text-lg">Épisodes</h2>
+              <p className="text-white/40 text-xs">{episodes.length} épisodes</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Season selector */}
+      <div className="px-4 py-3 border-b border-white/5">
+        <button
+          onClick={() => setShowSeasonPicker(!showSeasonPicker)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors border border-white/10"
+        >
+          <span className="text-white/60 text-sm">Saison</span>
+          <div className="flex items-center gap-2">
+            <span className="text-primary font-bold text-lg">{selectedSeason}</span>
+            {showSeasonPicker
+              ? <ChevronUp className="w-4 h-4 text-white/40" />
+              : <ChevronDown className="w-4 h-4 text-white/40" />}
+          </div>
+        </button>
+
+        <AnimatePresence>
+          {showSeasonPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="mt-2 bg-zinc-900 rounded-2xl border border-white/10 overflow-y-auto overscroll-contain" style={{ maxHeight: '40vh', WebkitOverflowScrolling: 'touch' }}
+            >
+              {seasons.map(s => {
+                const sEps = episodes.filter(e => e.season_number === s)
+                const isSelected = s === selectedSeason
+                return (
+                  <button
+                    key={s}
+                    onClick={() => { setSelectedSeason(s); setShowSeasonPicker(false) }}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}
+                  >
+                    <span className="font-semibold">Saison {s}</span>
+                    <span className={`text-sm ${isSelected ? 'text-primary font-bold' : 'text-white/40'}`}>{sEps.length} ép.</span>
+                  </button>
+                )
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Episodes list */}
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : filteredEps.length === 0 ? (
+          <p className="text-white/40 text-center py-12 text-sm">Aucun épisode</p>
+        ) : (
+          <div className="py-2">
+            {filteredEps.map(ep => {
+              const isCurrent = ep.season_number === currentSeason && ep.episode_number === currentEpisode
+              const epTitle = ep.title || `Épisode ${ep.episode_number}`
+              return (
+                <button
+                  key={ep.id}
+                  onClick={() => {
+                    if (ep.video_url) {
+                      onSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, epTitle)
+                    } else {
+                      onSelectEpisodeApi(ep.season_number, ep.episode_number, epTitle)
+                    }
+                  }}
+                  className={`w-full flex gap-3 px-4 py-3 text-left transition-all ${
+                    isCurrent ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-white/5 border-l-2 border-transparent'
+                  }`}
+                >
+                  <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                    {ep.still_path ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w185${ep.still_path}`}
+                        alt={epTitle}
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Film className="w-5 h-5 text-white/20" />
+                      </div>
+                    )}
+                    <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                      E{ep.episode_number}
+                    </div>
+                    {isCurrent && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
+                          <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold text-sm truncate mb-0.5 ${isCurrent ? 'text-primary' : 'text-white'}`}>
+                      {epTitle}
+                    </p>
+                    {ep.runtime && (
+                      <p className="text-white/40 text-xs mb-1">{ep.runtime} min</p>
+                    )}
+                    {ep.overview && (
+                      <p className="text-white/40 text-xs line-clamp-2">{ep.overview}</p>
+                    )}
+                    {isCurrent && (
+                      <span className="inline-flex items-center gap-1 text-primary text-xs font-medium mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                        EN COURS
+                      </span>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSeason, setSelectedSeason] = useState(currentSeason)
@@ -796,12 +1006,50 @@ export function NativePlayer({
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([])
 
   useEffect(() => {
-    if (type !== 'series' || !seriesDbId) return
-    fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
-      .then(r => r.json())
-      .then((data: Episode[]) => setAllEpisodes(data || []))
-      .catch(() => {})
-  }, [seriesDbId, type])
+    if (type !== 'series' || !tmdbId) return
+
+    // Essai 1 : épisodes depuis la DB
+    if (seriesDbId) {
+      fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
+        .then(r => r.json())
+        .then(async (data: Episode[]) => {
+          if (data && data.length > 0) {
+            setAllEpisodes(data)
+          } else {
+            // Fallback : construire une liste depuis TMDB
+            await loadEpisodesFromTmdb()
+          }
+        })
+        .catch(() => loadEpisodesFromTmdb())
+    } else {
+      loadEpisodesFromTmdb()
+    }
+
+    async function loadEpisodesFromTmdb() {
+      try {
+        const res = await fetch(`/api/content/[type]/${tmdbId}`)
+        const d = await res.json()
+        const seasons: number = d?.number_of_seasons || 1
+        const fakeEpisodes: Episode[] = []
+        for (let s = 1; s <= seasons; s++) {
+          const sr = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${s}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || ''}&language=fr-FR`)
+          if (!sr.ok) continue
+          const sd = await sr.json()
+          for (const ep of (sd.episodes || [])) {
+            fakeEpisodes.push({
+              id: ep.id,
+              series_id: 0,
+              season_number: ep.season_number,
+              episode_number: ep.episode_number,
+              title: ep.name || `Épisode ${ep.episode_number}`,
+              video_url: null,
+            } as any)
+          }
+        }
+        if (fakeEpisodes.length > 0) setAllEpisodes(fakeEpisodes)
+      } catch {}
+    }
+  }, [seriesDbId, tmdbId, type])
 
   const sortedEpisodes = [...allEpisodes].sort((a, b) =>
     a.season_number !== b.season_number ? a.season_number - b.season_number : a.episode_number - b.episode_number
@@ -810,9 +1058,49 @@ export function NativePlayer({
   const prevEp = currentIdx > 0 ? sortedEpisodes[currentIdx - 1] : null
   const nextEp = currentIdx < sortedEpisodes.length - 1 ? sortedEpisodes[currentIdx + 1] : null
 
-  const goToEpisode = (ep: Episode) => {
-    if (!ep.video_url) return
-    handleSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, ep.title || `Épisode ${ep.episode_number}`)
+  const goToEpisode = async (ep: Episode) => {
+    const episodeTitle = ep.title || `Épisode ${ep.episode_number}`
+    if (ep.video_url) {
+      handleSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, episodeTitle)
+      return
+    }
+    // Pas d'URL en DB → appel API
+    handleSelectEpisodeFromApi(ep.season_number, ep.episode_number, episodeTitle)
+  }
+
+  const handleSelectEpisodeFromApi = async (season: number, episode: number, episodeTitle: string) => {
+    setCurrentSeason(season)
+    setCurrentEpisode(episode)
+    setShowEpisodes(false)
+    setBuffering(true)
+    setInitialLoading(true)
+    setShowError(false)
+    setDisplayTitle(
+      type === 'series' && seriesName
+        ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
+        : episodeTitle
+    )
+    router.replace(`/watch/series/${tmdbId}?play=1&season=${season}&episode=${episode}`, { scroll: false })
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1300))
+      const res = await fetch(
+        `https://secret-cine-stream-flow.base44.app/api/series/${tmdbId}/${season}/${episode}`,
+        { cache: 'no-store' }
+      )
+      const text = await res.text()
+      const url = text.split('\n')[0].trim()
+      if (url && url.startsWith('http')) {
+        setVideoUrl(url)
+        loadVideo(url)
+      } else {
+        setShowError(true)
+        setInitialLoading(false)
+      }
+    } catch {
+      setShowError(true)
+      setInitialLoading(false)
+    }
   }
 
   const handleSelectEpisode = (season: number, episode: number, url: string, episodeTitle: string) => {
@@ -1018,7 +1306,7 @@ export function NativePlayer({
               </Link>
               <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
 
-              {type === 'series' && seriesDbId && (
+              {type === 'series' && (
                 <button
                   onClick={() => setShowEpisodes(true)}
                   className="flex items-center gap-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl transition-all border border-white/10 shrink-0"
@@ -1253,7 +1541,7 @@ export function NativePlayer({
 
       {/* Episodes panel */}
       <AnimatePresence>
-        {showEpisodes && seriesDbId && tmdbId && (
+        {showEpisodes && tmdbId && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} exit={{ opacity: 0 }}
@@ -1262,11 +1550,12 @@ export function NativePlayer({
             />
             <EpisodesPanel
               seriesDbId={seriesDbId}
-              tmdbId={tmdbId}
+              tmdbId={tmdbId!}
               currentSeason={currentSeason}
               currentEpisode={currentEpisode}
               onClose={() => setShowEpisodes(false)}
               onSelectEpisode={handleSelectEpisode}
+              onSelectEpisodeApi={handleSelectEpisodeFromApi}
             />
           </>
         )}
