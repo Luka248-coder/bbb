@@ -385,6 +385,11 @@ export function NativePlayer({
     videoStarted.current = true
   }, [])
 
+  const cancelErrorTimer = useCallback(() => {
+    if (errorTimer.current) { clearTimeout(errorTimer.current); errorTimer.current = null }
+    videoStarted.current = false
+  }, [])
+
   const saveProgress = useCallback(async () => {
     if (!userId || !tmdbId) return
     const ct = currentTimeRef.current
@@ -454,7 +459,7 @@ export function NativePlayer({
 
     setBuffering(true)
     setPlaying(false)
-    startErrorTimer()
+    setShowError(false)
 
     const isHls = url.includes('.m3u8')
 
@@ -480,9 +485,11 @@ export function NativePlayer({
         if (frIdx !== -1) hls.audioTrack = frIdx
 
         v.muted = true
+        startErrorTimer()
         v.play().then(() => {
           v.muted = false
         }).catch(() => {
+          cancelErrorTimer()
           setBuffering(false)
           setPlaying(false)
         })
@@ -524,19 +531,23 @@ export function NativePlayer({
     } else if (isHls && v.canPlayType('application/vnd.apple.mpegurl')) {
       v.src = url
       v.muted = true
+      startErrorTimer()
       v.play().then(() => { v.muted = false }).catch(() => {
+        cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
       })
     } else {
       v.src = url
       v.muted = true
+      startErrorTimer()
       v.play().then(() => { v.muted = false }).catch(() => {
+        cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
       })
     }
-  }, [startErrorTimer, clearErrorTimer])
+  }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
 
   // ─── Mount & video events ───────────────────────────────────────────────────
   useEffect(() => {
@@ -560,6 +571,13 @@ export function NativePlayer({
       }
     }
     const onPlay = () => { setPlaying(true); resetTimer() }
+    const onPlaying = () => {
+      setPlaying(true)
+      setBuffering(false)
+      setShowError(false)
+      clearErrorTimer()
+      resetTimer()
+    }
     const onPause = () => { setPlaying(false); setShowControls(true) }
     const onWaiting = () => setBuffering(true)
     const onCanPlay = () => {
@@ -582,6 +600,7 @@ export function NativePlayer({
     v.addEventListener('timeupdate', onTimeUpdate)
     v.addEventListener('loadedmetadata', onMeta)
     v.addEventListener('play', onPlay)
+    v.addEventListener('playing', onPlaying)
     v.addEventListener('pause', onPause)
     v.addEventListener('waiting', onWaiting)
     v.addEventListener('canplay', onCanPlay)
@@ -591,6 +610,7 @@ export function NativePlayer({
       v.removeEventListener('timeupdate', onTimeUpdate)
       v.removeEventListener('loadedmetadata', onMeta)
       v.removeEventListener('play', onPlay)
+      v.removeEventListener('playing', onPlaying)
       v.removeEventListener('pause', onPause)
       v.removeEventListener('waiting', onWaiting)
       v.removeEventListener('canplay', onCanPlay)
@@ -725,7 +745,19 @@ export function NativePlayer({
   // ─── Controls ───────────────────────────────────────────────────────────────
   const togglePlay = () => {
     const v = videoRef.current
-    if (v) v.paused ? v.play() : v.pause()
+    if (!v) return
+    if (v.paused) {
+      setShowError(false)
+      setBuffering(true)
+      startErrorTimer()
+      v.play().catch(() => {
+        cancelErrorTimer()
+        setBuffering(false)
+        setPlaying(false)
+      })
+    } else {
+      v.pause()
+    }
   }
 
   const skip = (s: number) => {
