@@ -265,34 +265,8 @@ function EpisodesPanel({
     </motion.div>
   )
 }
-  const [episodes, setEpisodes] = useState<Episode[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedSeason, setSelectedSeason] = useState(currentSeason)
-  const [showSeasonPicker, setShowSeasonPicker] = useState(false)
 
-  useEffect(() => {
-    fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
-      .then(r => r.json())
-      .then((data: Episode[]) => {
-        setEpisodes(data || [])
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }, [seriesDbId])
-
-  const seasons = [...new Set(episodes.map(e => e.season_number))].sort((a, b) => a - b)
-  const filteredEps = episodes.filter(e => e.season_number === selectedSeason)
-  const watchedCount = episodes.filter(e => e.video_url).length
-
-  return (
-    <motion.div
-      initial={{ x: '100%' }}
-      animate={{ x: 0 }}
-      exit={{ x: '100%' }}
-      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="absolute inset-y-0 right-0 w-full sm:w-96 bg-zinc-950/95 backdrop-blur-xl flex flex-col z-50 border-l border-white/5"
-      onClick={e => e.stopPropagation()}
-    >
+// ─── Main Player ───────────────────────────────────────────────────────────────
       {/* Header */}
       <div className="px-5 pt-6 pb-4 border-b border-white/10">
         <div className="flex items-center justify-between mb-1">
