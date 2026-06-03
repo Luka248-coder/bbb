@@ -952,15 +952,17 @@ export function NativePlayer({
     router.replace(`/watch/series/${tmdbId}?play=1&season=${season}&episode=${episode}`, { scroll: false })
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1300))
-      const res = await fetch(
-        `https://secret-cine-stream-flow.base44.app/api/series/${tmdbId}/${season}/${episode}`,
-        { cache: 'no-store' }
-      )
-      const text = await res.text()
-      const url = text.split('\n')[0].trim()
-      if (url && url.startsWith('http')) {
-        setVideoUrl(url) // le useEffect([videoUrl]) appellera loadVideo automatiquement
+      const params = new URLSearchParams({
+        tmdb_id: String(tmdbId),
+        type: 'series',
+        season: String(season),
+        episode: String(episode),
+        title: seriesName || '',
+      })
+      const res = await fetch(`/api/purstream?${params}`, { cache: 'no-store' })
+      const data = await res.json()
+      if (data.videoUrl) {
+        setVideoUrl(data.videoUrl) // le useEffect([videoUrl]) appellera loadVideo automatiquement
       } else {
         setShowError(true)
         setInitialLoading(false)
