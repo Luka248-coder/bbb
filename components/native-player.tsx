@@ -311,6 +311,7 @@ export function NativePlayer({
   const [buffering, setBuffering] = useState(true)
   const [initialLoading, setInitialLoading] = useState(false)
   const [showError, setShowError] = useState(false)
+  const [fetchingEpisode, setFetchingEpisode] = useState(false)
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showVol, setShowVol] = useState(false)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
@@ -938,12 +939,18 @@ export function NativePlayer({
   }
 
   const handleSelectEpisodeFromApi = async (season: number, episode: number, episodeTitle: string) => {
+    // Reset error timer immediately so it doesn't fire from a previous episode load
+    if (errorTimer.current) { clearTimeout(errorTimer.current); errorTimer.current = null }
+    if (autoReloadTimer.current) { clearTimeout(autoReloadTimer.current); autoReloadTimer.current = null }
+    sessionStorage.removeItem('player_reload_count')
+
     setCurrentSeason(season)
     setCurrentEpisode(episode)
     setShowEpisodes(false)
     setBuffering(true)
-    setInitialLoading(true)
+    setInitialLoading(false) // keep false until we actually have the URL and start loading
     setShowError(false)
+    setFetchingEpisode(true)
     setDisplayTitle(
       type === 'series' && seriesName
         ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
@@ -962,14 +969,21 @@ export function NativePlayer({
       const res = await fetch(`/api/purstream?${params}`, { cache: 'no-store' })
       const data = await res.json()
       if (data.videoUrl) {
+        // Only now set initialLoading=true so the 30s error timer starts after we have the URL
+        setInitialLoading(true)
+        setFetchingEpisode(false)
         setVideoUrl(data.videoUrl) // le useEffect([videoUrl]) appellera loadVideo automatiquement
       } else {
         setShowError(true)
         setInitialLoading(false)
+        setBuffering(false)
+        setFetchingEpisode(false)
       }
     } catch {
       setShowError(true)
       setInitialLoading(false)
+      setBuffering(false)
+      setFetchingEpisode(false)
     }
   }
 
@@ -1057,6 +1071,20 @@ export function NativePlayer({
       />
 
 
+
+      {/* Fetching episode spinner (while looking up URL from Purstream) */}
+      <AnimatePresence>
+        {fetchingEpisode && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[55] flex flex-col items-center justify-center gap-4"
+            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+          >
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
+            <p className="text-white/60 text-sm">{displayTitle}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 30s error popup */}
       <AnimatePresence>
