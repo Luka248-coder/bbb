@@ -960,8 +960,7 @@ export function NativePlayer({
       const text = await res.text()
       const url = text.split('\n')[0].trim()
       if (url && url.startsWith('http')) {
-        setVideoUrl(url)
-        loadVideo(url)
+        setVideoUrl(url) // le useEffect([videoUrl]) appellera loadVideo automatiquement
       } else {
         setShowError(true)
         setInitialLoading(false)
@@ -975,7 +974,7 @@ export function NativePlayer({
   const handleSelectEpisode = (season: number, episode: number, url: string, episodeTitle: string) => {
     setCurrentSeason(season)
     setCurrentEpisode(episode)
-    setVideoUrl(url)
+    setVideoUrl(url) // le useEffect([videoUrl]) appellera loadVideo automatiquement
     setTitle(episodeTitle)
     setDisplayTitle(
       type === 'series' && seriesName
@@ -986,7 +985,6 @@ export function NativePlayer({
     setBuffering(true)
     setInitialLoading(true)
     setShowError(false)
-    loadVideo(url)
     router.replace(`/watch/series/${tmdbId}?play=1&season=${season}&episode=${episode}`, { scroll: false })
   }
 
