@@ -652,19 +652,34 @@ export function NativePlayer({
         } else {
           const sNum = initialSeason || 1
           const eNum = initialEpisode || 1
-          if (items.seasons?.length) {
-            const s = items.seasons.find((s: any) => s.number === sNum || s.season === sNum)
-            const ep = s?.episodes?.find((e: any) => e.number === eNum || e.episode === eNum)
+
+          // Format 1 : seasons[].episodes[] (tableau)
+          if (Array.isArray(items.seasons) && items.seasons.length) {
+            const s = items.seasons.find((s: any) => Number(s.number ?? s.season ?? s.season_number) === sNum)
+            const ep = s?.episodes?.find((e: any) => Number(e.number ?? e.episode ?? e.episode_number) === eNum)
             url = ep?.urls?.[0]?.url || ep?.url || null
           }
-          if (!url && items.episodes?.length) {
+
+          // Format 2 : episodes[] plat (tableau)
+          if (!url && Array.isArray(items.episodes) && items.episodes.length) {
             const ep = items.episodes.find((e: any) =>
-              (e.season === sNum || e.seasonNumber === sNum) &&
-              (e.episode === eNum || e.number === eNum)
+              Number(e.season ?? e.season_number) === sNum &&
+              Number(e.episode ?? e.episode_number ?? e.number) === eNum
             )
             url = ep?.urls?.[0]?.url || ep?.url || null
           }
-          if (!url) url = items.urls?.[0]?.url || null
+
+          // Format 3 : liste plate d'URLs avec pattern /S1/E1/ dans l'URL
+          if (!url && Array.isArray(items.urls) && items.urls.length) {
+            const seRegex = /\/S(\d+)\/E(\d+)\//i
+            // Préférer 1080p, sinon prendre ce qui matche S/E
+            const candidates = items.urls.filter((u: any) => {
+              const m = u.url?.match(seRegex)
+              return m && parseInt(m[1]) === sNum && parseInt(m[2]) === eNum
+            })
+            const hd = candidates.find((u: any) => u.name?.includes('1080p'))
+            url = (hd || candidates[0])?.url || null
+          }
         }
 
         if (url) { setVideoUrl(url) }
