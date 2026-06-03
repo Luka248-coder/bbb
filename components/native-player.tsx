@@ -883,6 +883,16 @@ export function NativePlayer({
   const prevEp = currentIdx > 0 ? sortedEpisodes[currentIdx - 1] : null
   const nextEp = currentIdx < sortedEpisodes.length - 1 ? sortedEpisodes[currentIdx + 1] : null
 
+  const getEpisodePlayUrl = (season: number, episode: number) => {
+    const params = new URLSearchParams({
+      season: String(season),
+      episode: String(episode),
+      play: '1',
+    })
+
+    return `/watch/series/${tmdbId}?${params.toString()}`
+  }
+
   const goToEpisode = async (ep: Episode) => {
     const episodeTitle = ep.title || `Épisode ${ep.episode_number}`
     if (ep.video_url) {
@@ -905,7 +915,7 @@ export function NativePlayer({
         ? `${seriesName} - S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
         : episodeTitle
     )
-    router.replace(`/watch/series/${tmdbId}?play=1&season=${season}&episode=${episode}`, { scroll: false })
+    router.replace(getEpisodePlayUrl(season, episode), { scroll: false })
 
     try {
       const params = new URLSearchParams({
@@ -949,7 +959,7 @@ export function NativePlayer({
         : episodeTitle
     )
     setShowEpisodes(false)
-    router.replace(`/watch/series/${tmdbId}?play=1&season=${season}&episode=${episode}`, { scroll: false })
+    router.replace(getEpisodePlayUrl(season, episode), { scroll: false })
     if (videoUrl === url) {
       loadVideo(url)
     } else {
