@@ -77,20 +77,17 @@ function EpisodesPanel({
           }
         } catch {}
       }
-      // Fallback : TMDB
+      // Fallback : via notre API serveur (la clé TMDB est côté serveur uniquement)
       try {
         const r = await fetch(`/api/content/series/${tmdbId}`)
         const d = await r.json()
         const totalSeasons: number = d?.details?.number_of_seasons || 1
         const all: Episode[] = []
         for (let s = 1; s <= totalSeasons; s++) {
-          const sr = await fetch(
-            `https://api.themoviedb.org/3/tv/${tmdbId}/season/${s}?language=fr-FR`,
-            { headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_TOKEN || ''}` } }
-          )
+          const sr = await fetch(`/api/content/series/${tmdbId}?season=${s}`)
           if (!sr.ok) continue
           const sd = await sr.json()
-          for (const ep of (sd.episodes || [])) {
+          for (const ep of (sd.seasonData?.episodes || [])) {
             all.push({
               id: ep.id,
               series_id: 0,
@@ -899,15 +896,15 @@ export function NativePlayer({
 
     async function loadEpisodesFromTmdb() {
       try {
-        const res = await fetch(`/api/content/${type}/${tmdbId}`)
+        const res = await fetch(`/api/content/series/${tmdbId}`)
         const d = await res.json()
         const seasons: number = d?.details?.number_of_seasons || 1
         const fakeEpisodes: Episode[] = []
         for (let s = 1; s <= seasons; s++) {
-          const sr = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${s}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || ''}&language=fr-FR`)
+          const sr = await fetch(`/api/content/series/${tmdbId}?season=${s}`)
           if (!sr.ok) continue
           const sd = await sr.json()
-          for (const ep of (sd.episodes || [])) {
+          for (const ep of (sd.seasonData?.episodes || [])) {
             fakeEpisodes.push({
               id: ep.id,
               series_id: 0,
