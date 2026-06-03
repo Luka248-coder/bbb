@@ -6,6 +6,7 @@ import { Film, Tv } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getPosterUrl, type Movie, type Series } from '@/lib/content-types'
+import { useDrawer } from '@/components/movie-drawer'
 
 interface GenrePageProps {
   genreId: number
@@ -20,6 +21,7 @@ function isMovie(item: Movie | Series): item is Movie {
 
 export function GenrePage({ genreId, genreName, movies, series }: GenrePageProps) {
   const [tab, setTab] = useState<'movies' | 'series'>('movies')
+  const { openDrawer } = useDrawer()
 
   const items = tab === 'movies' ? movies : series
   const count = items.length
@@ -89,8 +91,8 @@ export function GenrePage({ genreId, genreName, movies, series }: GenrePageProps
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02 }}
               >
-                <Link href={`/watch/${type}/${tmdbId}`}>
-                  <div className="group cursor-pointer">
+                <div className="group cursor-pointer" onClick={() => openDrawer(type as 'movie' | 'series', tmdbId)}>
+                  <div>
                     <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 mb-2">
                       <Image
                         src={getPosterUrl(item.poster_path)}
@@ -114,7 +116,7 @@ export function GenrePage({ genreId, genreName, movies, series }: GenrePageProps
                     <p className="text-white text-xs font-semibold truncate">{title}</p>
                     {year && <p className="text-white/40 text-xs">{year}</p>}
                   </div>
-                </Link>
+                </div>
               </motion.div>
             )
           })}

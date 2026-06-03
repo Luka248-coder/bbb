@@ -8,6 +8,7 @@ import { Heart, Play, Trash2, Film, Tv, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getPosterUrl } from '@/lib/content-types'
 import type { Favorite } from '@/lib/types'
+import { useDrawer } from '@/components/movie-drawer'
 
 interface FavoritesListProps {
   userId: string
@@ -197,6 +198,7 @@ function EmptyState() {
 }
 
 function FavoriteCard({ favorite, onRemove }: { favorite: Favorite; onRemove: (tmdbId: number, contentType: string) => void }) {
+  const { openDrawer } = useDrawer()
   return (
     <motion.div
       layout
@@ -205,7 +207,7 @@ function FavoriteCard({ favorite, onRemove }: { favorite: Favorite; onRemove: (t
       exit={{ opacity: 0, scale: 0.9 }}
       className="group relative"
     >
-      <Link href={`/watch/${favorite.content_type}/${favorite.tmdb_id}`}>
+      <div className="cursor-pointer" onClick={() => openDrawer(favorite.content_type as 'movie' | 'series', favorite.tmdb_id)}>
         <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-card">
           <Image
             src={getPosterUrl(favorite.poster)}
@@ -221,7 +223,7 @@ function FavoriteCard({ favorite, onRemove }: { favorite: Favorite; onRemove: (t
             </button>
           </div>
         </div>
-      </Link>
+      </div>
       <button
         className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600/80"
         onClick={() => onRemove(favorite.tmdb_id, favorite.content_type)}

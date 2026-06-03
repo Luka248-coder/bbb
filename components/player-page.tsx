@@ -11,6 +11,7 @@ import {
   Film, Tv, User, ChevronDown, ChevronUp
 } from 'lucide-react'
 import useSWR from 'swr'
+import { useDrawer } from '@/components/movie-drawer'
 import {
   getTMDBPosterUrl, getTMDBBackdropUrl, getTMDBProfileUrl,
   formatRuntime, formatYear, getDirectors,
@@ -36,6 +37,7 @@ type TabType = 'synopsis' | 'casting' | 'similaires'
 
 export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId, isDrawer = false, onClose }: PlayerPageProps) {
   const router = useRouter()
+  const { openDrawer } = useDrawer()
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -519,7 +521,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               {collection.parts.map((item) => {
                 const isCurrent = item.id === tmdbId
                 return (
-                  <Link key={item.id} href={`/watch/movie/${item.id}`}>
+                  <div key={item.id} className="cursor-pointer" onClick={() => openDrawer('movie', item.id)}>
                     <div className="flex-shrink-0 w-[155px] cursor-pointer group">
                       <div
                         className="relative w-[155px] h-[220px] rounded-2xl overflow-hidden mb-3"
@@ -557,7 +559,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                         <span className="text-white/30 text-[11px] font-semibold">{formatYear(item.release_date)}</span>
                       )}
                     </div>
-                  </Link>
+                  </div>
                 )
               })}
             </div>
@@ -581,7 +583,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                   return map[id] || ''
                 }).filter(Boolean)
                 return (
-                  <Link key={item.id} href={`/watch/${type}/${item.id}`}>
+                  <div key={item.id} className="cursor-pointer" onClick={() => openDrawer(type as 'movie' | 'series', item.id)}>
                     <div className="flex-shrink-0 w-[155px] cursor-pointer group">
                       <div className="relative w-[155px] h-[220px] rounded-2xl overflow-hidden mb-3 bg-white/5"
                         style={{ border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
@@ -601,7 +603,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                         {genreNames.length > 0 && <span className="text-white/30 text-[11px] font-semibold uppercase tracking-wide">{genreNames[0]}</span>}
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 )
               })}
             </div>

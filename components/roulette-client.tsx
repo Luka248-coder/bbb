@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Shuffle, Play, Star } from 'lucide-react'
 import { GENRES, getPosterUrl } from '@/lib/content-types'
+import { useDrawer } from '@/components/movie-drawer'
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
 const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#ffffff']
@@ -174,6 +175,7 @@ const COMMON_GENRES = [28, 35, 18, 27, 878, 10749, 16, 53, 12, 80, 14, 99]
 interface Props { userId: string | null }
 
 export function RouletteClient({ userId }: Props) {
+  const { openDrawer } = useDrawer()
   const [allContent, setAllContent] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [spinning, setSpinning] = useState(false)
@@ -334,11 +336,12 @@ export function RouletteClient({ userId }: Props) {
 
                         {result && !spinning && (
                           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex-shrink-0">
-                            <Link href={`/watch/${result.type}/${result.tmdb_id}`}
+                            <button
+                              onClick={() => openDrawer(result.type as 'movie' | 'series', result.tmdb_id)}
                               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors">
                               <Play className="w-3.5 h-3.5 fill-white" />
                               Regarder
-                            </Link>
+                            </button>
                           </motion.div>
                         )}
                       </div>

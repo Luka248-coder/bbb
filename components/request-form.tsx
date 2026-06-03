@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Film, Tv, Star, Check, X, Send, Sparkles, ArrowLeft, Play } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useDrawer } from '@/components/movie-drawer'
 
 interface TMDBResult {
   id: number
@@ -23,6 +24,7 @@ interface RequestFormProps {
 }
 
 export function RequestForm({ userId }: RequestFormProps) {
+  const { openDrawer } = useDrawer()
   const [tab, setTab] = useState<'movie' | 'series'>('movie')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TMDBResult[]>([])
@@ -313,12 +315,13 @@ export function RequestForm({ userId }: RequestFormProps) {
           {selected && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {alreadyAvailable ? (
-                <Link href={`/watch/${tab}/${selected.id}`}>
-                  <button className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-green-500/20">
-                    <Play className="w-5 h-5 fill-current" />
-                    Regarder maintenant →
-                  </button>
-                </Link>
+                <button
+                  onClick={() => openDrawer(tab as 'movie' | 'series', selected.id)}
+                  className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-green-500/20"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  Regarder maintenant →
+                </button>
               ) : (
                 <button onClick={handleSend} disabled={sending}
                   className="w-full flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-primary/20">

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Info, Star, Clock, BookmarkPlus } from 'lucide-react'
 import { getBackdropUrl, getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
+import { useDrawer } from '@/components/movie-drawer'
 
 interface HeroProps {
   content: (Movie | Series)[]
@@ -17,6 +18,7 @@ function isMovie(item: Movie | Series): item is Movie {
 
 export function Hero({ content }: HeroProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const { openDrawer } = useDrawer()
   const featured = content.slice(0, 5)
 
   useEffect(() => {
@@ -167,12 +169,13 @@ export function Hero({ content }: HeroProps) {
               </Link>
 
               {/* Fiche */}
-              <Link href={`/watch/${type}/${tmdbId}`}>
-                <button className="flex items-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold px-6 py-3.5 rounded-2xl border border-white/15 transition-all text-sm">
-                  <Info className="w-4 h-4" />
-                  Plus d&apos;infos
-                </button>
-              </Link>
+              <button
+                onClick={() => openDrawer(type as 'movie' | 'series', tmdbId)}
+                className="flex items-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold px-6 py-3.5 rounded-2xl border border-white/15 transition-all text-sm"
+              >
+                <Info className="w-4 h-4" />
+                Plus d&apos;infos
+              </button>
 
               {/* Favoris */}
               <button className="flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white w-12 h-12 rounded-2xl border border-white/15 transition-all">
