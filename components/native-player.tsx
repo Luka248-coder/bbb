@@ -499,7 +499,16 @@ export function NativePlayer({
         )
         if (frIdx !== -1) hls.audioTrack = frIdx
 
-        v.play().catch(() => {})
+        // Mute first to bypass autoplay policy, then unmute once playing
+        v.muted = true
+        v.play().then(() => {
+          v.muted = false
+        }).catch(() => {
+          // Autoplay blocked entirely — show play button, user must tap
+          setBuffering(false)
+          setInitialLoading(false)
+          setPlaying(false)
+        })
       })
 
       // Force sync duration/time after HLS attaches (fixes 0:00 / 0:00 bug)
@@ -539,11 +548,21 @@ export function NativePlayer({
     } else if (isHls && v.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari : HLS natif
       v.src = url
-      v.play().catch(() => {})
+      v.muted = true
+      v.play().then(() => { v.muted = false }).catch(() => {
+        setBuffering(false)
+        setInitialLoading(false)
+        setPlaying(false)
+      })
     } else {
       // MP4 natif
       v.src = url
-      v.play().catch(() => {})
+      v.muted = true
+      v.play().then(() => { v.muted = false }).catch(() => {
+        setBuffering(false)
+        setInitialLoading(false)
+        setPlaying(false)
+      })
     }
   }, [])
 
@@ -578,6 +597,13 @@ export function NativePlayer({
       setInitialLoading(false)
       setShowError(false)
       if (errorTimer.current) clearTimeout(errorTimer.current)
+      // If video is paused (autoplay was blocked), attempt play here
+      if (v.paused) {
+        v.muted = true
+        v.play().then(() => { v.muted = false }).catch(() => {
+          setPlaying(false)
+        })
+      }
     }
     const onProgress = () => {
       if (v.buffered.length > 0) {
@@ -1097,7 +1123,7 @@ export function NativePlayer({
 
       {/* Big play icon */}
       <AnimatePresence>
-        {!playing && !buffering && (
+        {!playing && !initialLoading && (
           <motion.div
             initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
