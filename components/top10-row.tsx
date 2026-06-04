@@ -30,9 +30,9 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
   return (
     <section className="relative py-6">
-      <div className="px-4 mb-5 flex items-center gap-3">
+      <div className="px-4 mb-5 flex items-center gap-3" style={{ paddingLeft: '2.5rem' }}>
         <div className="w-[3px] rounded-full self-stretch" style={{ background: `linear-gradient(to bottom, ${accentColor}, transparent)`, minHeight: '2rem' }} />
-        <h2 className="text-2xl md:text-3xl font-black text-white">{title}</h2>
+        <h2 className="text-lg md:text-xl font-black text-white">{title}</h2>
       </div>
 
       <div className="relative group">

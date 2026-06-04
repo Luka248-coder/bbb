@@ -80,7 +80,7 @@ export function ContentRow({ title, content, type, showRank = false, accentColor
 
   return (
     <section className="relative py-6">
-      <div className="px-4 mb-4 flex items-center justify-between">
+      <div className="px-4 mb-4 flex items-center justify-between" style={{ paddingLeft: '2.5rem' }}>
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -94,7 +94,7 @@ export function ContentRow({ title, content, type, showRank = false, accentColor
               minHeight: '2rem',
             }}
           />
-          <h2 className="text-2xl md:text-3xl font-black text-white">
+          <h2 className="text-lg md:text-xl font-black text-white">
             {title}
           </h2>
         </motion.div>
