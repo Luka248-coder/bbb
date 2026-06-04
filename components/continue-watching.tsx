@@ -105,7 +105,13 @@ export function ContinueWatching() {
                 onClick={() => openDrawer(item.content_type, item.content_id)}
                 className="w-full text-left appearance-none bg-transparent outline-none cursor-pointer"
               >
-                <div className="relative overflow-hidden rounded-xl bg-zinc-800 aspect-[2/3]">
+                <div className="relative bg-zinc-800 aspect-[2/3]"
+                  style={{
+                    borderRadius: '0.75rem',
+                    transform: 'scale(1)',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  }}>
+                  <div className="absolute inset-0 overflow-hidden" style={{ borderRadius: '0.75rem' }}>
                   {item.poster_url ? (
                     <Image
                       src={item.poster_url}
@@ -144,6 +150,7 @@ export function ContinueWatching() {
 
                   <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-lg">
                     {item.progress}%
+                  </div>
                   </div>
                 </div>
 
