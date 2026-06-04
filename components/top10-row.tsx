@@ -51,40 +51,38 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
           <ChevronRight className="w-5 h-5 text-white" />
         </button>
 
-        {/* Le conteneur scroll a overflow visible pour que le chiffre déborde */}
-        <div style={{ overflowX: 'auto', overflowY: 'visible', scrollbarWidth: 'none' }}>
-          <div
-            ref={scrollRef}
-            className="flex"
-            style={{
-              gap: '3rem',         /* espace entre les cartes pour voir le chiffre */
-              paddingLeft: 'max(4rem, calc((100% - 80rem) / 2 + 4rem))',
-              paddingRight: '2rem',
-              paddingTop: '0.5rem',
-              paddingBottom: '0.5rem',
-              width: 'max-content',
-            }}
-          >
-            {items.map((item, i) => {
-              const t = isMovie(item) ? item.title : item.name
-              const tmdbId = (item as any).tmdb_id || item.id
-              const genres = getGenreNames(item.genre_ids || []).slice(0, 1)
-              return (
-                <Top10Card
-                  key={item.id}
-                  item={item}
-                  rank={i + 1}
-                  title={t}
-                  tmdbId={tmdbId}
-                  type={type}
-                  genres={genres}
-                  accentColor={accentColor}
-                  index={i}
-                  onOpen={() => openDrawer(type as 'movie' | 'series', tmdbId)}
-                />
-              )
-            })}
-          </div>
+        <div
+          ref={scrollRef}
+          className="flex"
+          style={{
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            flexWrap: 'nowrap',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))',
+            paddingRight: '1.5rem',
+          }}
+        >
+          {items.map((item, i) => {
+            const t = isMovie(item) ? item.title : item.name
+            const tmdbId = (item as any).tmdb_id || item.id
+            const genres = getGenreNames(item.genre_ids || []).slice(0, 1)
+            return (
+              <Top10Card
+                key={item.id}
+                item={item}
+                rank={i + 1}
+                title={t}
+                tmdbId={tmdbId}
+                type={type}
+                genres={genres}
+                accentColor={accentColor}
+                index={i}
+                onOpen={() => openDrawer(type as 'movie' | 'series', tmdbId)}
+              />
+            )
+          })}
         </div>
       </div>
     </section>
@@ -113,34 +111,33 @@ function Top10Card({
   const numColor = rank <= 3 ? accentColor : '#ffffff'
   const numShadow = rank <= 3
     ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
-    : `3px 5px 0 rgba(0,0,0,0.95), 0 0 0 3px rgba(80,80,80,0.3)`
+    : `3px 5px 0 rgba(0,0,0,0.95)`
 
+  /* Chaque item = chiffre à gauche + carte à droite, dans un flex row */
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="relative flex-shrink-0 cursor-pointer"
-      style={{ width: 260 }}
+      className="flex-shrink-0 flex items-center cursor-pointer"
+      style={{ gap: '0.25rem' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Chiffre centré verticalement, à cheval sur le bord gauche de la carte */}
+      {/* Chiffre à gauche, complètement en dehors de la carte */}
       <div
-        className="absolute font-black leading-none select-none pointer-events-none"
+        className="flex-shrink-0 font-black leading-none select-none pointer-events-none text-center"
         style={{
-          fontSize: '9rem',
+          fontSize: '8rem',
           lineHeight: 1,
           fontFamily: 'Arial Black, Impact, sans-serif',
           color: numColor,
           textShadow: numShadow,
           WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(120,120,120,0.5)',
-          top: '50%',
-          left: '-2.5rem',          /* moitié dehors, moitié dedans */
-          transform: `translateY(-50%) ${hovered ? 'scale(1.08)' : 'scale(1)'}`,
+          width: rank < 10 ? '5rem' : '6.5rem',
           transition: 'transform 0.3s',
-          zIndex: 20,
+          transform: hovered ? 'scale(1.08)' : 'scale(1)',
         }}
       >
         {rank}
@@ -148,8 +145,9 @@ function Top10Card({
 
       {/* Carte image */}
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-hidden flex-shrink-0"
         style={{
+          width: 260,
           borderRadius: '14px',
           aspectRatio: '16/9',
           boxShadow: hovered
