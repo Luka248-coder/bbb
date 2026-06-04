@@ -118,28 +118,50 @@ function Top10Card({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
       className="relative flex-shrink-0 cursor-pointer"
-      style={{ width: 300 }}
+      style={{ width: 280, marginLeft: index === 0 ? 0 : '0.5rem' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Layout : numéro à gauche + carte à droite */}
-      <div className="flex items-end gap-0">
-        {/* Numéro géant */}
+      {/* Carte image */}
+      <div
+        className="relative overflow-hidden transition-all duration-300"
+        style={{
+          borderRadius: '14px',
+          aspectRatio: '16/9',
+          boxShadow: hovered
+            ? `0 20px 50px rgba(0,0,0,0.8), 0 0 0 2px ${accentColor}`
+            : '0 8px 24px rgba(0,0,0,0.6)',
+          transform: hovered ? 'scale(1.03) translateY(-4px)' : 'scale(1)',
+        }}
+      >
+        <Image
+          src={imgSrc}
+          alt={title}
+          fill
+          className="object-cover transition-transform duration-500"
+          style={{ transform: hovered ? 'scale(1.06)' : 'scale(1)' }}
+        />
+
+        {/* Dégradé bas */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 40%, transparent 100%)'
+        }} />
+
+        {/* Numéro géant par dessus l'image, en bas à gauche */}
         <div
-          className="flex-shrink-0 font-black leading-none select-none pointer-events-none"
+          className="absolute z-20 font-black leading-none select-none pointer-events-none"
           style={{
             fontSize: '8rem',
             lineHeight: 1,
             fontFamily: 'Arial Black, Impact, sans-serif',
             color: rank <= 3 ? accentColor : '#ffffff',
-            WebkitTextStroke: rank <= 3 ? '0px' : '3px rgba(180,180,180,0.6)',
+            WebkitTextStroke: rank <= 3 ? '0px' : '3px rgba(180,180,180,0.5)',
             textShadow: rank <= 3
-              ? `0 0 40px ${accentColor}60, 2px 4px 0 rgba(0,0,0,0.9)`
-              : `2px 4px 0 rgba(0,0,0,0.9)`,
-            width: rank < 10 ? '4.5rem' : '6rem',
-            textAlign: 'center',
-            marginBottom: '-0.1em',
+              ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
+              : `3px 5px 0 rgba(0,0,0,0.95)`,
+            bottom: '-0.05em',
+            left: '0.1em',
             transition: 'all 0.3s',
             transform: hovered ? 'scale(1.05)' : 'scale(1)',
           }}
@@ -147,56 +169,30 @@ function Top10Card({
           {rank}
         </div>
 
-        {/* Carte image */}
-        <div
-          className="relative overflow-hidden transition-all duration-300 flex-1"
-          style={{
-            borderRadius: '14px',
-            aspectRatio: '16/9',
-            boxShadow: hovered
-              ? `0 20px 50px rgba(0,0,0,0.8), 0 0 0 2px ${accentColor}`
-              : '0 8px 24px rgba(0,0,0,0.6)',
-            transform: hovered ? 'scale(1.03) translateY(-4px)' : 'scale(1)',
-          }}
-        >
-          <Image
-            src={imgSrc}
-            alt={title}
-            fill
-            className="object-cover transition-transform duration-500"
-            style={{ transform: hovered ? 'scale(1.06)' : 'scale(1)' }}
-          />
-
-          {/* Dégradé bas */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 45%, transparent 100%)'
-          }} />
-
-          {/* Bouton play hover */}
-          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }}>
-              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-            </div>
+        {/* Bouton play hover */}
+        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }}>
+            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
           </div>
+        </div>
 
-          {/* Infos bas */}
-          <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6">
-            <p className="text-white font-black text-[13px] uppercase tracking-wide truncate leading-tight mb-1">
-              {title}
-            </p>
-            <div className="flex items-center gap-1.5 text-[11px]">
-              {item.vote_average && (
-                <span className="text-yellow-400 font-bold flex items-center gap-0.5">
-                  ★ {item.vote_average.toFixed(1)}
-                </span>
-              )}
-              {genres[0] && (
-                <>
-                  <span className="text-white/30">·</span>
-                  <span className="text-white/50 uppercase tracking-wider font-medium">{genres[0]}</span>
-                </>
-              )}
-            </div>
+        {/* Infos bas droite */}
+        <div className="absolute bottom-0 right-0 px-3 pb-2.5 pt-6" style={{ left: rank < 10 ? '5rem' : '6.5rem' }}>
+          <p className="text-white font-black text-[13px] uppercase tracking-wide truncate leading-tight mb-1">
+            {title}
+          </p>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            {item.vote_average && (
+              <span className="text-yellow-400 font-bold flex items-center gap-0.5">
+                ★ {item.vote_average.toFixed(1)}
+              </span>
+            )}
+            {genres[0] && (
+              <>
+                <span className="text-white/30">·</span>
+                <span className="text-white/50 uppercase tracking-wider font-medium">{genres[0]}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
