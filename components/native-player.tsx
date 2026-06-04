@@ -528,9 +528,9 @@ export function NativePlayer({
           durationRef.current = v.duration
         }
         setBuffering(false)
-        setPlaying(true)
+        // Ne PAS appeler resetTimer ici : FRAG_CHANGED fire toutes les ~6-10s
+        // ce qui ferait réapparaître les contrôles sans action utilisateur
         clearErrorTimer()
-        resetTimerRef.current?.()
       })
 
       hls.on(Hls.Events.ERROR, (_e, data) => {
@@ -595,7 +595,8 @@ export function NativePlayer({
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
-      resetTimer()
+      // Ne PAS appeler resetTimer ici : onPlaying fire à chaque segment HLS (~10s)
+      // ce qui ferait réapparaître les contrôles en permanence
     }
     const onPause = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
     const onEnded = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
