@@ -41,6 +41,8 @@ export function Hero({ content }: HeroProps) {
 
   return (
     <section className="relative w-full overflow-hidden" style={{ height: '78vh', minHeight: 520, maxHeight: 780 }}>
+      {/* Fondu bas fixe — en dehors de l'animation pour ne pas scroller */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none" style={{ height: '45%', background: 'linear-gradient(to top, #0a0506 0%, rgba(10,5,6,0.97) 15%, rgba(10,5,6,0.7) 35%, transparent 100%)' }} />
 
       {/* Backdrop plein écran */}
       <AnimatePresence mode="wait">
@@ -62,10 +64,7 @@ export function Hero({ content }: HeroProps) {
           <div className="absolute inset-0" style={{
             background: 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.1) 75%, transparent 100%)'
           }} />
-          {/* Dégradé bas — fond vers la couleur du site */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, #0a0506 0%, rgba(10,5,6,0.98) 12%, rgba(10,5,6,0.85) 25%, rgba(10,5,6,0.4) 45%, transparent 70%)'
-          }} />
+
           {/* Léger vignette haut */}
           <div className="absolute inset-0" style={{
             background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%)'
