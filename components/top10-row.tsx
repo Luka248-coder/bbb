@@ -59,12 +59,14 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
           className="flex gap-0"
           style={{
             overflowX: 'auto',
-            overflowY: 'hidden',
+            overflowY: 'visible',
             flexWrap: 'nowrap',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))',
             paddingRight: '1.5rem',
+            paddingTop: '1rem',
+            paddingBottom: '1rem',
           }}
         >
           {items.map((item, i) => {
@@ -118,11 +120,36 @@ function Top10Card({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
       className="relative flex-shrink-0 cursor-pointer"
-      style={{ width: 280, marginLeft: index === 0 ? 0 : '0.5rem' }}
+      style={{
+        width: 320,
+        marginLeft: index === 0 ? '4rem' : '-1rem',
+        paddingLeft: index === 0 ? 0 : 0,
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
+      {/* Numéro géant à gauche, par dessus l'image */}
+      <div
+        className="absolute z-20 font-black leading-none select-none pointer-events-none"
+        style={{
+          fontSize: '9rem',
+          lineHeight: 1,
+          fontFamily: 'Arial Black, Impact, sans-serif',
+          color: rank <= 3 ? accentColor : '#ffffff',
+          WebkitTextStroke: rank <= 3 ? '0px' : '3px rgba(150,150,150,0.5)',
+          textShadow: rank <= 3
+            ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
+            : `3px 5px 0 rgba(0,0,0,0.95)`,
+          bottom: 8,
+          left: 8,
+          transition: 'all 0.3s',
+          transform: hovered ? 'scale(1.05)' : 'scale(1)',
+        }}
+      >
+        {rank}
+      </div>
+
       {/* Carte image */}
       <div
         className="relative overflow-hidden transition-all duration-300"
@@ -148,27 +175,6 @@ function Top10Card({
           background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 40%, transparent 100%)'
         }} />
 
-        {/* Numéro géant par dessus l'image, en bas à gauche */}
-        <div
-          className="absolute z-20 font-black leading-none select-none pointer-events-none"
-          style={{
-            fontSize: '8rem',
-            lineHeight: 1,
-            fontFamily: 'Arial Black, Impact, sans-serif',
-            color: rank <= 3 ? accentColor : '#ffffff',
-            WebkitTextStroke: rank <= 3 ? '0px' : '3px rgba(180,180,180,0.5)',
-            textShadow: rank <= 3
-              ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
-              : `3px 5px 0 rgba(0,0,0,0.95)`,
-            bottom: '-0.05em',
-            left: '0.1em',
-            transition: 'all 0.3s',
-            transform: hovered ? 'scale(1.05)' : 'scale(1)',
-          }}
-        >
-          {rank}
-        </div>
-
         {/* Bouton play hover */}
         <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }}>
@@ -176,8 +182,8 @@ function Top10Card({
           </div>
         </div>
 
-        {/* Infos bas droite */}
-        <div className="absolute bottom-0 right-0 px-3 pb-2.5 pt-6" style={{ left: rank < 10 ? '5rem' : '6.5rem' }}>
+        {/* Infos bas */}
+        <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6">
           <p className="text-white font-black text-[13px] uppercase tracking-wide truncate leading-tight mb-1">
             {title}
           </p>
