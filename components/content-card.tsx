@@ -59,7 +59,7 @@ export function ContentCard({
 
       <div
         className={cn(
-          'relative overflow-hidden cursor-pointer bg-card',
+          'relative cursor-pointer bg-card',
           showRank ? 'w-40 md:w-52 ml-8' : 'w-44 md:w-56',
           'aspect-[2/3]',
         )}
@@ -69,6 +69,9 @@ export function ContentCard({
           boxShadow: hovered ? '0 20px 48px rgba(0,0,0,0.7)' : '0 4px 16px rgba(0,0,0,0.4)',
           transform: hovered ? 'scale(1.03)' : 'scale(1)',
           transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+          overflow: 'hidden',
+          willChange: 'transform',
+          isolation: 'isolate',
         }}
         onClick={() => !hovered && openDrawer(type, tmdbId)}
       >
