@@ -40,9 +40,7 @@ export function Hero({ content }: HeroProps) {
   const genres = getGenreNames(current.genre_ids || []).slice(0, 3)
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ height: '78vh', minHeight: 520, maxHeight: 780 }}>
-      {/* Fondu bas fixe — en dehors de l'animation pour ne pas scroller */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none" style={{ height: '45%', background: 'linear-gradient(to top, #0a0506 0%, rgba(10,5,6,0.97) 15%, rgba(10,5,6,0.7) 35%, transparent 100%)' }} />
+    <section className="relative w-full overflow-hidden" style={{ height: '100vh', minHeight: 600, maxHeight: 950 }}>
 
       {/* Backdrop plein écran */}
       <AnimatePresence mode="wait">
@@ -64,6 +62,11 @@ export function Hero({ content }: HeroProps) {
           <div className="absolute inset-0" style={{
             background: 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.1) 75%, transparent 100%)'
           }} />
+          {/* Dégradé bas très progressif vers la couleur exacte du fond */}
+          <div className="absolute inset-x-0 bottom-0" style={{
+            height: '65%',
+            background: 'linear-gradient(to top, #0a0506 0%, #0a0506 5%, rgba(10,5,6,0.93) 18%, rgba(10,5,6,0.6) 38%, rgba(10,5,6,0.15) 60%, transparent 100%)'
+          }} />
 
           {/* Léger vignette haut */}
           <div className="absolute inset-0" style={{
@@ -73,7 +76,7 @@ export function Hero({ content }: HeroProps) {
       </AnimatePresence>
 
       {/* Contenu gauche */}
-      <div className="relative h-full flex items-center px-8 md:px-16 lg:px-24">
+      <div className="relative h-full flex items-end pb-24 px-8 md:px-16 lg:px-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
