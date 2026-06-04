@@ -120,7 +120,7 @@ function Top10Card({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className="flex-shrink-0 flex items-center cursor-pointer"
-      style={{ gap: '0.25rem' }}
+      style={{ gap: '0' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
@@ -135,7 +135,7 @@ function Top10Card({
           color: numColor,
           textShadow: numShadow,
           WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(120,120,120,0.5)',
-          width: rank < 10 ? '5rem' : '6.5rem',
+          width: rank < 10 ? '3.5rem' : '5rem',
           transition: 'transform 0.3s',
           transform: hovered ? 'scale(1.08)' : 'scale(1)',
         }}
