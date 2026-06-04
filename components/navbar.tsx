@@ -435,7 +435,7 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 12, scale: 0.95 }}
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                        className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl"
+                        className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl max-sm:fixed max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:right-auto max-sm:w-[92vw] max-sm:top-16"
                         style={{
                           background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
                           border: '1px solid rgba(255,255,255,0.09)',
