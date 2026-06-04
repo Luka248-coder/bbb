@@ -119,8 +119,8 @@ function Top10Card({
       transition={{ delay: index * 0.05 }}
       className="relative flex-shrink-0 cursor-pointer"
       style={{
-        width: 320,
-        marginLeft: index === 0 ? 0 : '-2rem', // léger chevauchement
+        width: 340,
+        marginLeft: index === 0 ? 0 : '-1rem',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -133,9 +133,11 @@ function Top10Card({
           fontSize: '9rem',
           lineHeight: 1,
           fontFamily: 'Arial Black, Impact, sans-serif',
-          color: accentColor,
-          WebkitTextStroke: '0px',
-          textShadow: `0 0 40px ${accentColor}60, 2px 4px 0 rgba(0,0,0,0.9)`,
+          color: rank <= 3 ? accentColor : '#ffffff',
+          WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(255,255,255,0.3)',
+          textShadow: rank <= 3
+            ? `0 0 40px ${accentColor}60, 2px 4px 0 rgba(0,0,0,0.9)`
+            : `2px 4px 0 rgba(0,0,0,0.9)`,
           bottom: '-0.15em',
           left: '-0.05em',
           transition: 'all 0.3s',
@@ -149,7 +151,7 @@ function Top10Card({
       <div
         className="relative overflow-hidden transition-all duration-300"
         style={{
-          marginLeft: rank < 10 ? '3.5rem' : '5rem',
+          marginLeft: rank < 10 ? '5rem' : '6.5rem',
           borderRadius: '14px',
           aspectRatio: '16/9',
           boxShadow: hovered
