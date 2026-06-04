@@ -105,11 +105,22 @@ export async function getMovieDetails(tmdbId: number): Promise<TMDBMovieDetails 
   try {
     const response = await fetch(
       `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
-      { next: { revalidate: 3600 } } // Cache for 1 hour
+      { next: { revalidate: 3600 } }
     )
-    
     if (!response.ok) return null
-    return await response.json()
+    const data = await response.json()
+    // Fallback EN si synopsis FR vide
+    if (!data.overview) {
+      const enRes = await fetch(
+        `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US`,
+        { next: { revalidate: 3600 } }
+      )
+      if (enRes.ok) {
+        const enData = await enRes.json()
+        data.overview = enData.overview || ''
+      }
+    }
+    return data
   } catch (error) {
     console.error('Error fetching movie details:', error)
     return null
@@ -123,9 +134,20 @@ export async function getSeriesDetails(tmdbId: number): Promise<TMDBSeriesDetail
       `${TMDB_BASE_URL}/tv/${tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
       { next: { revalidate: 3600 } }
     )
-    
     if (!response.ok) return null
-    return await response.json()
+    const data = await response.json()
+    // Fallback EN si synopsis FR vide
+    if (!data.overview) {
+      const enRes = await fetch(
+        `${TMDB_BASE_URL}/tv/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US`,
+        { next: { revalidate: 3600 } }
+      )
+      if (enRes.ok) {
+        const enData = await enRes.json()
+        data.overview = enData.overview || ''
+      }
+    }
+    return data
   } catch (error) {
     console.error('Error fetching series details:', error)
     return null

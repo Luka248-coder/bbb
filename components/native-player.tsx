@@ -327,6 +327,7 @@ export function NativePlayer({
   const titleRef = useRef(initialTitle)
   const resumeTimeRef = useRef(0)
 
+  const playingRef = useRef(false)
   const syncVideoState = useCallback((video: HTMLVideoElement) => {
     const nextTime = Number.isFinite(video.currentTime) ? video.currentTime : 0
     const nextDuration = Number.isFinite(video.duration) ? video.duration : 0
@@ -339,7 +340,12 @@ export function NativePlayer({
       durationRef.current = nextDuration
     }
 
-    setPlaying(!video.paused && !video.ended)
+    // Ne mettre à jour playing que si la valeur change vraiment (évite re-renders inutiles)
+    const nextPlaying = !video.paused && !video.ended
+    if (nextPlaying !== playingRef.current) {
+      playingRef.current = nextPlaying
+      setPlaying(nextPlaying)
+    }
   }, [])
 
   useEffect(() => {
