@@ -110,6 +110,15 @@ export function ContentCard({
               className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-10"
               style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 70%, transparent)' }}
             >
+              {/* Bouton play centré */}
+              <div className="absolute inset-x-0 bottom-12 flex justify-center pointer-events-none">
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }}
+                >
+                  <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                </div>
+              </div>
               <p className="text-white font-black text-sm leading-tight truncate uppercase tracking-wide mb-1">{title}</p>
               <p className="text-white/50 text-xs">{year}</p>
             </motion.div>
