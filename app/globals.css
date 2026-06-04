@@ -150,7 +150,7 @@
 }
 
 /* Grid background — keep visible */
-html { background: #12080a !important; }
+html { background: #12080a !important; zoom: 0.85; }
 body { background: transparent !important; }
 .bg-background { background-color: rgba(18,8,10,0.82) !important; }
 .bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(18,8,10,0.82) !important; }
