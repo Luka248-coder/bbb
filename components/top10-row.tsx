@@ -119,8 +119,8 @@ function Top10Card({
       transition={{ delay: index * 0.05 }}
       className="relative flex-shrink-0 cursor-pointer"
       style={{
-        width: 340,
-        marginLeft: index === 0 ? 0 : '-1rem',
+        width: 360,
+        marginLeft: index === 0 ? 0 : '0.5rem',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -151,7 +151,7 @@ function Top10Card({
       <div
         className="relative overflow-hidden transition-all duration-300"
         style={{
-          marginLeft: rank < 10 ? '5rem' : '6.5rem',
+          marginLeft: rank < 10 ? '7rem' : '8.5rem',
           borderRadius: '14px',
           aspectRatio: '16/9',
           boxShadow: hovered
