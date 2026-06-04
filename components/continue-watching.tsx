@@ -36,15 +36,28 @@ export function ContinueWatching() {
         setItems(unfinished)
         Promise.all(unfinished.map(async (item: WatchItem) => {
           try {
-            const r = await fetch(`/api/content/${item.content_type === 'movie' ? 'movie' : 'tv'}/${item.content_id}`, { cache: 'force-cache' })
-            if (!r.ok) return { id: item.content_id, logo: null }
+            const apiType = item.content_type === 'movie' ? 'movie' : 'series'
+            const r = await fetch(`/api/content/${apiType}/${item.content_id}`, { cache: 'force-cache' })
+            if (!r.ok) return { id: item.content_id, logo: null, poster: null }
             const d = await r.json()
-            return { id: item.content_id, logo: d.logo ?? null }
-          } catch { return { id: item.content_id, logo: null } }
+            // Récupérer le poster TMDB si absent en BDD
+            const poster = d.details?.poster_path
+              ? `https://image.tmdb.org/t/p/w500${d.details.poster_path}`
+              : null
+            return { id: item.content_id, logo: d.logo ?? null, poster }
+          } catch { return { id: item.content_id, logo: null, poster: null } }
         })).then(results => {
-          const map: Record<number, string | null> = {}
-          results.forEach(({ id, logo }: { id: number; logo: string | null }) => { map[id] = logo })
-          setLogos(map)
+          const logoMap: Record<number, string | null> = {}
+          const posterMap: Record<number, string | null> = {}
+          results.forEach(({ id, logo, poster }: { id: number; logo: string | null; poster: string | null }) => {
+            logoMap[id] = logo
+            posterMap[id] = poster
+          })
+          setLogos(logoMap)
+          setItems(prev => prev.map(item => ({
+            ...item,
+            poster_url: item.poster_url || posterMap[item.content_id] || null
+          })))
         })
       })
       .catch(() => {})
