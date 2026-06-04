@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContentCard } from '@/components/content-card'
+import { Top10Row } from '@/components/top10-row'
 import type { Movie, Series } from '@/lib/content-types'
 
 interface ContentRowProps {
@@ -27,6 +28,11 @@ const ROW_CONFIG: Record<string, { color: string; href: string }> = {
 }
 
 export function ContentRow({ title, content, type, showRank = false, accentColor, viewAllHref }: ContentRowProps) {
+  // Déléguer les Top 10 au composant dédié
+  if (title === 'Top 10 Films de la semaine' || title === 'Top 10 Séries de la semaine') {
+    return <Top10Row title={title} content={content} type={type} accentColor={accentColor ?? (title.includes('Films') ? '#f59e0b' : '#06b6d4')} />
+  }
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const [logos, setLogos] = useState<Record<number, string | null>>({})
 
