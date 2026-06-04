@@ -150,13 +150,24 @@
 }
 
 /* Grid background — keep visible */
-html { background: #12080a !important; zoom: 0.92; }
+html { background: #12080a !important; }
+@media (min-width: 768px) {
+  html { zoom: 0.92; }
+}
 body { background: transparent !important; }
 .bg-background { background-color: rgba(18,8,10,0.82) !important; }
 .bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(18,8,10,0.82) !important; }
 .min-h-screen { background: transparent !important; }
 
-/* Hide V0 badge */
+/* Hero full height responsive */
+.hero-section {
+  height: 100vh;
+}
+@media (min-width: 768px) {
+  .hero-section {
+    height: calc(100vh / 0.92);
+  }
+}
 #v0-badge,
 #v0-built-with-button-aec00727-a866-4b89-9314-a31381108bc4 {
   display: none !important;
