@@ -7,9 +7,8 @@ export function GridBackground() {
         position: 'absolute',
         inset: 0,
         background: `
-          radial-gradient(ellipse 70% 60% at 50% 40%, rgba(160,60,10,0.28) 0%, transparent 65%),
-          radial-gradient(ellipse 50% 40% at 50% 35%, rgba(200,80,10,0.15) 0%, transparent 50%),
-          radial-gradient(ellipse 100% 80% at 50% 50%, rgba(100,20,5,0.18) 0%, transparent 75%)
+          radial-gradient(ellipse 90% 55% at 50% 75%, rgba(130,45,8,0.20) 0%, transparent 70%),
+          radial-gradient(ellipse 60% 35% at 50% 70%, rgba(170,60,8,0.10) 0%, transparent 55%)
         `,
       }} />
     </div>
