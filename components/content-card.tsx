@@ -59,11 +59,12 @@ export function ContentCard({
 
       <div
         className={cn(
-          'relative overflow-hidden rounded-2xl cursor-pointer bg-card transition-all duration-300',
+          'relative overflow-hidden cursor-pointer bg-card',
           showRank ? 'w-40 md:w-52 ml-8' : 'w-44 md:w-56',
           'aspect-[2/3]',
         )}
         style={{
+          borderRadius: '1rem',
           border: '1px solid rgba(255,255,255,0.07)',
           boxShadow: hovered ? '0 20px 48px rgba(0,0,0,0.7)' : '0 4px 16px rgba(0,0,0,0.4)',
           transform: hovered ? 'scale(1.03)' : 'scale(1)',
