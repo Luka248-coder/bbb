@@ -285,20 +285,18 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
+    <header className="fixed top-0 left-0 right-0 z-50 pt-3 transition-all duration-500">
       <div
-        className="relative transition-all duration-500"
+        className="relative mx-4 md:mx-6 rounded-2xl transition-all duration-500"
         style={{
-          background: isScrolled
-            ? 'rgba(10,4,5,0.88)'
-            : 'linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%)',
-          backdropFilter: isScrolled ? 'blur(24px)' : undefined,
-          borderBottom: isScrolled ? '1px solid rgba(255,255,255,0.05)' : undefined,
-          boxShadow: isScrolled ? '0 4px 32px rgba(0,0,0,0.5)' : undefined,
+          background: 'rgba(18,6,8,0.85)',
+          backdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
         }}
       >
-        <div className="w-full px-5 md:px-8">
-          <div className="flex items-center justify-between h-[60px] gap-6">
+        <div className="w-full px-5 md:px-6">
+          <div className="flex items-center justify-between h-[56px] gap-6">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 mr-2 -ml-2">
@@ -309,27 +307,25 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-0.5">
+          <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
-                <Link key={link.href} href={link.href} className="relative select-none group">
+                <Link key={link.href} href={link.href} className="relative select-none">
                   <div
                     className={cn(
-                      'relative px-4 py-2 text-[13px] font-semibold tracking-widest uppercase transition-all duration-200',
-                      isActive ? 'text-white' : 'text-white/40 hover:text-white/80',
-                      link.highlight ? 'text-red-400 hover:text-red-300' : ''
+                      'relative px-4 py-2 rounded-xl text-[13px] font-semibold tracking-wide transition-all duration-200',
+                      isActive
+                        ? 'text-white'
+                        : 'text-white/45 hover:text-white/80 hover:bg-white/[0.05]',
+                      link.highlight && !isActive ? 'text-red-400 hover:text-red-300' : ''
                     )}
+                    style={isActive ? {
+                      background: 'linear-gradient(135deg, rgba(185,28,28,0.9), rgba(220,38,38,0.75))',
+                      boxShadow: '0 2px 12px rgba(220,38,38,0.35)',
+                    } : {}}
                   >
                     {link.label}
-                    {isActive && (
-                      <motion.div
-                        layoutId="nav-indicator"
-                        className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #dc2626, #ef4444)' }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                      />
-                    )}
                   </div>
                 </Link>
               )
