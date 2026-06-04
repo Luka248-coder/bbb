@@ -148,18 +148,7 @@ export function ContinueWatching() {
                 </div>
 
                 <div className="mt-2 px-1">
-                  {logos[item.content_id] ? (
-                    <div className="mb-1" style={{ height: '28px' }}>
-                      <img
-                        src={logos[item.content_id]!}
-                        alt={item.title}
-                        className="h-full max-w-full object-contain object-left"
-                        style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9)) brightness(1.1)' }}
-                      />
-                    </div>
-                  ) : (
                     <p className="text-white/90 text-sm font-semibold truncate">{item.title}</p>
-                  )}
                 </div>
               </button>
             </motion.div>
