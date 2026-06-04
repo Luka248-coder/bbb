@@ -90,8 +90,11 @@ function DisableModal({ onConfirm, onCancel }: { onConfirm:(r:string)=>void, onC
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserData[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [selected, setSelected] = useState<UserDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [confirm, setConfirm] = useState<{title:string,message:string,action:()=>void}|null>(null)
@@ -99,13 +102,32 @@ export default function AdminUsersPage() {
   const [ipBanned, setIpBanned] = useState<Record<string,boolean>>({})
   const [activeTab, setActiveTab] = useState<'info'|'history'|'favorites'|'requests'>('info')
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (p = 0, s = '') => {
     setLoading(true)
-    try { const res = await fetch('/api/auth/admin/users'); if (res.ok) setUsers(await res.json()) } catch {}
+    try {
+      const params = new URLSearchParams({ page: String(p) })
+      if (s) params.set('search', s)
+      const res = await fetch(`/api/auth/admin/users?${params}`)
+      if (res.ok) {
+        const json = await res.json()
+        setUsers(json.data || [])
+        setTotal(json.total || 0)
+        setPage(p)
+      }
+    } catch {}
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetchUsers() }, [fetchUsers])
+  useEffect(() => { fetchUsers(0, search) }, [fetchUsers])
+
+  // Debounce la recherche
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput)
+      fetchUsers(0, searchInput)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   const openUser = async (user: UserData) => {
     setLoadingDetail(true); setSelected(null); setActiveTab('info')
@@ -134,12 +156,7 @@ export default function AdminUsersPage() {
     setIpBanned(prev=>({...prev,[ip]:!unban}))
   }
 
-  const filtered = users.filter(u =>
-    u.username.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.discord_id.includes(search) ||
-    (u.last_ip||'').includes(search)
-  )
+  const filtered = users  // filtrage fait côté serveur
 
   const u = selected?.user
 
@@ -151,10 +168,10 @@ export default function AdminUsersPage() {
         <div className="p-5 border-b border-zinc-800">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-lg font-black text-white flex items-center gap-2"><Users className="w-5 h-5 text-primary"/>Utilisateurs</h1>
-            <button onClick={fetchUsers} className="text-zinc-500 hover:text-white transition-colors"><RefreshCw className="w-4 h-4"/></button>
+            <button onClick={() => fetchUsers(0, search)} className="text-zinc-500 hover:text-white transition-colors"><RefreshCw className="w-4 h-4"/></button>
           </div>
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {[{l:'Total',v:users.length,c:'text-white'},{l:'Bannis',v:users.filter(u=>u.is_banned).length,c:'text-red-400'},{l:'Désactivés',v:users.filter(u=>u.is_disabled).length,c:'text-orange-400'}].map(s=>(
+            {[{l:'Total',v:total,c:'text-white'},{l:'Bannis',v:users.filter(u=>u.is_banned).length,c:'text-red-400'},{l:'Désactivés',v:users.filter(u=>u.is_disabled).length,c:'text-orange-400'}].map(s=>(
               <div key={s.l} className="bg-zinc-900 rounded-xl p-2.5 text-center border border-zinc-800">
                 <p className={`text-lg font-black ${s.c}`}>{s.v}</p>
                 <p className="text-zinc-600 text-xs">{s.l}</p>
@@ -163,7 +180,7 @@ export default function AdminUsersPage() {
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600"/>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher..."
+            <input value={searchInput} onChange={e=>setSearchInput(e.target.value)} placeholder="Rechercher..."
               className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm outline-none focus:border-zinc-600 placeholder-zinc-600 transition-colors"/>
           </div>
         </div>
@@ -199,6 +216,22 @@ export default function AdminUsersPage() {
             </div>
           )}
         </div>
+        {/* Pagination */}
+        {total > 100 && (
+          <div className="p-3 border-t border-zinc-800 flex items-center justify-between gap-2">
+            <button
+              onClick={() => fetchUsers(page - 1, search)}
+              disabled={page === 0}
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-semibold disabled:opacity-30 hover:bg-zinc-800 transition-colors"
+            >← Préc.</button>
+            <span className="text-zinc-500 text-xs">{page * 100 + 1}–{Math.min((page + 1) * 100, total)} / {total}</span>
+            <button
+              onClick={() => fetchUsers(page + 1, search)}
+              disabled={(page + 1) * 100 >= total}
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-semibold disabled:opacity-30 hover:bg-zinc-800 transition-colors"
+            >Suiv. →</button>
+          </div>
+        )}
       </div>
 
       {/* DETAIL */}

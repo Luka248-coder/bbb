@@ -24,13 +24,25 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const { data, error } = await supabase
+  const search = request.nextUrl.searchParams.get('search') || ''
+  const page = parseInt(request.nextUrl.searchParams.get('page') || '0')
+  const pageSize = 100
+
+  let query = supabase
     .from('users')
-    .select('id, discord_id, username, avatar, email, is_admin, is_banned, is_disabled, disabled_reason, role, last_ip, last_seen, created_at, updated_at')
+    .select('id, discord_id, username, avatar, email, is_admin, is_banned, is_disabled, disabled_reason, role, last_ip, last_seen, created_at, updated_at', { count: 'exact' })
     .order('created_at', { ascending: false })
 
+  if (search) {
+    query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,discord_id.ilike.%${search}%,last_ip.ilike.%${search}%`)
+  }
+
+  query = query.range(page * pageSize, (page + 1) * pageSize - 1)
+
+  const { data, error, count } = await query
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json({ data, total: count ?? 0, page, pageSize })
 }
 
 export async function PATCH(request: NextRequest) {
