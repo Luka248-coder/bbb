@@ -37,7 +37,7 @@ export function ContentRow({ title, content, type, showRank = false, accentColor
   // Fetch logos pour les items visibles (les 10 premiers)
   useEffect(() => {
     const visible = content.slice(0, 10)
-    const mediaType = type === 'movie' ? 'movie' : 'tv'
+    const mediaType = type === 'movie' ? 'movie' : 'series'
 
     Promise.all(
       visible.map(async (item) => {
