@@ -62,6 +62,7 @@ async function HomeContent() {
           content={topRatedMovies}
           type="movie"
           showRank
+          accentColor="#e53935"
         />
         
         <ContentRow
@@ -69,6 +70,7 @@ async function HomeContent() {
           content={topRatedSeries}
           type="series"
           showRank
+          accentColor="#e53935"
         />
         
         <ContentRow
