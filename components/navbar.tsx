@@ -286,17 +286,16 @@ export function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 pt-3 transition-all duration-500">
-      <div
-        className="relative mx-4 md:mx-6 rounded-2xl transition-all duration-500"
-        style={{
-          background: 'rgba(18,6,8,0.85)',
-          backdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-        }}
+      <div className={cn(
+        'relative transition-all duration-500',
+        isScrolled
+          ? 'mx-4 md:mx-8 rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+          : 'mx-0 rounded-none'
+      )}
+      style={isScrolled ? { background: 'rgba(12,12,14,0.82)', backdropFilter: 'blur(20px)' } : {}}
       >
         <div className="w-full px-5 md:px-6">
-          <div className="flex items-center justify-between h-[56px] gap-6">
+          <div className="flex items-center justify-between h-[68px] gap-6">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 mr-2 -ml-2">
@@ -314,16 +313,11 @@ export function Navbar() {
                 <Link key={link.href} href={link.href} className="relative select-none">
                   <div
                     className={cn(
-                      'relative px-4 py-2 rounded-xl text-[13px] font-semibold tracking-wide transition-all duration-200',
-                      isActive
-                        ? 'text-white'
-                        : 'text-white/45 hover:text-white/80 hover:bg-white/[0.05]',
-                      link.highlight && !isActive ? 'text-red-400 hover:text-red-300' : ''
+                      'relative z-10 px-[14px] py-[7px] rounded-lg transition-colors duration-150',
+                      'uppercase tracking-[0.14em] text-[13px] font-bold',
+                      isActive ? 'text-white bg-white/10' : 'text-white/38 hover:text-white/65'
                     )}
-                    style={isActive ? {
-                      background: 'linear-gradient(135deg, rgba(185,28,28,0.9), rgba(220,38,38,0.75))',
-                      boxShadow: '0 2px 12px rgba(220,38,38,0.35)',
-                    } : {}}
+                    style={{ fontFamily: "var(--font-barlow-condensed)" }}
                   >
                     {link.label}
                   </div>
