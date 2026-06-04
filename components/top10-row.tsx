@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getBackdropUrl, getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
-import Link from 'next/link'
 
 function isMovie(item: Movie | Series): item is Movie { return 'title' in item }
 
@@ -24,7 +23,7 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return
-    scrollRef.current.scrollBy({ left: dir === 'left' ? -500 : 500, behavior: 'smooth' })
+    scrollRef.current.scrollBy({ left: dir === 'left' ? -600 : 600, behavior: 'smooth' })
   }
 
   if (items.length === 0) return null
@@ -41,14 +40,14 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
       <div className="relative group">
         <button
           onClick={() => scroll('left')}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
         >
           <ChevronLeft className="w-5 h-5 text-white" />
         </button>
         <button
           onClick={() => scroll('right')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
         >
           <ChevronRight className="w-5 h-5 text-white" />
@@ -56,17 +55,15 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
         <div
           ref={scrollRef}
-          className="flex gap-0"
+          className="flex gap-3"
           style={{
             overflowX: 'auto',
-            overflowY: 'visible',
+            overflowY: 'hidden',
             flexWrap: 'nowrap',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))',
             paddingRight: '1.5rem',
-            paddingTop: '1rem',
-            paddingBottom: '1rem',
           }}
         >
           {items.map((item, i) => {
@@ -114,43 +111,23 @@ function Top10Card({
     ? getBackdropUrl((item as any).backdrop_path)
     : getPosterUrl(item.poster_path)
 
+  const numColor = rank <= 3 ? accentColor : '#ffffff'
+  const numShadow = rank <= 3
+    ? `0 0 30px ${accentColor}99, 2px 4px 8px rgba(0,0,0,1)`
+    : `2px 4px 8px rgba(0,0,0,1)`
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className="relative flex-shrink-0 cursor-pointer"
-      style={{
-        width: 320,
-        marginLeft: index === 0 ? '4rem' : '-1rem',
-        paddingLeft: index === 0 ? 0 : 0,
-      }}
+      style={{ width: 300 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Numéro géant à gauche, par dessus l'image */}
-      <div
-        className="absolute z-20 font-black leading-none select-none pointer-events-none"
-        style={{
-          fontSize: '9rem',
-          lineHeight: 1,
-          fontFamily: 'Arial Black, Impact, sans-serif',
-          color: rank <= 3 ? accentColor : '#ffffff',
-          WebkitTextStroke: rank <= 3 ? '0px' : '3px rgba(150,150,150,0.5)',
-          textShadow: rank <= 3
-            ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
-            : `3px 5px 0 rgba(0,0,0,0.95)`,
-          bottom: 8,
-          left: 8,
-          transition: 'all 0.3s',
-          transform: hovered ? 'scale(1.05)' : 'scale(1)',
-        }}
-      >
-        {rank}
-      </div>
-
-      {/* Carte image */}
+      {/* Carte image — le chiffre est DEDANS */}
       <div
         className="relative overflow-hidden transition-all duration-300"
         style={{
@@ -160,31 +137,52 @@ function Top10Card({
             ? `0 20px 50px rgba(0,0,0,0.8), 0 0 0 2px ${accentColor}`
             : '0 8px 24px rgba(0,0,0,0.6)',
           transform: hovered ? 'scale(1.03) translateY(-4px)' : 'scale(1)',
+          transition: 'transform 0.3s, box-shadow 0.3s',
         }}
       >
         <Image
           src={imgSrc}
           alt={title}
           fill
-          className="object-cover transition-transform duration-500"
-          style={{ transform: hovered ? 'scale(1.06)' : 'scale(1)' }}
+          className="object-cover"
+          style={{ transform: hovered ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.5s' }}
         />
 
-        {/* Dégradé bas */}
+        {/* Dégradé sombre en bas */}
         <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 40%, transparent 100%)'
+          background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 35%, transparent 70%)'
         }} />
 
-        {/* Bouton play hover */}
+        {/* Chiffre en bas à gauche, DANS la carte */}
+        <div
+          className="absolute bottom-0 left-0 font-black leading-none select-none pointer-events-none"
+          style={{
+            fontSize: '7rem',
+            lineHeight: 0.85,
+            fontFamily: 'Arial Black, Impact, sans-serif',
+            color: numColor,
+            textShadow: numShadow,
+            WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(100,100,100,0.6)',
+            paddingLeft: '0.3rem',
+            paddingBottom: '0.1rem',
+            transition: 'transform 0.3s',
+            transform: hovered ? 'scale(1.05)' : 'scale(1)',
+            transformOrigin: 'bottom left',
+          }}
+        >
+          {rank}
+        </div>
+
+        {/* Bouton play au hover */}
         <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }}>
             <Play className="w-5 h-5 text-white fill-white ml-0.5" />
           </div>
         </div>
 
-        {/* Infos bas */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6">
-          <p className="text-white font-black text-[13px] uppercase tracking-wide truncate leading-tight mb-1">
+        {/* Infos titre + note */}
+        <div className="absolute bottom-0 right-0 left-24 px-3 pb-2.5">
+          <p className="text-white font-black text-[12px] uppercase tracking-wide truncate leading-tight mb-0.5">
             {title}
           </p>
           <div className="flex items-center gap-1.5 text-[11px]">
