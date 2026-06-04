@@ -113,21 +113,21 @@ function Top10Card({
     ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
     : `3px 5px 0 rgba(0,0,0,0.95)`
 
-  /* Chaque item = chiffre à gauche + carte à droite, dans un flex row */
+  /* Chaque item = carte avec chiffre par dessus en bas à gauche */
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="flex-shrink-0 flex items-center cursor-pointer"
-      style={{ gap: '0' }}
+      className="flex-shrink-0 relative cursor-pointer"
+      style={{ width: 260 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Chiffre à gauche, complètement en dehors de la carte */}
+      {/* Chiffre par dessus l'affiche, en bas à gauche */}
       <div
-        className="flex-shrink-0 font-black leading-none select-none pointer-events-none text-center"
+        className="absolute z-10 font-black leading-none select-none pointer-events-none"
         style={{
           fontSize: '8rem',
           lineHeight: 1,
@@ -135,9 +135,11 @@ function Top10Card({
           color: numColor,
           textShadow: numShadow,
           WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(120,120,120,0.5)',
-          width: rank < 10 ? '3.5rem' : '5rem',
+          bottom: '0.5rem',
+          left: '0.5rem',
           transition: 'transform 0.3s',
           transform: hovered ? 'scale(1.08)' : 'scale(1)',
+          transformOrigin: 'bottom left',
         }}
       >
         {rank}
