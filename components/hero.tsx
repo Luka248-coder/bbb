@@ -40,7 +40,7 @@ export function Hero({ content }: HeroProps) {
   const genres = getGenreNames(current.genre_ids || []).slice(0, 3)
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ height: '100vh', minHeight: 600, maxHeight: 900 }}>
+    <section className="relative w-full overflow-hidden" style={{ height: '78vh', minHeight: 520, maxHeight: 780 }}>
 
       {/* Backdrop plein écran */}
       <AnimatePresence mode="wait">
@@ -64,7 +64,7 @@ export function Hero({ content }: HeroProps) {
           }} />
           {/* Dégradé bas — fond vers la couleur du site */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, #0a0506 0%, rgba(10,5,6,0.97) 8%, rgba(10,5,6,0.7) 22%, transparent 55%)'
+            background: 'linear-gradient(to top, #0a0506 0%, rgba(10,5,6,0.98) 12%, rgba(10,5,6,0.85) 25%, rgba(10,5,6,0.4) 45%, transparent 70%)'
           }} />
           {/* Léger vignette haut */}
           <div className="absolute inset-0" style={{
@@ -74,7 +74,7 @@ export function Hero({ content }: HeroProps) {
       </AnimatePresence>
 
       {/* Contenu gauche */}
-      <div className="relative h-full flex items-end pb-20 md:pb-24 px-8 md:px-16 lg:px-24">
+      <div className="relative h-full flex items-center px-8 md:px-16 lg:px-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
