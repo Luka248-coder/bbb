@@ -68,7 +68,7 @@ export function ContinueWatching() {
 
   return (
     <section className="relative py-6">
-      <div className="mb-4 flex items-center justify-between" style={{ paddingLeft: 'max(1rem, calc((100% - 80rem) / 2 + 1rem))', paddingRight: 'max(1rem, calc((100% - 80rem) / 2 + 1rem))' }}>
+      <div className="mb-4 px-4 flex items-center justify-between">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -90,7 +90,7 @@ export function ContinueWatching() {
 
       <div
         className="flex gap-4 overflow-x-auto hide-scrollbar pb-4"
-        style={{ paddingLeft: 'max(1rem, calc((100% - 80rem) / 2 + 1rem))', paddingRight: '1rem' }}
+        style={{ paddingLeft: '1rem', paddingRight: '1rem' }}
       >
         {items.map((item, i) => {
           return (

@@ -30,7 +30,7 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
   return (
     <section className="relative py-6">
-      <div className="px-6 md:px-16 mb-5 flex items-center gap-3">
+      <div className="px-4 mb-5 flex items-center gap-3">
         <div className="w-[3px] rounded-full self-stretch" style={{ background: `linear-gradient(to bottom, ${accentColor}, transparent)`, minHeight: '2rem' }} />
         <h2 className="text-2xl md:text-3xl font-black text-white">{title}</h2>
       </div>
@@ -43,7 +43,7 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
           <ChevronRight className="w-5 h-5 text-white" />
         </button>
 
-        <div ref={scrollRef} className="flex" style={{ overflowX: 'auto', overflowY: 'hidden', flexWrap: 'nowrap', scrollbarWidth: 'none', paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))', paddingRight: '1.5rem', gap: '0.75rem' }}>
+        <div ref={scrollRef} className="flex" style={{ overflowX: 'auto', overflowY: 'hidden', flexWrap: 'nowrap', scrollbarWidth: 'none', paddingLeft: '1rem', paddingRight: '1.5rem', gap: '0.75rem' }}>
           {items.map((item, i) => {
             const t = isMovie(item) ? item.title : item.name
             const tmdbId = (item as any).tmdb_id || item.id
