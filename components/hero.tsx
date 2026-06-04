@@ -62,9 +62,9 @@ export function Hero({ content }: HeroProps) {
           <div className="absolute inset-0" style={{
             background: 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.1) 75%, transparent 100%)'
           }} />
-          {/* Dégradé bas */}
+          {/* Dégradé bas — fond vers la couleur du site */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 30%, transparent 60%)'
+            background: 'linear-gradient(to top, #0a0506 0%, rgba(10,5,6,0.97) 8%, rgba(10,5,6,0.7) 22%, transparent 55%)'
           }} />
           {/* Léger vignette haut */}
           <div className="absolute inset-0" style={{
