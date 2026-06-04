@@ -154,11 +154,7 @@
 
 /* Fond global : dégradé rouge → orange ultra discret */
 html {
-  background:
-    radial-gradient(ellipse 120% 60% at 15% 0%, rgba(180,30,20,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at 85% 100%, rgba(200,80,10,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(140,20,10,0.08) 0%, transparent 70%),
-    #0e0608 !important;
+  background: #0a0506 !important;
   background-attachment: fixed !important;
 }
 body { background: transparent !important; }
