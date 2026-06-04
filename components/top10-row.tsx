@@ -30,13 +30,11 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
   return (
     <section className="relative py-6">
-      {/* Header */}
       <div className="px-6 md:px-16 mb-5 flex items-center gap-3">
         <div className="w-[3px] rounded-full self-stretch" style={{ background: `linear-gradient(to bottom, ${accentColor}, transparent)`, minHeight: '2rem' }} />
         <h2 className="text-2xl md:text-3xl font-black text-white">{title}</h2>
       </div>
 
-      {/* Scroll container */}
       <div className="relative group">
         <button
           onClick={() => scroll('left')}
@@ -53,39 +51,40 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
           <ChevronRight className="w-5 h-5 text-white" />
         </button>
 
-        <div
-          ref={scrollRef}
-          className="flex gap-3"
-          style={{
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            flexWrap: 'nowrap',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))',
-            paddingRight: '1.5rem',
-          }}
-        >
-          {items.map((item, i) => {
-            const t = isMovie(item) ? item.title : item.name
-            const tmdbId = (item as any).tmdb_id || item.id
-            const genres = getGenreNames(item.genre_ids || []).slice(0, 1)
-
-            return (
-              <Top10Card
-                key={item.id}
-                item={item}
-                rank={i + 1}
-                title={t}
-                tmdbId={tmdbId}
-                type={type}
-                genres={genres}
-                accentColor={accentColor}
-                index={i}
-                onOpen={() => openDrawer(type as 'movie' | 'series', tmdbId)}
-              />
-            )
-          })}
+        {/* Le conteneur scroll a overflow visible pour que le chiffre déborde */}
+        <div style={{ overflowX: 'auto', overflowY: 'visible', scrollbarWidth: 'none' }}>
+          <div
+            ref={scrollRef}
+            className="flex"
+            style={{
+              gap: '3rem',         /* espace entre les cartes pour voir le chiffre */
+              paddingLeft: 'max(4rem, calc((100% - 80rem) / 2 + 4rem))',
+              paddingRight: '2rem',
+              paddingTop: '0.5rem',
+              paddingBottom: '0.5rem',
+              width: 'max-content',
+            }}
+          >
+            {items.map((item, i) => {
+              const t = isMovie(item) ? item.title : item.name
+              const tmdbId = (item as any).tmdb_id || item.id
+              const genres = getGenreNames(item.genre_ids || []).slice(0, 1)
+              return (
+                <Top10Card
+                  key={item.id}
+                  item={item}
+                  rank={i + 1}
+                  title={t}
+                  tmdbId={tmdbId}
+                  type={type}
+                  genres={genres}
+                  accentColor={accentColor}
+                  index={i}
+                  onOpen={() => openDrawer(type as 'movie' | 'series', tmdbId)}
+                />
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>
@@ -93,7 +92,7 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 }
 
 function Top10Card({
-  item, rank, title, tmdbId, type, genres, accentColor, index, onOpen
+  item, rank, title, genres, accentColor, index, onOpen
 }: {
   item: Movie | Series
   rank: number
@@ -113,8 +112,8 @@ function Top10Card({
 
   const numColor = rank <= 3 ? accentColor : '#ffffff'
   const numShadow = rank <= 3
-    ? `0 0 30px ${accentColor}99, 2px 4px 8px rgba(0,0,0,1)`
-    : `2px 4px 8px rgba(0,0,0,1)`
+    ? `0 0 40px ${accentColor}80, 3px 5px 0 rgba(0,0,0,0.95)`
+    : `3px 5px 0 rgba(0,0,0,0.95), 0 0 0 3px rgba(80,80,80,0.3)`
 
   return (
     <motion.div
@@ -122,14 +121,34 @@ function Top10Card({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className="relative flex-shrink-0 cursor-pointer"
-      style={{ width: 300 }}
+      style={{ width: 260 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Carte image — le chiffre est DEDANS */}
+      {/* Chiffre centré verticalement, à cheval sur le bord gauche de la carte */}
       <div
-        className="relative overflow-hidden transition-all duration-300"
+        className="absolute font-black leading-none select-none pointer-events-none"
+        style={{
+          fontSize: '9rem',
+          lineHeight: 1,
+          fontFamily: 'Arial Black, Impact, sans-serif',
+          color: numColor,
+          textShadow: numShadow,
+          WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(120,120,120,0.5)',
+          top: '50%',
+          left: '-2.5rem',          /* moitié dehors, moitié dedans */
+          transform: `translateY(-50%) ${hovered ? 'scale(1.08)' : 'scale(1)'}`,
+          transition: 'transform 0.3s',
+          zIndex: 20,
+        }}
+      >
+        {rank}
+      </div>
+
+      {/* Carte image */}
+      <div
+        className="relative overflow-hidden"
         style={{
           borderRadius: '14px',
           aspectRatio: '16/9',
@@ -148,54 +167,24 @@ function Top10Card({
           style={{ transform: hovered ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.5s' }}
         />
 
-        {/* Dégradé sombre en bas */}
         <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 35%, transparent 70%)'
+          background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 45%, transparent 100%)'
         }} />
 
-        {/* Chiffre en bas à gauche, DANS la carte */}
-        <div
-          className="absolute bottom-0 left-0 font-black leading-none select-none pointer-events-none"
-          style={{
-            fontSize: '7rem',
-            lineHeight: 0.85,
-            fontFamily: 'Arial Black, Impact, sans-serif',
-            color: numColor,
-            textShadow: numShadow,
-            WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(100,100,100,0.6)',
-            paddingLeft: '0.3rem',
-            paddingBottom: '0.1rem',
-            transition: 'transform 0.3s',
-            transform: hovered ? 'scale(1.05)' : 'scale(1)',
-            transformOrigin: 'bottom left',
-          }}
-        >
-          {rank}
-        </div>
-
-        {/* Bouton play au hover */}
         <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }}>
             <Play className="w-5 h-5 text-white fill-white ml-0.5" />
           </div>
         </div>
 
-        {/* Infos titre + note */}
-        <div className="absolute bottom-0 right-0 left-24 px-3 pb-2.5">
-          <p className="text-white font-black text-[12px] uppercase tracking-wide truncate leading-tight mb-0.5">
-            {title}
-          </p>
+        <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6">
+          <p className="text-white font-black text-[13px] uppercase tracking-wide truncate leading-tight mb-1">{title}</p>
           <div className="flex items-center gap-1.5 text-[11px]">
             {item.vote_average && (
-              <span className="text-yellow-400 font-bold flex items-center gap-0.5">
-                ★ {item.vote_average.toFixed(1)}
-              </span>
+              <span className="text-yellow-400 font-bold flex items-center gap-0.5">★ {item.vote_average.toFixed(1)}</span>
             )}
             {genres[0] && (
-              <>
-                <span className="text-white/30">·</span>
-                <span className="text-white/50 uppercase tracking-wider font-medium">{genres[0]}</span>
-              </>
+              <><span className="text-white/30">·</span><span className="text-white/50 uppercase tracking-wider font-medium">{genres[0]}</span></>
             )}
           </div>
         </div>
