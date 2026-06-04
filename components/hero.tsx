@@ -40,7 +40,7 @@ export function Hero({ content }: HeroProps) {
   const genres = getGenreNames(current.genre_ids || []).slice(0, 3)
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ height: '100vh', minHeight: 600, maxHeight: 950 }}>
+    <section className="relative w-full overflow-hidden" style={{ height: '100vh', minHeight: 600 }}>
 
       {/* Backdrop plein écran */}
       <AnimatePresence mode="wait">
