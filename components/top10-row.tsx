@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Play, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { getBackdropUrl, getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
 import Link from 'next/link'
@@ -19,13 +19,7 @@ interface Top10RowProps {
 
 export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top10RowProps) {
   const { openDrawer } = useDrawer()
-  const scrollRef = useRef<HTMLDivElement>(null)
   const items = content.slice(0, 10)
-
-  const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return
-    scrollRef.current.scrollBy({ left: dir === 'left' ? -500 : 500, behavior: 'smooth' })
-  }
 
   if (items.length === 0) return null
 
@@ -37,50 +31,31 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
         <h2 className="text-2xl md:text-3xl font-black text-white">{title}</h2>
       </div>
 
-      {/* Scroll container */}
-      <div className="relative group">
-        {/* Boutons nav */}
-        <button
-          onClick={() => scroll('left')}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
-        >
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => scroll('right')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
-        >
-          <ChevronRight className="w-5 h-5 text-white" />
-        </button>
+      {/* Fixed grid */}
+      <div
+        className="flex gap-0 flex-wrap"
+        style={{ paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))', paddingRight: '1.5rem' }}
+      >
+        {items.map((item, i) => {
+          const t = isMovie(item) ? item.title : item.name
+          const tmdbId = (item as any).tmdb_id || item.id
+          const genres = getGenreNames(item.genre_ids || []).slice(0, 1)
 
-        <div
-          ref={scrollRef}
-          className="flex overflow-x-auto hide-scrollbar gap-0"
-          style={{ paddingLeft: 'max(1.5rem, calc((100% - 80rem) / 2 + 1.5rem))', paddingRight: '1.5rem' }}
-        >
-          {items.map((item, i) => {
-            const t = isMovie(item) ? item.title : item.name
-            const tmdbId = (item as any).tmdb_id || item.id
-            const genres = getGenreNames(item.genre_ids || []).slice(0, 1)
-
-            return (
-              <Top10Card
-                key={item.id}
-                item={item}
-                rank={i + 1}
-                title={t}
-                tmdbId={tmdbId}
-                type={type}
-                genres={genres}
-                accentColor={accentColor}
-                index={i}
-                onOpen={() => openDrawer(type as 'movie' | 'series', tmdbId)}
-              />
-            )
-          })}
-        </div>
+          return (
+            <Top10Card
+              key={item.id}
+              item={item}
+              rank={i + 1}
+              title={t}
+              tmdbId={tmdbId}
+              type={type}
+              genres={genres}
+              accentColor={accentColor}
+              index={i}
+              onOpen={() => openDrawer(type as 'movie' | 'series', tmdbId)}
+            />
+          )
+        })}
       </div>
     </section>
   )
