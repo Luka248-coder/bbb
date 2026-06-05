@@ -645,6 +645,7 @@ export function Navbar() {
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
               className="md:hidden fixed top-0 left-0 right-0 z-[97] px-4 pt-4 pb-3"
               style={{ background: 'rgba(10,4,6,0.97)', backdropFilter: 'blur(20px)' }}
+              onPointerDown={e => e.stopPropagation()}
             >
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
@@ -674,13 +675,11 @@ export function Navbar() {
                   const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
                   return (
                     <button key={`${result.media_type}-${result.id}`}
-                      onPointerDown={() => { 
-                        const type = isMovie ? 'movie' : 'series'
-                        const id = result.id
+                      onClick={() => { 
                         setIsSearchOpen(false)
                         setSearchResults([])
                         setSearchQuery('')
-                        setTimeout(() => openDrawer(type, id), 400)
+                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent cursor-pointer"
                     >
