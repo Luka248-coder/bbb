@@ -330,10 +330,17 @@ export function Navbar() {
             {/* Roulette dé */}
             <Link href="/roulette" title="Roulette" className="select-none">
               <div className={cn(
-                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 text-lg',
+                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
                 pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
               )}>
-                🎲
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="4"/>
+                  <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+                </svg>
               </div>
             </Link>
 
@@ -414,11 +421,8 @@ export function Navbar() {
             </AnimatePresence>
           </div>
 
-            </div>{/* fin pill */}
-        </div>
-
-        {/* Actions droite — fixe à droite */}
-        <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-1">
+            <div className="w-px h-4 bg-white/10 mx-1" />
+            {/* Bell + Avatar dans la pill */}
             {user ? (
               <>
                 {/* Bell */}
@@ -584,7 +588,9 @@ export function Navbar() {
               </Link>
             )}
 
-        </div>{/* fin actions droite desktop */}
+            </div>{/* fin pill */}
+          </div>
+        </div>
 
         {/* Mobile menu button */}
         <div className="pointer-events-auto ml-auto md:hidden">
