@@ -292,6 +292,7 @@ export function Navbar() {
   }
 
   return (
+    <>
     <header className="fixed top-8 left-0 right-0 z-50 pointer-events-none">
 
       <div className="relative flex items-center h-[60px] px-4 md:px-6">
@@ -754,16 +755,17 @@ export function Navbar() {
         </AnimatePresence>
         , document.body)}
 
-      {/* Mobile bottom sheet */}
+    </header>
+    {/* Mobile bottom sheet — outside <header> to escape pointer-events-none */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[95]" onClick={() => setIsMobileMenuOpen(false)} onTouchEnd={() => setIsMobileMenuOpen(false)} />
+              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[95] pointer-events-auto" onClick={() => setIsMobileMenuOpen(false)} onTouchEnd={() => setIsMobileMenuOpen(false)} />
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 38 }}
-              className="md:hidden fixed bottom-0 left-0 right-0 z-[96] rounded-t-3xl overflow-hidden pb-10"
+              className="md:hidden fixed bottom-0 left-0 right-0 z-[96] rounded-t-3xl overflow-hidden pb-10 pointer-events-auto"
               style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}
               onClick={e => e.stopPropagation()}
               onTouchStart={e => e.stopPropagation()}
@@ -799,6 +801,6 @@ export function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   )
 }
