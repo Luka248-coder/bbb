@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Info, Bookmark, BookmarkCheck } from 'lucide-react'
+import { Play, Info, BookmarkPlus } from 'lucide-react'
 import { getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
-import { useSession } from '@/components/session-provider'
 
 interface HeroProps {
   content: (Movie | Series)[]
@@ -19,10 +18,7 @@ function isMovie(item: Movie | Series): item is Movie {
 
 export function Hero({ content }: HeroProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isFav, setIsFav] = useState(false)
-  const [favLoading, setFavLoading] = useState(false)
   const { openDrawer } = useDrawer()
-  const { user } = useSession()
 
   // Filtrer uniquement les contenus qui ont un backdrop OU un poster
   const featured = content
@@ -36,45 +32,6 @@ export function Hero({ content }: HeroProps) {
     }, 8000)
     return () => clearInterval(interval)
   }, [featured.length])
-
-  // Vérifier si le film courant est en favoris
-  useEffect(() => {
-    if (!user?.id || !featured[currentIndex]) return
-    const current = featured[currentIndex]
-    const tmdbId = current.tmdb_id || current.id
-    const type = isMovie(current) ? 'movie' : 'series'
-    fetch(`/api/favorites?user_id=${user.id}`)
-      .then(r => r.json())
-      .then((favs: any[]) => {
-        setIsFav(favs.some(f => f.tmdb_id === tmdbId && f.content_type === type))
-      })
-      .catch(() => {})
-  }, [currentIndex, user?.id])
-
-  const toggleFav = async () => {
-    if (!user?.id) return
-    const current = featured[currentIndex]
-    const tmdbId = current.tmdb_id || current.id
-    const type = isMovie(current) ? 'movie' : 'series'
-    const title = isMovie(current) ? current.title : current.name
-    const poster = current.poster_path
-    setFavLoading(true)
-    try {
-      if (isFav) {
-        await fetch(`/api/favorites?user_id=${user.id}&tmdb_id=${tmdbId}&content_type=${type}`, { method: 'DELETE' })
-        setIsFav(false)
-      } else {
-        await fetch('/api/favorites', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id, tmdb_id: tmdbId, content_type: type, title, poster }),
-        })
-        setIsFav(true)
-      }
-    } finally {
-      setFavLoading(false)
-    }
-  }
 
   if (featured.length === 0) return null
 
@@ -125,7 +82,7 @@ export function Hero({ content }: HeroProps) {
       </AnimatePresence>
 
       {/* Contenu gauche */}
-      <div className="relative h-full flex items-end pb-24 px-4 md:px-16 lg:px-24">
+      <div className="relative h-full flex items-end pb-24 px-8 md:px-16 lg:px-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -186,7 +143,7 @@ export function Hero({ content }: HeroProps) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
-              className="flex items-center gap-3 flex-wrap justify-start"
+              className="flex items-center gap-3 flex-wrap"
             >
               <Link href={`/watch/${type}/${tmdbId}?play=1`}>
                 <button className="flex items-center gap-2.5 bg-white hover:bg-white/90 text-black font-bold px-7 py-3 rounded-full transition-all shadow-xl text-sm tracking-wide">
@@ -205,19 +162,10 @@ export function Hero({ content }: HeroProps) {
               </button>
 
               <button
-                onClick={toggleFav}
-                disabled={favLoading || !user}
-                className="flex items-center justify-center w-11 h-11 rounded-full border transition-all"
-                style={{
-                  background: isFav ? 'rgba(220,38,38,0.2)' : 'rgba(255,255,255,0.06)',
-                  borderColor: isFav ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.2)',
-                }}
-                title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                className="flex items-center justify-center w-11 h-11 rounded-full border border-white/20 hover:border-white/40 text-white/60 hover:text-white transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
               >
-                {isFav
-                  ? <BookmarkCheck className="w-4 h-4 text-red-400" />
-                  : <Bookmark className="w-4 h-4 text-white/60" />
-                }
+                <BookmarkPlus className="w-4 h-4" />
               </button>
             </motion.div>
           </motion.div>
@@ -267,8 +215,8 @@ function HeroLogo({ tmdbId, type, title }: { tmdbId: number; type: string; title
         alt={title}
         width={420}
         height={180}
-        className="max-h-36 w-auto object-contain"
-        style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.9))', display: 'block', marginLeft: 0, objectPosition: 'left center' }}
+        className="max-h-36 w-auto object-contain object-left"
+        style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.9))' }}
       />
     )
   }
