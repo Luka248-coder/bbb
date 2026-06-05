@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
@@ -14,7 +13,6 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
 import { useDrawer } from '@/components/movie-drawer'
-
 interface Notification {
   id: string
   title: string
@@ -26,7 +24,6 @@ interface Notification {
   is_read: boolean
   created_at: string
 }
-
 interface NotifPrefs {
   new_movies: boolean
   new_series: boolean
@@ -35,7 +32,6 @@ interface NotifPrefs {
   request_rejected: boolean
   announcements: boolean
 }
-
 interface WatchHistory {
   id: string
   content_id: number
@@ -48,15 +44,12 @@ interface WatchHistory {
   finished: boolean
   watched_at: string
 }
-
 const navLinks = [
   { href: '/', label: 'Accueil', icon: Home },
   { href: '/movies', label: 'Films', icon: Film },
   { href: '/series', label: 'Séries', icon: Tv },
   { href: '/request', label: 'Demander', icon: Plus },
-
 ]
-
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
   const days = Math.floor(diff / 86400000)
@@ -66,7 +59,6 @@ function timeAgo(date: string) {
   if (hours > 0) return `Il y a ${hours}h`
   return `Il y a ${mins}min`
 }
-
 const prefConfig = [
   { key: 'new_movies', label: 'Nouveaux films', icon: Film, color: 'bg-red-500/20 text-red-400' },
   { key: 'new_series', label: 'Nouvelles séries', icon: Tv, color: 'bg-red-500/20 text-red-400' },
@@ -75,7 +67,6 @@ const prefConfig = [
   { key: 'request_rejected', label: 'Demande refusée', icon: X, color: 'bg-red-500/20 text-red-400' },
   { key: 'announcements', label: 'Annonces', icon: Bell, color: 'bg-blue-500/20 text-blue-400' },
 ]
-
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -90,7 +81,6 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
     </button>
   )
 }
-
 export function Navbar() {
   const { user } = useSession()
   const { openDrawer } = useDrawer()
@@ -102,10 +92,8 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
-
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifPrefs, setShowNotifPrefs] = useState(false)
-
   const [showNotifications, setShowNotifications] = useState(false)
   const [showNotifPrefsBell, setShowNotifPrefsBell] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -114,14 +102,11 @@ export function Navbar() {
     new_movies: true, new_series: true, new_episodes: true,
     request_approved: true, request_rejected: true, announcements: true,
   })
-
   const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
-
   const [mounted, setMounted] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const unreadCount = notifications.filter(n => !n.is_read).length
-
   useEffect(() => {
     const isOpen = showProfile || isMobileMenuOpen
     if (isOpen) {
@@ -153,9 +138,7 @@ export function Navbar() {
       if (scrollY) window.scrollTo(0, scrollY)
     }
   }, [showProfile, isMobileMenuOpen])
-
   useEffect(() => { setMounted(true) }, [])
-
   useEffect(() => {
     let ticking = false
     const fn = () => {
@@ -172,11 +155,9 @@ export function Navbar() {
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
   }, [])
-
   useEffect(() => {
     if (user) { fetchNotifications(); fetchNotifPrefs() }
   }, [user])
-
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -187,7 +168,6 @@ export function Navbar() {
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [])
-
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -199,7 +179,6 @@ export function Navbar() {
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [])
-
   const fetchNotifications = async () => {
     if (!user) return
     setLoadingNotifs(true)
@@ -210,7 +189,6 @@ export function Navbar() {
     } catch {}
     setLoadingNotifs(false)
   }
-
   const fetchNotifPrefs = async () => {
     if (!user) return
     try {
@@ -218,7 +196,6 @@ export function Navbar() {
       if (res.ok) { const data = await res.json(); if (data) setNotifPrefs(data) }
     } catch {}
   }
-
   const fetchWatchHistory = async () => {
     if (!user) return
     setLoadingHistory(true)
@@ -228,7 +205,6 @@ export function Navbar() {
     } catch {}
     setLoadingHistory(false)
   }
-
   const updatePref = async (key: string, value: boolean) => {
     if (!user) return
     const newPrefs = { ...notifPrefs, [key]: value }
@@ -239,24 +215,20 @@ export function Navbar() {
       body: JSON.stringify({ user_id: user.id, ...newPrefs }),
     })
   }
-
   const markAllRead = async () => {
     if (!user) return
     await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: user.id, mark_all: true }) })
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
   }
-
   const clearAll = async () => {
     if (!user) return
     await fetch(`/api/notifications?user_id=${user.id}`, { method: 'DELETE' })
     setNotifications([])
   }
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) { window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`; setSearchResults([]) }
   }
-
   const handleSearchChange = async (value: string) => {
     setSearchQuery(value)
     if (!value.trim()) { setSearchResults([]); return }
@@ -268,9 +240,7 @@ export function Navbar() {
       setSearchResults([...movies, ...series].slice(0, 6))
     } catch {}
   }
-
   const avatarUrl = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png` : null
-
   const openProfile = () => {
     setShowProfile(true)
     setShowNotifications(false)
@@ -278,16 +248,13 @@ export function Navbar() {
     setShowNotifPrefs(false)
     fetchWatchHistory()
   }
-
   const closeProfile = () => {
     setShowProfile(false)
     setShowNotifPrefs(false)
   }
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none" style={{ zIndex: 50 }}>
       <div className="relative flex items-center h-[60px] px-4 md:px-6">
-
         {/* Logo — fixe à gauche */}
         <div className="pointer-events-auto flex-shrink-0">
           <Link href="/">
@@ -297,7 +264,6 @@ export function Navbar() {
             />
           </Link>
         </div>
-
         {/* Pill centré — position absolue */}
         <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
           <div
@@ -324,28 +290,17 @@ export function Navbar() {
                 </Link>
               )
             })}
-
             <div className="w-px h-4 bg-white/10 mx-1" />
-
             {/* Roulette dé */}
             <Link href="/roulette" title="Roulette" className="select-none">
               <div className={cn(
-                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
+                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 text-lg',
                 pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
               )}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="4"/>
-                  <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-                </svg>
+                🎲
               </div>
             </Link>
-
             <div className="w-px h-4 bg-white/10 mx-1" />
-
             {/* Search inline */}
             <div ref={searchRef} className="relative flex items-center">
             <AnimatePresence mode="wait">
@@ -382,7 +337,6 @@ export function Navbar() {
                 </motion.button>
               )}
             </AnimatePresence>
-
             {/* Dropdown résultats */}
             <AnimatePresence>
               {isSearchOpen && searchResults.length > 0 && (
@@ -420,9 +374,10 @@ export function Navbar() {
               )}
             </AnimatePresence>
           </div>
-
-            <div className="w-px h-4 bg-white/10 mx-1" />
-            {/* Bell + Avatar dans la pill */}
+            </div>{/* fin pill */}
+        </div>
+        {/* Actions droite — fixe à droite */}
+        <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-1">
             {user ? (
               <>
                 {/* Bell */}
@@ -438,7 +393,6 @@ export function Navbar() {
                       </span>
                     )}
                   </button>
-
                   <AnimatePresence>
                     {(showNotifications || showNotifPrefsBell) && (
                       <motion.div
@@ -456,7 +410,6 @@ export function Navbar() {
                       >
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 pointer-events-none"
                           style={{ background: 'radial-gradient(ellipse, rgba(220,38,38,0.18) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-
                         {!showNotifPrefsBell ? (
                           <>
                             <div className="relative px-5 pt-5 pb-4">
@@ -563,7 +516,6 @@ export function Navbar() {
                     )}
                   </AnimatePresence>
                 </div>
-
                 {/* Avatar */}
                 <button onClick={openProfile} className="relative w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all flex-shrink-0">
                   {avatarUrl ? (
@@ -587,11 +539,7 @@ export function Navbar() {
                 </div>
               </Link>
             )}
-
-            </div>{/* fin pill */}
-          </div>
-        </div>
-
+        </div>{/* fin actions droite desktop */}
         {/* Mobile menu button */}
         <div className="pointer-events-auto ml-auto md:hidden">
           <button
@@ -602,7 +550,6 @@ export function Navbar() {
           </button>
         </div>
       </div>
-
       {/* Profile panel */}
       {mounted && createPortal(
         <AnimatePresence>
@@ -732,7 +679,6 @@ export function Navbar() {
           )}
         </AnimatePresence>
         , document.body)}
-
       {/* Mobile bottom sheet */}
       <AnimatePresence>
         {isMobileMenuOpen && (
