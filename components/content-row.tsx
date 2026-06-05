@@ -19,18 +19,18 @@ interface ContentRowProps {
 }
 
 const ROW_CONFIG: Record<string, { color: string; href: string }> = {
-  'Nouveautés Films':            { color: '#e53935', href: '/movies?sort=new' },
-  'Nouveautés Séries':           { color: '#7c3aed', href: '/series?sort=new' },
-  'Top 10 Films de la semaine':  { color: '#f59e0b', href: '/movies?sort=top' },
-  'Top 10 Séries de la semaine': { color: '#06b6d4', href: '/series?sort=top' },
-  'Films populaires':            { color: '#10b981', href: '/movies?sort=popular' },
-  'Séries populaires':           { color: '#ec4899', href: '/series?sort=popular' },
+  'Nouveautés Films':            { color: '#ff1a1a', href: '/movies?sort=new' },
+  'Nouveautés Séries':           { color: '#ff1a1a', href: '/series?sort=new' },
+  'Top 10 Films de la semaine':  { color: '#ff1a1a', href: '/movies?sort=top' },
+  'Top 10 Séries de la semaine': { color: '#ff1a1a', href: '/series?sort=top' },
+  'Films populaires':            { color: '#ff1a1a', href: '/movies?sort=popular' },
+  'Séries populaires':           { color: '#ff1a1a', href: '/series?sort=popular' },
 }
 
 export function ContentRow({ title, content, type, showRank = false, accentColor, viewAllHref }: ContentRowProps) {
   // Déléguer les Top 10 au composant dédié
   if (title === 'Top 10 Films de la semaine' || title === 'Top 10 Séries de la semaine') {
-    return <Top10Row title={title} content={content} type={type} accentColor={accentColor ?? (title.includes('Films') ? '#f59e0b' : '#06b6d4')} />
+    return <Top10Row title={title} content={content} type={type} accentColor={accentColor ?? '#ff1a1a'} />
   }
 
   const scrollRef = useRef<HTMLDivElement>(null)
