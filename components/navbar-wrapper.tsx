@@ -8,6 +8,7 @@ const HIDDEN_PATHS = [
   '/auth',
   '/admin',
   '/watch',
+  '/embed',
 ]
 
 export function NavbarWrapper() {
