@@ -79,10 +79,21 @@ export function AdminContentManager({ type, title, items: initialItems }: AdminC
   const addContent = async (result: TMDBResult, videoUrl: string) => {
     setSaving(true)
     try {
+      // Récupérer le vrai backdrop depuis l'API TMDB images
+      const endpoint = type === 'movie' ? 'movie' : 'tv'
+      let bestBackdrop = result.backdrop_path
+      try {
+        const imgRes = await fetch(`/api/auth/admin/tmdb-images?type=${endpoint}&id=${result.id}`)
+        if (imgRes.ok) {
+          const imgData = await imgRes.json()
+          if (imgData.backdrop_path) bestBackdrop = imgData.backdrop_path
+        }
+      } catch (e) { /* fallback sur le backdrop de base */ }
+
       const res = await fetch('/api/auth/admin/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, tmdbData: result, videoUrl }),
+        body: JSON.stringify({ type, tmdbData: { ...result, backdrop_path: bestBackdrop }, videoUrl }),
       })
       if (res.ok) {
         const newItem = await res.json()
