@@ -292,10 +292,10 @@ export function Navbar() {
         <div
           className="relative flex items-center h-[52px] px-2 gap-1 rounded-full transition-all duration-300"
           style={{
-            background: isScrolled ? 'rgba(12,6,8,0.82)' : 'rgba(12,6,8,0.55)',
+            background: isScrolled ? 'rgba(12,6,8,0.55)' : 'rgba(12,6,8,0.15)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255,255,255,0.09)',
+            border: '1px solid rgba(255,255,255,0.12)',
             boxShadow: isScrolled ? '0 8px 32px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
           }}
         >
@@ -373,7 +373,7 @@ export function Navbar() {
                 <motion.div
                   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                   className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
-                  style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.09)' }}
+                  style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
                 >
                   {searchResults.map(result => {
                     const title = result.title || result.name || ''
@@ -436,7 +436,7 @@ export function Navbar() {
                         className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl max-sm:fixed max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:right-auto max-sm:w-[92vw] max-sm:top-16"
                         style={{
                           background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
-                          border: '1px solid rgba(255,255,255,0.09)',
+                          border: '1px solid rgba(255,255,255,0.12)',
                           backdropFilter: 'blur(32px)',
                           boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
                         }}
