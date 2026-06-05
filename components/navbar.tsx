@@ -311,11 +311,11 @@ export function Navbar() {
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
             style={{
-              background: isScrolled ? 'rgba(12,6,8,0.65)' : 'rgba(12,6,8,0.2)',
+              background: isScrolled ? 'rgba(12,6,8,0.35)' : 'rgba(12,6,8,0.08)',
               backdropFilter: 'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: isScrolled ? '0 8px 32px rgba(0,0,0,0.5)' : '0 2px 12px rgba(0,0,0,0.2)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: isScrolled ? '0 8px 32px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.1)',
             }}
           >
             {/* Nav links */}
