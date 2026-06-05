@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -168,6 +168,23 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
     transition: { delay, duration: 0.4 },
   })
 
+  const [fixingBackdrops, setFixingBackdrops] = useState(false)
+  const [fixResult, setFixResult] = useState<string | null>(null)
+
+  const handleFixBackdrops = async () => {
+    setFixingBackdrops(true)
+    setFixResult(null)
+    try {
+      const res = await fetch('/api/auth/admin/fix-backdrops', { method: 'POST' })
+      const data = await res.json()
+      setFixResult(`✅ ${data.updated.movies} films et ${data.updated.series} séries mis à jour`)
+    } catch {
+      setFixResult('❌ Erreur lors de la correction')
+    } finally {
+      setFixingBackdrops(false)
+    }
+  }
+
   return (
     <div className="p-6 md:p-8 space-y-6 min-h-screen">
 
@@ -180,14 +197,28 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
             {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        {stats.pendingRequests > 0 && (
-          <Link href="/admin/requests">
-            <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/25 rounded-xl px-4 py-2.5 text-amber-400 text-sm font-semibold hover:bg-amber-400/15 transition-colors cursor-pointer">
-              <Clock className="w-4 h-4" />
-              {stats.pendingRequests} demande{stats.pendingRequests > 1 ? 's' : ''} en attente
-            </div>
-          </Link>
-        )}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Bouton fix backdrops */}
+          <div className="flex flex-col items-end gap-1">
+            <button
+              onClick={handleFixBackdrops}
+              disabled={fixingBackdrops}
+              className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/25 rounded-xl px-4 py-2.5 text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${fixingBackdrops ? 'animate-spin' : ''}`} />
+              {fixingBackdrops ? 'Correction en cours...' : 'Corriger les bannières'}
+            </button>
+            {fixResult && <p className="text-xs text-white/50">{fixResult}</p>}
+          </div>
+          {stats.pendingRequests > 0 && (
+            <Link href="/admin/requests">
+              <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/25 rounded-xl px-4 py-2.5 text-amber-400 text-sm font-semibold hover:bg-amber-400/15 transition-colors cursor-pointer">
+                <Clock className="w-4 h-4" />
+                {stats.pendingRequests} demande{stats.pendingRequests > 1 ? 's' : ''} en attente
+              </div>
+            </Link>
+          )}
+        </div>
       </motion.div>
 
       {/* ── KPI Grid ── */}
