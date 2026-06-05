@@ -33,6 +33,23 @@ export function ContentCard({
   const rank = index + 1
   const { openDrawer } = useDrawer()
   const [hovered, setHovered] = useState(false)
+  const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
+  const handleClick = () => {
+    if (isTouchDevice) {
+      if (!hovered) {
+        setHovered(true)
+      } else {
+        openDrawer(type, tmdbId)
+      }
+    } else {
+      if (!hovered) openDrawer(type, tmdbId)
+    }
+  }
+
+  const handleBlur = () => {
+    if (isTouchDevice) setHovered(false)
+  }
 
   const overview = (content as any).overview || ''
   const shortOverview = overview.length > 80 ? overview.slice(0, 80) + '...' : overview
@@ -45,7 +62,7 @@ export function ContentCard({
       transition={{ delay: index * 0.05, duration: 0.3 }}
       className="relative group flex-shrink-0"
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); handleBlur() }}
     >
       {/* Rank number */}
       {showRank && (
@@ -78,7 +95,7 @@ export function ContentCard({
           borderRadius: '1rem',
           border: '1px solid rgba(255,255,255,0.07)',
         }}
-        onClick={() => !hovered && openDrawer(type, tmdbId)}
+        onClick={handleClick}
       >
         {/* Poster */}
         <Image
