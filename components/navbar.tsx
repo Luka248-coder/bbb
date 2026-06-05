@@ -329,27 +329,44 @@ export function Navbar() {
 
           <div className="flex-1" />
 
-          {/* Search bar — toujours visible */}
+          {/* Search — icône par défaut, barre au clic */}
           <div ref={searchRef} className="relative hidden md:block">
-            <div className="flex items-center rounded-full px-3.5 py-2 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 220 }}>
-              <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
-              <input
-                value={searchQuery}
-                onChange={e => handleSearchChange(e.target.value)}
-                onFocus={() => setIsSearchOpen(true)}
-                onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
-                placeholder="Rechercher..."
-                className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
-              />
-              {searchQuery && (
-                <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                  <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />
-                </button>
+            <AnimatePresence mode="wait">
+              {isSearchOpen ? (
+                <motion.div
+                  key="open"
+                  initial={{ width: 36, opacity: 0 }} animate={{ width: 220, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                  className="flex items-center rounded-full px-3.5 py-2 gap-2"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                  <input
+                    value={searchQuery}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    placeholder="Rechercher..."
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                      <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />
+                    </button>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="closed"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  <Search className="w-4 h-4" />
+                </motion.button>
               )}
-            </div>
+            </AnimatePresence>
 
             <AnimatePresence>
-              {searchResults.length > 0 && (
+              {isSearchOpen && searchResults.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                   className="absolute right-0 top-12 w-80 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
