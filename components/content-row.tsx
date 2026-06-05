@@ -88,13 +88,13 @@ export function ContentRow({ title, content, type, showRank = false, accentColor
           className="flex items-center gap-2"
         >
           <div
-            className="w-[3px] rounded-full self-stretch"
+            className="w-[3px] rounded-sm self-stretch"
             style={{
-              background: `linear-gradient(to bottom, ${color}, transparent)`,
-              minHeight: '2rem',
+              background: color,
+              minHeight: '1.4rem',
             }}
           />
-          <h2 className="text-lg md:text-xl font-black text-white">
+          <h2 className="text-base md:text-lg font-semibold text-white tracking-wide">
             {title}
           </h2>
         </motion.div>

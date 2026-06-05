@@ -76,13 +76,13 @@ export function ContinueWatching() {
           className="flex items-center gap-2"
         >
           <div
-            className="w-[3px] rounded-full self-stretch"
+            className="w-[3px] rounded-sm self-stretch"
             style={{
-              background: 'linear-gradient(to bottom, #3b82f6, transparent)',
+              background: '#e53935',
               minHeight: '2rem',
             }}
           />
-          <h2 className="text-lg md:text-xl font-black text-white">
+          <h2 className="text-base md:text-lg font-semibold text-white tracking-wide">
             Continuer à regarder
           </h2>
         </motion.div>
