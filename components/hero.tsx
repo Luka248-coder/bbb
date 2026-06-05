@@ -267,8 +267,8 @@ function HeroLogo({ tmdbId, type, title }: { tmdbId: number; type: string; title
         alt={title}
         width={420}
         height={180}
-        className="max-h-36 w-auto object-contain object-left"
-        style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.9))' }}
+        className="max-h-36 w-auto object-contain"
+        style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.9))', display: 'block', marginLeft: 0, objectPosition: 'left center' }}
       />
     )
   }
