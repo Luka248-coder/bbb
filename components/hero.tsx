@@ -125,7 +125,7 @@ export function Hero({ content }: HeroProps) {
       </AnimatePresence>
 
       {/* Contenu gauche */}
-      <div className="relative h-full flex items-end pb-24 px-8 md:px-16 lg:px-24">
+      <div className="relative h-full flex items-end pb-24 px-4 md:px-16 lg:px-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -186,7 +186,7 @@ export function Hero({ content }: HeroProps) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
-              className="flex items-center gap-3 flex-wrap"
+              className="flex items-center gap-3 flex-wrap justify-start"
             >
               <Link href={`/watch/${type}/${tmdbId}?play=1`}>
                 <button className="flex items-center gap-2.5 bg-white hover:bg-white/90 text-black font-bold px-7 py-3 rounded-full transition-all shadow-xl text-sm tracking-wide">
