@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Info, BookmarkPlus } from 'lucide-react'
+import { Play, Info, Bookmark, BookmarkCheck } from 'lucide-react'
 import { getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
+import { useSession } from 'next-auth/react'
 
 interface HeroProps {
   content: (Movie | Series)[]
@@ -18,7 +19,10 @@ function isMovie(item: Movie | Series): item is Movie {
 
 export function Hero({ content }: HeroProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isFav, setIsFav] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
   const { openDrawer } = useDrawer()
+  const { data: session } = useSession()
 
   // Filtrer uniquement les contenus qui ont un backdrop OU un poster
   const featured = content
@@ -32,6 +36,45 @@ export function Hero({ content }: HeroProps) {
     }, 8000)
     return () => clearInterval(interval)
   }, [featured.length])
+
+  // Vérifier si le film courant est en favoris
+  useEffect(() => {
+    if (!session?.user?.id || !featured[currentIndex]) return
+    const current = featured[currentIndex]
+    const tmdbId = current.tmdb_id || current.id
+    const type = isMovie(current) ? 'movie' : 'series'
+    fetch(`/api/favorites?user_id=${session.user.id}`)
+      .then(r => r.json())
+      .then((favs: any[]) => {
+        setIsFav(favs.some(f => f.tmdb_id === tmdbId && f.content_type === type))
+      })
+      .catch(() => {})
+  }, [currentIndex, session?.user?.id])
+
+  const toggleFav = async () => {
+    if (!session?.user?.id) return
+    const current = featured[currentIndex]
+    const tmdbId = current.tmdb_id || current.id
+    const type = isMovie(current) ? 'movie' : 'series'
+    const title = isMovie(current) ? current.title : current.name
+    const poster = current.poster_path
+    setFavLoading(true)
+    try {
+      if (isFav) {
+        await fetch(`/api/favorites?user_id=${session.user.id}&tmdb_id=${tmdbId}&content_type=${type}`, { method: 'DELETE' })
+        setIsFav(false)
+      } else {
+        await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: session.user.id, tmdb_id: tmdbId, content_type: type, title, poster }),
+        })
+        setIsFav(true)
+      }
+    } finally {
+      setFavLoading(false)
+    }
+  }
 
   if (featured.length === 0) return null
 
@@ -162,10 +205,19 @@ export function Hero({ content }: HeroProps) {
               </button>
 
               <button
-                className="flex items-center justify-center w-11 h-11 rounded-full border border-white/20 hover:border-white/40 text-white/60 hover:text-white transition-all"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
+                onClick={toggleFav}
+                disabled={favLoading || !session}
+                className="flex items-center justify-center w-11 h-11 rounded-full border transition-all"
+                style={{
+                  background: isFav ? 'rgba(220,38,38,0.2)' : 'rgba(255,255,255,0.06)',
+                  borderColor: isFav ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.2)',
+                }}
+                title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               >
-                <BookmarkPlus className="w-4 h-4" />
+                {isFav
+                  ? <BookmarkCheck className="w-4 h-4 text-red-400" />
+                  : <Bookmark className="w-4 h-4 text-white/60" />
+                }
               </button>
             </motion.div>
           </motion.div>
