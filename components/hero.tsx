@@ -73,19 +73,10 @@ export function Hero({ content }: HeroProps) {
             fill priority
             className={current.backdrop_path ? "object-cover object-top" : "object-cover object-center"}
           />
-          {/* Dégradé gauche fort pour lisibilité */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.1) 75%, transparent 100%)'
-          }} />
-          {/* Dégradé bas vers fond site */}
+          {/* Dégradé bas uniquement — fondu vers le contenu */}
           <div className="absolute inset-x-0 bottom-0" style={{
             height: '75%',
             background: 'linear-gradient(to top, #0a0506 0%, #0a0506 8%, rgba(10,5,6,0.96) 20%, rgba(10,5,6,0.75) 38%, rgba(10,5,6,0.35) 58%, rgba(10,5,6,0.08) 78%, transparent 100%)'
-          }} />
-
-          {/* Léger vignette haut */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%)'
           }} />
         </motion.div>
       </AnimatePresence>
