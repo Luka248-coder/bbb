@@ -18,43 +18,40 @@ async function getBestBackdrop(type: 'movie' | 'tv', tmdbId: number): Promise<st
 }
 
 export async function POST(request: NextRequest) {
+  const { offset = 0, contentType = 'movie' } = await request.json().catch(() => ({}))
+  const BATCH = 5
+
   const supabase = await createClient()
-  const results = { movies: 0, series: 0, errors: 0 }
+  const table = contentType === 'movie' ? 'movies' : 'series'
+  const tmdbType = contentType === 'movie' ? 'movie' : 'tv'
 
-  // Fix movies
-  const { data: movies } = await supabase.from('movies').select('id, tmdb_id, backdrop_path')
-  if (movies) {
-    for (const movie of movies) {
-      const backdrop = await getBestBackdrop('movie', movie.tmdb_id)
-      if (backdrop && backdrop !== movie.backdrop_path) {
-        const { error } = await supabase
-          .from('movies')
-          .update({ backdrop_path: backdrop })
-          .eq('id', movie.id)
-        if (error) results.errors++
-        else results.movies++
-      }
-      // Pause pour éviter le rate limit TMDB
-      await new Promise(r => setTimeout(r, 250))
+  const { data: items, count } = await supabase
+    .from(table)
+    .select('id, tmdb_id, backdrop_path', { count: 'exact' })
+    .range(offset, offset + BATCH - 1)
+
+  if (!items || items.length === 0) {
+    return NextResponse.json({ done: true, contentType, total: count ?? 0 })
+  }
+
+  let updated = 0
+  for (const item of items) {
+    const backdrop = await getBestBackdrop(tmdbType, item.tmdb_id)
+    if (backdrop && backdrop !== item.backdrop_path) {
+      await supabase.from(table).update({ backdrop_path: backdrop }).eq('id', item.id)
+      updated++
     }
   }
 
-  // Fix series
-  const { data: series } = await supabase.from('series').select('id, tmdb_id, backdrop_path')
-  if (series) {
-    for (const show of series) {
-      const backdrop = await getBestBackdrop('tv', show.tmdb_id)
-      if (backdrop && backdrop !== show.backdrop_path) {
-        const { error } = await supabase
-          .from('series')
-          .update({ backdrop_path: backdrop })
-          .eq('id', show.id)
-        if (error) results.errors++
-        else results.series++
-      }
-      await new Promise(r => setTimeout(r, 250))
-    }
-  }
+  const nextOffset = offset + BATCH
+  const hasMore = nextOffset < (count ?? 0)
 
-  return NextResponse.json({ success: true, updated: results })
+  return NextResponse.json({
+    done: !hasMore,
+    updated,
+    processed: items.length,
+    nextOffset: hasMore ? nextOffset : null,
+    nextType: hasMore ? contentType : (contentType === 'movie' ? 'series' : null),
+    total: count ?? 0,
+  })
 }

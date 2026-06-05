@@ -170,18 +170,44 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
 
   const [fixingBackdrops, setFixingBackdrops] = useState(false)
   const [fixResult, setFixResult] = useState<string | null>(null)
+  const [fixProgress, setFixProgress] = useState<string | null>(null)
 
   const handleFixBackdrops = async () => {
     setFixingBackdrops(true)
     setFixResult(null)
+    let totalUpdated = 0
+    let offset = 0
+    let contentType = 'movie'
+
     try {
-      const res = await fetch('/api/auth/admin/fix-backdrops', { method: 'POST' })
-      const data = await res.json()
-      setFixResult(`✅ ${data.updated.movies} films et ${data.updated.series} séries mis à jour`)
+      while (true) {
+        setFixProgress(`${contentType === 'movie' ? 'Films' : 'Séries'} — lot à partir de ${offset}...`)
+        const res = await fetch('/api/auth/admin/fix-backdrops', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offset, contentType }),
+        })
+        const data = await res.json()
+        totalUpdated += data.updated ?? 0
+
+        if (data.done) {
+          if (contentType === 'movie') {
+            // Passer aux séries
+            contentType = 'series'
+            offset = 0
+          } else {
+            break
+          }
+        } else {
+          offset = data.nextOffset
+        }
+      }
+      setFixResult(`✅ ${totalUpdated} bannière(s) corrigée(s)`)
     } catch {
       setFixResult('❌ Erreur lors de la correction')
     } finally {
       setFixingBackdrops(false)
+      setFixProgress(null)
     }
   }
 
@@ -206,9 +232,10 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
               className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/25 rounded-xl px-4 py-2.5 text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${fixingBackdrops ? 'animate-spin' : ''}`} />
-              {fixingBackdrops ? 'Correction en cours...' : 'Corriger les bannières'}
+              {fixingBackdrops ? 'Correction...' : 'Corriger les bannières'}
             </button>
-            {fixResult && <p className="text-xs text-white/50">{fixResult}</p>}
+            {fixProgress && <p className="text-xs text-white/40">{fixProgress}</p>}
+            {fixResult && <p className="text-xs text-white/60">{fixResult}</p>}
           </div>
           {stats.pendingRequests > 0 && (
             <Link href="/admin/requests">
