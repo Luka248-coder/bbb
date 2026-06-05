@@ -635,18 +635,11 @@ export function Navbar() {
       {/* Overlay recherche mobile */}
       <AnimatePresence>
         {isSearchOpen && (
-          <>
-            {/* Backdrop bloquant les touches derrière */}
-            <div 
-              className="md:hidden fixed inset-0 z-[96]"
-              onPointerDown={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="md:hidden fixed top-0 left-0 right-0 z-[97] px-4 pt-4 pb-3"
-              style={{ background: 'rgba(10,4,6,0.97)', backdropFilter: 'blur(20px)' }}
-              onPointerDown={e => e.stopPropagation()}
-            >
+          <motion.div
+            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="md:hidden fixed top-0 left-0 right-0 z-[97] px-4 pt-4 pb-3"
+            style={{ background: 'rgba(10,4,6,0.97)', backdropFilter: 'blur(20px)' }}
+          >
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
                 <Search className="w-4 h-4 text-white/40 shrink-0" />
@@ -675,11 +668,18 @@ export function Navbar() {
                   const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
                   return (
                     <button key={`${result.media_type}-${result.id}`}
-                      onClick={() => { 
+                      onTouchEnd={(e) => {
+                        e.preventDefault()
                         setIsSearchOpen(false)
                         setSearchResults([])
                         setSearchQuery('')
-                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
+                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 350)
+                      }}
+                      onClick={() => {
+                        setIsSearchOpen(false)
+                        setSearchResults([])
+                        setSearchQuery('')
+                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 350)
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent cursor-pointer"
                     >
@@ -696,7 +696,6 @@ export function Navbar() {
               </div>
             )}
           </motion.div>
-          </>
         )}
       </AnimatePresence>
       {mounted && createPortal(
