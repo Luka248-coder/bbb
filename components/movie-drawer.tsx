@@ -69,7 +69,7 @@ export function MovieDrawerProvider({ children }: { children: React.ReactNode })
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 z-[90]"
+              className="fixed inset-0 z-[98]"
               style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
               onClick={closeDrawer}
             />
@@ -81,7 +81,7 @@ export function MovieDrawerProvider({ children }: { children: React.ReactNode })
               animate={{ y: '4vh', borderRadius: '24px' }}
               exit={{ y: '100%', borderRadius: '24px' }}
               transition={{ type: 'spring', stiffness: 320, damping: 38, mass: 0.8 }}
-              className="fixed bottom-0 z-[91] overflow-hidden"
+              className="fixed bottom-0 z-[99] overflow-hidden"
               style={{
                 left: '3vw',
                 right: '3vw',
