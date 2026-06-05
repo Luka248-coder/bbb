@@ -4,15 +4,15 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Menu, X, User, LogOut, Settings, Heart,
   Film, Tv, Home, Plus, Bell, Check, Trash2, ChevronRight, Shield, Shuffle,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
 import { useDrawer } from '@/components/movie-drawer'
+
 interface Notification {
   id: string
   title: string
@@ -44,12 +44,22 @@ interface WatchHistory {
   finished: boolean
   watched_at: string
 }
+
 const navLinks = [
   { href: '/', label: 'Accueil', icon: Home },
   { href: '/movies', label: 'Films', icon: Film },
   { href: '/series', label: 'Séries', icon: Tv },
-  { href: '/request', label: 'Demander', icon: Plus },
+  { href: '/series?genre=animation', label: 'Animés', icon: Tv },
+  { href: '/movies?sort=new', label: 'Nouveautés', icon: Bell },
+  { href: '/request', label: "Demande d'ajout", icon: Plus },
+  { href: '/vip', label: 'VIP', icon: Shield },
 ]
+
+const moreLinks = [
+  { href: '/favorites', label: 'Favoris', icon: Heart },
+  { href: '/roulette', label: 'Roulette', icon: Shuffle },
+]
+
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
   const days = Math.floor(diff / 86400000)
@@ -59,6 +69,7 @@ function timeAgo(date: string) {
   if (hours > 0) return `Il y a ${hours}h`
   return `Il y a ${mins}min`
 }
+
 const prefConfig = [
   { key: 'new_movies', label: 'Nouveaux films', icon: Film, color: 'bg-red-500/20 text-red-400' },
   { key: 'new_series', label: 'Nouvelles séries', icon: Tv, color: 'bg-red-500/20 text-red-400' },
@@ -67,6 +78,7 @@ const prefConfig = [
   { key: 'request_rejected', label: 'Demande refusée', icon: X, color: 'bg-red-500/20 text-red-400' },
   { key: 'announcements', label: 'Annonces', icon: Bell, color: 'bg-blue-500/20 text-blue-400' },
 ]
+
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -81,6 +93,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
     </button>
   )
 }
+
 export function Navbar() {
   const { user } = useSession()
   const { openDrawer } = useDrawer()
@@ -92,6 +105,9 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
+  const moreRef = useRef<HTMLDivElement>(null)
+
+  const [showMore, setShowMore] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifPrefs, setShowNotifPrefs] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -107,6 +123,7 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const unreadCount = notifications.filter(n => !n.is_read).length
+
   useEffect(() => {
     const isOpen = showProfile || isMobileMenuOpen
     if (isOpen) {
@@ -138,15 +155,15 @@ export function Navbar() {
       if (scrollY) window.scrollTo(0, scrollY)
     }
   }, [showProfile, isMobileMenuOpen])
+
   useEffect(() => { setMounted(true) }, [])
+
   useEffect(() => {
     let ticking = false
     const fn = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           setIsScrolled(window.scrollY > 20)
-          const scrollTop = window.scrollY
-          const docHeight = document.documentElement.scrollHeight - window.innerHeight
           ticking = false
         })
         ticking = true
@@ -155,9 +172,11 @@ export function Navbar() {
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
   }, [])
+
   useEffect(() => {
     if (user) { fetchNotifications(); fetchNotifPrefs() }
   }, [user])
+
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -168,6 +187,7 @@ export function Navbar() {
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [])
+
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -179,6 +199,17 @@ export function Navbar() {
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [])
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMore(false)
+      }
+    }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+
   const fetchNotifications = async () => {
     if (!user) return
     setLoadingNotifs(true)
@@ -189,6 +220,7 @@ export function Navbar() {
     } catch {}
     setLoadingNotifs(false)
   }
+
   const fetchNotifPrefs = async () => {
     if (!user) return
     try {
@@ -196,6 +228,7 @@ export function Navbar() {
       if (res.ok) { const data = await res.json(); if (data) setNotifPrefs(data) }
     } catch {}
   }
+
   const fetchWatchHistory = async () => {
     if (!user) return
     setLoadingHistory(true)
@@ -205,6 +238,7 @@ export function Navbar() {
     } catch {}
     setLoadingHistory(false)
   }
+
   const updatePref = async (key: string, value: boolean) => {
     if (!user) return
     const newPrefs = { ...notifPrefs, [key]: value }
@@ -215,20 +249,24 @@ export function Navbar() {
       body: JSON.stringify({ user_id: user.id, ...newPrefs }),
     })
   }
+
   const markAllRead = async () => {
     if (!user) return
     await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: user.id, mark_all: true }) })
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
   }
+
   const clearAll = async () => {
     if (!user) return
     await fetch(`/api/notifications?user_id=${user.id}`, { method: 'DELETE' })
     setNotifications([])
   }
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) { window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`; setSearchResults([]) }
   }
+
   const handleSearchChange = async (value: string) => {
     setSearchQuery(value)
     if (!value.trim()) { setSearchResults([]); return }
@@ -240,7 +278,9 @@ export function Navbar() {
       setSearchResults([...movies, ...series].slice(0, 6))
     } catch {}
   }
+
   const avatarUrl = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png` : null
+
   const openProfile = () => {
     setShowProfile(true)
     setShowNotifications(false)
@@ -248,13 +288,16 @@ export function Navbar() {
     setShowNotifPrefs(false)
     fetchWatchHistory()
   }
+
   const closeProfile = () => {
     setShowProfile(false)
     setShowNotifPrefs(false)
   }
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none" style={{ zIndex: 50 }}>
       <div className="relative flex items-center h-[60px] px-4 md:px-6">
+
         {/* Logo — fixe à gauche */}
         <div className="pointer-events-auto flex-shrink-0">
           <Link href="/">
@@ -264,6 +307,7 @@ export function Navbar() {
             />
           </Link>
         </div>
+
         {/* Pill centré — position absolue */}
         <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
           <div
@@ -282,7 +326,7 @@ export function Navbar() {
               return (
                 <Link key={link.href} href={link.href} className="select-none">
                   <div className={cn(
-                    'px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold',
+                    'px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold whitespace-nowrap',
                     isActive ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
                   )}>
                     {link.label}
@@ -290,256 +334,325 @@ export function Navbar() {
                 </Link>
               )
             })}
+
+            {/* Voir plus dropdown */}
+            <div ref={moreRef} className="relative">
+              <button
+                onClick={() => setShowMore(!showMore)}
+                className={cn(
+                  'flex items-center gap-1 px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold select-none whitespace-nowrap',
+                  showMore ? 'bg-white/10 text-white' : 'text-white/55 hover:text-white hover:bg-white/10'
+                )}
+              >
+                Voir plus
+                <motion.svg
+                  animate={{ rotate: showMore ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </motion.svg>
+              </button>
+              <AnimatePresence>
+                {showMore && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    className="absolute top-12 left-1/2 -translate-x-1/2 w-44 rounded-2xl overflow-hidden z-50 py-1"
+                    style={{
+                      background: 'rgba(12,6,8,0.96)',
+                      backdropFilter: 'blur(24px)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+                    }}
+                  >
+                    {moreLinks.map(link => {
+                      const Icon = link.icon
+                      const isActive = pathname === link.href
+                      return (
+                        <Link key={link.href} href={link.href} onClick={() => setShowMore(false)}>
+                          <div className={cn(
+                            'flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors',
+                            isActive ? 'text-white bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
+                          )}>
+                            <Icon className="w-3.5 h-3.5" />
+                            {link.label}
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <div className="w-px h-4 bg-white/10 mx-1" />
+
             {/* Roulette dé */}
             <Link href="/roulette" title="Roulette" className="select-none">
               <div className={cn(
-                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 text-lg',
+                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
                 pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
               )}>
-                🎲
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="4"/>
+                  <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+                </svg>
               </div>
             </Link>
+
             <div className="w-px h-4 bg-white/10 mx-1" />
+
             {/* Search inline */}
             <div ref={searchRef} className="relative flex items-center">
-            <AnimatePresence mode="wait">
-              {isSearchOpen ? (
-                <motion.div
-                  key="open"
-                  initial={{ width: 36, opacity: 0 }} animate={{ width: 200, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                  className="flex items-center rounded-full px-3 gap-2 h-8"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-                >
-                  <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
-                  <input
-                    value={searchQuery}
-                    onChange={e => handleSearchChange(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
-                    placeholder="Rechercher..."
-                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
-                    autoFocus
-                  />
-                  {searchQuery && (
-                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                      <X className="w-3 h-3 text-white/30 hover:text-white/60" />
-                    </button>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.button
-                  key="closed"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                >
-                  <Search className="w-4 h-4" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-            {/* Dropdown résultats */}
-            <AnimatePresence>
-              {isSearchOpen && searchResults.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                  className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
-                  style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
-                >
-                  {searchResults.map(result => {
-                    const title = result.title || result.name || ''
-                    const date = result.release_date || result.first_air_date || ''
-                    const year = date ? new Date(date).getFullYear() : ''
-                    const isMovieResult = result.media_type === 'movie'
-                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                    return (
-                      <button key={`${result.media_type}-${result.id}`}
-                        onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
-                      >
-                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-semibold text-sm truncate">{title}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
-                            {year && <span className="text-white/30 text-xs">{year}</span>}
-                          </div>
-                        </div>
-                        <ChevronRight className="w-3.5 h-3.5 text-white/20" />
+              <AnimatePresence mode="wait">
+                {isSearchOpen ? (
+                  <motion.div
+                    key="open"
+                    initial={{ width: 36, opacity: 0 }} animate={{ width: 200, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                    className="flex items-center rounded-full px-3 gap-2 h-8"
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  >
+                    <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                    <input
+                      value={searchQuery}
+                      onChange={e => handleSearchChange(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
+                      placeholder="Rechercher..."
+                      className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
+                      autoFocus
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                        <X className="w-3 h-3 text-white/30 hover:text-white/60" />
                       </button>
-                    )
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="closed"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    <Search className="w-4 h-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+
+              {/* Dropdown résultats */}
+              <AnimatePresence>
+                {isSearchOpen && searchResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  >
+                    {searchResults.map(result => {
+                      const title = result.title || result.name || ''
+                      const date = result.release_date || result.first_air_date || ''
+                      const year = date ? new Date(date).getFullYear() : ''
+                      const isMovieResult = result.media_type === 'movie'
+                      const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                      return (
+                        <button key={`${result.media_type}-${result.id}`}
+                          onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
+                        >
+                          <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                            {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-semibold text-sm truncate">{title}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
+                              {year && <span className="text-white/30 text-xs">{year}</span>}
+                            </div>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-white/20" />
+                        </button>
+                      )
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
           </div>
-            </div>{/* fin pill */}
         </div>
+
         {/* Actions droite — fixe à droite */}
         <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-1">
-            {user ? (
-              <>
-                {/* Bell */}
-                <div ref={notifRef} className="relative">
-                  <button
-                    onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
-                    className="relative w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {(showNotifications || showNotifPrefsBell) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 12, scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                        className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl max-sm:fixed max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:right-auto max-sm:w-[92vw] max-sm:top-16"
-                        style={{
-                          background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          backdropFilter: 'blur(32px)',
-                          boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
-                        }}
-                      >
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 pointer-events-none"
-                          style={{ background: 'radial-gradient(ellipse, rgba(220,38,38,0.18) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-                        {!showNotifPrefsBell ? (
-                          <>
-                            <div className="relative px-5 pt-5 pb-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                    style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)' }}>
-                                    <Bell className="w-4 h-4 text-red-400" />
-                                  </div>
-                                  <div>
-                                    <p className="font-bold text-white text-[15px] leading-tight">Notifications</p>
-                                    {unreadCount > 0
-                                      ? <p className="text-[11px] font-medium mt-0.5" style={{ color: 'rgba(252,165,165,0.8)' }}>{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
-                                      : <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>Tout est à jour</p>
-                                    }
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {unreadCount > 0 && (
-                                    <button onClick={markAllRead} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-green-500/10 hover:text-green-400 transition-all"><Check className="w-3.5 h-3.5" /></button>
-                                  )}
-                                  {notifications.length > 0 && (
-                                    <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-red-500/10 hover:text-red-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-                                  )}
-                                  <button onClick={() => setShowNotifications(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><X className="w-3.5 h-3.5" /></button>
-                                </div>
-                              </div>
-                            </div>
-                            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
-                            <div className="overflow-y-auto" style={{ maxHeight: '340px' }}>
-                              {loadingNotifs ? (
-                                <div className="flex items-center justify-center py-12">
-                                  <div className="w-5 h-5 rounded-full" style={{ border: '2px solid rgba(239,68,68,0.2)', borderTopColor: 'rgba(239,68,68,0.7)', animation: 'spin 0.8s linear infinite' }} />
-                                </div>
-                              ) : notifications.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-14 gap-3">
-                                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                    <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.15)' }} />
-                                  </div>
-                                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>Aucune notification</p>
-                                </div>
-                              ) : (
-                                <div className="py-2">
-                                  {notifications.map((notif, i) => (
-                                    <motion.div key={notif.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.035 }}
-                                      className="group flex gap-3.5 px-5 py-3.5 cursor-pointer relative transition-all hover:bg-white/[0.03]"
-                                      style={notif.is_read ? {} : { background: 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }}
-                                      onClick={async () => {
-                                        await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notification_id: notif.id, user_id: user.id }) })
-                                        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
-                                        if (notif.content_id && notif.content_type) { setShowNotifications(false); router.push(`/watch/${notif.content_type}/${notif.content_id}`) }
-                                      }}
-                                    >
-                                      {!notif.is_read && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full" style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))' }} />}
-                                      {notif.image_url ? (
-                                        <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                                          <Image src={notif.image_url} alt="" fill className="object-cover" sizes="44px" />
-                                        </div>
-                                      ) : (
-                                        <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', border: '1px solid rgba(239,68,68,0.15)' }}>
-                                          <Bell className="w-4 h-4 text-red-400" />
-                                        </div>
-                                      )}
-                                      <div className="flex-1 min-w-0 py-0.5">
-                                        <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>{notif.title}</p>
-                                        <p className="text-[12px] line-clamp-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>{notif.message}</p>
-                                        <p className="text-[11px] mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(notif.created_at)}</p>
-                                      </div>
-                                      {!notif.is_read && <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ background: 'radial-gradient(circle, rgb(239,68,68), rgb(185,28,28))', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }} />}
-                                    </motion.div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
-                            <button onClick={() => setShowNotifPrefsBell(true)}
-                              className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-medium text-white/25 hover:text-white/50 hover:bg-white/[0.03] transition-all">
-                              <Settings className="w-3.5 h-3.5" />Préférences d&apos;alertes
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-3 px-5 py-4">
-                              <button onClick={() => setShowNotifPrefsBell(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><ChevronRight className="w-4 h-4 rotate-180" /></button>
-                              <p className="font-bold text-white text-[15px]">Préférences</p>
-                            </div>
-                            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
-                            <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
-                              {prefConfig.map(pref => {
-                                const Icon = pref.icon
-                                const enabled = notifPrefs[pref.key as keyof NotifPrefs]
-                                return (
-                                  <div key={pref.key} className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${pref.color}`}><Icon className="w-3.5 h-3.5" /></div>
-                                    <p className="text-sm font-medium flex-1" style={{ color: 'rgba(255,255,255,0.75)' }}>{pref.label}</p>
-                                    <Toggle enabled={enabled} onChange={v => updatePref(pref.key, v)} />
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                {/* Avatar */}
-                <button onClick={openProfile} className="relative w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all flex-shrink-0">
-                  {avatarUrl ? (
-                    <Image src={avatarUrl} alt={user.username} width={32} height={32} className="rounded-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-red-600 flex items-center justify-center">
-                      <User className="w-3.5 h-3.5 text-white" />
-                    </div>
+          {user ? (
+            <>
+              {/* Bell */}
+              <div ref={notifRef} className="relative">
+                <button
+                  onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
+                  className="relative w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
                   )}
                 </button>
-              </>
-            ) : (
-              <Link href="/login">
-                <div className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 transition-colors px-3.5 py-1.5 rounded-full text-white font-semibold text-[13px]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                    <polyline points="10 17 15 12 10 7"/>
-                    <line x1="15" y1="12" x2="3" y2="12"/>
-                  </svg>
-                  Connexion
-                </div>
-              </Link>
-            )}
-        </div>{/* fin actions droite desktop */}
+                <AnimatePresence>
+                  {(showNotifications || showNotifPrefsBell) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      className="absolute right-0 top-12 w-[380px] z-50 overflow-hidden rounded-2xl max-sm:fixed max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:right-auto max-sm:w-[92vw] max-sm:top-16"
+                      style={{
+                        background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        backdropFilter: 'blur(32px)',
+                        boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
+                      }}
+                    >
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 pointer-events-none"
+                        style={{ background: 'radial-gradient(ellipse, rgba(220,38,38,0.18) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+                      {!showNotifPrefsBell ? (
+                        <>
+                          <div className="relative px-5 pt-5 pb-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                  style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)' }}>
+                                  <Bell className="w-4 h-4 text-red-400" />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-white text-[15px] leading-tight">Notifications</p>
+                                  {unreadCount > 0
+                                    ? <p className="text-[11px] font-medium mt-0.5" style={{ color: 'rgba(252,165,165,0.8)' }}>{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
+                                    : <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>Tout est à jour</p>
+                                  }
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {unreadCount > 0 && (
+                                  <button onClick={markAllRead} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-green-500/10 hover:text-green-400 transition-all"><Check className="w-3.5 h-3.5" /></button>
+                                )}
+                                {notifications.length > 0 && (
+                                  <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-red-500/10 hover:text-red-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                                )}
+                                <button onClick={() => setShowNotifications(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><X className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
+                          <div className="overflow-y-auto" style={{ maxHeight: '340px' }}>
+                            {loadingNotifs ? (
+                              <div className="flex items-center justify-center py-12">
+                                <div className="w-5 h-5 rounded-full" style={{ border: '2px solid rgba(239,68,68,0.2)', borderTopColor: 'rgba(239,68,68,0.7)', animation: 'spin 0.8s linear infinite' }} />
+                              </div>
+                            ) : notifications.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center py-14 gap-3">
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                  <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.15)' }} />
+                                </div>
+                                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>Aucune notification</p>
+                              </div>
+                            ) : (
+                              <div className="py-2">
+                                {notifications.map((notif, i) => (
+                                  <motion.div key={notif.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.035 }}
+                                    className="group flex gap-3.5 px-5 py-3.5 cursor-pointer relative transition-all hover:bg-white/[0.03]"
+                                    style={notif.is_read ? {} : { background: 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }}
+                                    onClick={async () => {
+                                      await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notification_id: notif.id, user_id: user.id }) })
+                                      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
+                                      if (notif.content_id && notif.content_type) { setShowNotifications(false); router.push(`/watch/${notif.content_type}/${notif.content_id}`) }
+                                    }}
+                                  >
+                                    {!notif.is_read && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full" style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))' }} />}
+                                    {notif.image_url ? (
+                                      <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <Image src={notif.image_url} alt="" fill className="object-cover" sizes="44px" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', border: '1px solid rgba(239,68,68,0.15)' }}>
+                                        <Bell className="w-4 h-4 text-red-400" />
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0 py-0.5">
+                                      <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>{notif.title}</p>
+                                      <p className="text-[12px] line-clamp-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>{notif.message}</p>
+                                      <p className="text-[11px] mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(notif.created_at)}</p>
+                                    </div>
+                                    {!notif.is_read && <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ background: 'radial-gradient(circle, rgb(239,68,68), rgb(185,28,28))', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }} />}
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
+                          <button onClick={() => setShowNotifPrefsBell(true)}
+                            className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-medium text-white/25 hover:text-white/50 hover:bg-white/[0.03] transition-all">
+                            <Settings className="w-3.5 h-3.5" />Préférences d&apos;alertes
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3 px-5 py-4">
+                            <button onClick={() => setShowNotifPrefsBell(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+                            <p className="font-bold text-white text-[15px]">Préférences</p>
+                          </div>
+                          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
+                          <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+                            {prefConfig.map(pref => {
+                              const Icon = pref.icon
+                              const enabled = notifPrefs[pref.key as keyof NotifPrefs]
+                              return (
+                                <div key={pref.key} className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${pref.color}`}><Icon className="w-3.5 h-3.5" /></div>
+                                  <p className="text-sm font-medium flex-1" style={{ color: 'rgba(255,255,255,0.75)' }}>{pref.label}</p>
+                                  <Toggle enabled={enabled} onChange={v => updatePref(pref.key, v)} />
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Avatar */}
+              <button onClick={openProfile} className="relative w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all flex-shrink-0">
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt={user.username} width={32} height={32} className="rounded-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+              </button>
+            </>
+          ) : (
+            <Link href="/login">
+              <div className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 transition-colors px-3.5 py-1.5 rounded-full text-white font-semibold text-[13px]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Connexion
+              </div>
+            </Link>
+          )}
+        </div>
+
         {/* Mobile menu button */}
         <div className="pointer-events-auto ml-auto md:hidden">
           <button
@@ -549,7 +662,9 @@ export function Navbar() {
             {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
+
       </div>
+
       {/* Profile panel */}
       {mounted && createPortal(
         <AnimatePresence>
@@ -679,6 +794,7 @@ export function Navbar() {
           )}
         </AnimatePresence>
         , document.body)}
+
       {/* Mobile bottom sheet */}
       <AnimatePresence>
         {isMobileMenuOpen && (
