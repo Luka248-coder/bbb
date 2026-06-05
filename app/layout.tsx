@@ -3,7 +3,6 @@ import { Inter, Barlow_Condensed } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SessionProvider } from '@/components/session-provider'
 import { MovieDrawerProvider } from '@/components/movie-drawer'
-import { NavbarWrapper } from '@/components/navbar-wrapper'
 import './globals.css'
 import { GridBackground } from '@/components/grid-background'
 
@@ -25,8 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GridBackground />
         <SessionProvider>
           <MovieDrawerProvider>
-            <NavbarWrapper />
-            <div className="relative page-scaled" style={{ zIndex: 1 }}>
+            <div className="relative" style={{ zIndex: 1 }}>
               {children}
             </div>
           </MovieDrawerProvider>
