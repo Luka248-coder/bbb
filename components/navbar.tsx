@@ -590,6 +590,7 @@ export function Navbar() {
             </div>{/* fin pill */}
           </div>
         </div>
+      </div>
 
         {/* Mobile menu button */}
         <div className="pointer-events-auto ml-auto md:hidden">
