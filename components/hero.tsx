@@ -19,7 +19,11 @@ function isMovie(item: Movie | Series): item is Movie {
 export function Hero({ content }: HeroProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const { openDrawer } = useDrawer()
-  const featured = content.slice(0, 5)
+
+  // Filtrer uniquement les contenus qui ont un backdrop OU un poster
+  const featured = content
+    .filter(item => item.backdrop_path || item.poster_path)
+    .slice(0, 5)
 
   useEffect(() => {
     if (featured.length <= 1) return
@@ -42,6 +46,15 @@ export function Hero({ content }: HeroProps) {
   return (
     <section className="relative w-full overflow-hidden hero-section" style={{ minHeight: 600 }}>
 
+      {/* Préchargement des images suivantes */}
+      {featured.map((item, i) => {
+        if (i === currentIndex) return null
+        const src = item.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+          : `https://image.tmdb.org/t/p/w780${item.poster_path}`
+        return <link key={i} rel="preload" as="image" href={src} />
+      })}
+
       {/* Backdrop plein écran */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -53,10 +66,12 @@ export function Hero({ content }: HeroProps) {
           className="absolute inset-0"
         >
           <Image
-            src={getBackdropUrl(current.backdrop_path)}
+            src={current.backdrop_path
+              ? `https://image.tmdb.org/t/p/original${current.backdrop_path}`
+              : `https://image.tmdb.org/t/p/w780${current.poster_path}`}
             alt={title}
             fill priority
-            className="object-cover object-top"
+            className={current.backdrop_path ? "object-cover object-top" : "object-cover object-center"}
           />
           {/* Dégradé gauche fort pour lisibilité */}
           <div className="absolute inset-0" style={{
