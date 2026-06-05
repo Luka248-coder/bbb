@@ -9,7 +9,7 @@ async function getBestBackdrop(type: 'movie' | 'tv', tmdbId: number): Promise<st
     const res = await fetch(`${TMDB_BASE_URL}/${type}/${tmdbId}/images?api_key=${TMDB_API_KEY}`)
     const data = await res.json()
     const backdrops = (data.backdrops || [])
-      .filter((b: any) => b.aspect_ratio > 1.7)
+      .filter((b: any) => b.aspect_ratio > 1.7 && b.iso_639_1 === null)
       .sort((a: any, b: any) => b.vote_average - a.vote_average)
     return backdrops[0]?.file_path || null
   } catch {

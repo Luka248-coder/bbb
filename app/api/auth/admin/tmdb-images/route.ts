@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Prendre le backdrop avec le meilleur vote_average (vrai fond de scène, pas logo)
     const backdrops = (data.backdrops || [])
-      .filter((b: any) => b.aspect_ratio > 1.7) // ratio 16:9 = vrai backdrop
+      .filter((b: any) => b.aspect_ratio > 1.7 && b.iso_639_1 === null)
       .sort((a: any, b: any) => b.vote_average - a.vote_average)
 
     const bestBackdrop = backdrops[0]?.file_path || null
