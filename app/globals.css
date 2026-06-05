@@ -159,7 +159,17 @@ body { background: transparent !important; }
 .bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(18,8,10,0.82) !important; }
 .min-h-screen { background: transparent !important; }
 
-/* Hero full height responsive */
+/* Player fullscreen — compensates for desktop zoom */
+.player-fullscreen {
+  width: 100vw;
+  height: 100dvh;
+}
+@media (min-width: 768px) {
+  .player-fullscreen {
+    width: calc(100vw / 0.92);
+    height: calc(100dvh / 0.92);
+  }
+}
 .hero-section {
   height: 100vh;
 }

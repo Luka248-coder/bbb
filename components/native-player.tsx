@@ -1021,8 +1021,7 @@ export function NativePlayer({
   return (
     <div
       ref={containerRef}
-      className="w-screen bg-black relative overflow-hidden"
-      style={{ height: '100dvh' }}
+      className="bg-black relative overflow-hidden player-fullscreen"
       onMouseMove={resetTimer}
       onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
     >
