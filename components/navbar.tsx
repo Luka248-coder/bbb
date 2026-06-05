@@ -759,11 +759,11 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={() => setIsMobileMenuOpen(false)} />
+              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[95]" onClick={() => setIsMobileMenuOpen(false)} />
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 38 }}
-              className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden pb-10"
+              className="md:hidden fixed bottom-0 left-0 right-0 z-[96] rounded-t-3xl overflow-hidden pb-10"
               style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}
             >
               <div className="flex justify-center pt-3 pb-4"><div className="w-8 h-1 rounded-full bg-white/15" /></div>
