@@ -285,41 +285,41 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pt-3 transition-all duration-300">
-      <div
-        className="mx-3 md:mx-6 rounded-2xl transition-all duration-300"
-        style={{
-          background: 'rgba(15,8,10,0.72)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.07)',
-        }}
-      >
-        <div className="w-full px-4 md:px-5">
-          <div className="flex items-center h-[56px] gap-3">
+    <header className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pt-4 pointer-events-none" style={{ zIndex: 50 }}>
 
-          {/* Logo */}
-          <Link href="/" className="flex-shrink-0 mr-1">
+      {/* ─── Navbar pill centré ─── */}
+      <div className="pointer-events-auto w-full max-w-4xl mx-auto px-4">
+        <div
+          className="relative flex items-center h-[52px] px-2 gap-1 rounded-full transition-all duration-300"
+          style={{
+            background: isScrolled ? 'rgba(12,6,8,0.82)' : 'rgba(12,6,8,0.55)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255,255,255,0.09)',
+            boxShadow: isScrolled ? '0 8px 32px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
+          }}
+        >
+          {/* Logo gauche */}
+          <Link href="/" className="flex-shrink-0 px-2">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={280} height={84} className="h-7 md:h-20 w-auto"
+              alt="StreamSelf" width={280} height={84} className="h-6 w-auto"
             />
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-0.5">
+          {/* Séparateur */}
+          <div className="hidden md:block w-px h-4 bg-white/10 mx-1" />
+
+          {/* Nav links — desktop */}
+          <nav className="hidden md:flex items-center gap-0.5 flex-1">
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
-                <Link key={link.href} href={link.href} className="relative select-none">
-                  <div
-                    className={cn(
-                      'relative px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold',
-                      isActive
-                        ? 'bg-white text-black'
-                        : 'text-white/60 hover:text-white hover:bg-white/10'
-                    )}
-                  >
+                <Link key={link.href} href={link.href} className="select-none">
+                  <div className={cn(
+                    'px-3 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold',
+                    isActive ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
+                  )}>
                     {link.label}
                   </div>
                 </Link>
@@ -327,30 +327,32 @@ export function Navbar() {
             })}
           </nav>
 
-          <div className="flex-1" />
+          {/* Spacer mobile */}
+          <div className="flex-1 md:hidden" />
 
-          {/* Search — icône par défaut, barre au clic */}
-          <div ref={searchRef} className="relative hidden md:block">
+          {/* Search inline */}
+          <div ref={searchRef} className="relative hidden md:flex items-center">
             <AnimatePresence mode="wait">
               {isSearchOpen ? (
                 <motion.div
                   key="open"
-                  initial={{ width: 36, opacity: 0 }} animate={{ width: 220, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
+                  initial={{ width: 36, opacity: 0 }} animate={{ width: 200, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                  className="flex items-center rounded-full px-3.5 py-2 gap-2"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  className="flex items-center rounded-full px-3 gap-2 h-8"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
                 >
                   <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
                   <input
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
                     placeholder="Rechercher..."
                     className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
                     autoFocus
                   />
                   {searchQuery && (
                     <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                      <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />
+                      <X className="w-3 h-3 text-white/30 hover:text-white/60" />
                     </button>
                   )}
                 </motion.div>
@@ -358,34 +360,31 @@ export function Navbar() {
                 <motion.button
                   key="closed"
                   onClick={() => setIsSearchOpen(true)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
                 >
                   <Search className="w-4 h-4" />
                 </motion.button>
               )}
             </AnimatePresence>
 
+            {/* Dropdown résultats */}
             <AnimatePresence>
               {isSearchOpen && searchResults.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                  className="absolute right-0 top-12 w-80 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.09)' }}
                 >
                   {searchResults.map(result => {
                     const title = result.title || result.name || ''
                     const date = result.release_date || result.first_air_date || ''
                     const year = date ? new Date(date).getFullYear() : ''
-                    const isMovie = result.media_type === 'movie'
+                    const isMovieResult = result.media_type === 'movie'
                     const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
                     return (
                       <button key={`${result.media_type}-${result.id}`}
-                        onClick={() => {
-                          setIsSearchOpen(false)
-                          setSearchResults([])
-                          setSearchQuery('')
-                          openDrawer(isMovie ? 'movie' : 'series', result.id)
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left appearance-none bg-transparent outline-none cursor-pointer"
+                        onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
                       >
                         <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
                           {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
@@ -393,7 +392,7 @@ export function Navbar() {
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-semibold text-sm truncate">{title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
+                            <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
                             {year && <span className="text-white/30 text-xs">{year}</span>}
                           </div>
                         </div>
@@ -406,24 +405,22 @@ export function Navbar() {
             </AnimatePresence>
           </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-1.5">
+          {/* Séparateur */}
+          <div className="hidden md:block w-px h-4 bg-white/10 mx-1" />
+
+          {/* Actions droite */}
+          <div className="flex items-center gap-1">
             {user ? (
               <>
                 {/* Bell */}
                 <div ref={notifRef} className="relative">
                   <button
-                    onClick={() => {
-                      setShowNotifications(!showNotifications)
-                      setShowProfile(false)
-                      setShowNotifPrefsBell(false)
-                      if (!showNotifications) fetchNotifications()
-                    }}
-                    className="relative w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.07] transition-all"
+                    onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
+                    className="relative w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
                   >
-                    <Bell className="w-4.5 h-4.5" />
+                    <Bell className="w-4 h-4" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                      <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
@@ -441,21 +438,19 @@ export function Navbar() {
                           background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
                           border: '1px solid rgba(255,255,255,0.09)',
                           backdropFilter: 'blur(32px)',
-                          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 1px 0 rgba(255,255,255,0.08) inset',
+                          boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
                         }}
                       >
-                        {/* Ambient glow top */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 pointer-events-none"
                           style={{ background: 'radial-gradient(ellipse, rgba(220,38,38,0.18) 0%, transparent 70%)', filter: 'blur(20px)' }} />
 
                         {!showNotifPrefsBell ? (
                           <>
-                            {/* Header */}
                             <div className="relative px-5 pt-5 pb-4">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                    style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)', boxShadow: '0 0 12px rgba(239,68,68,0.15)' }}>
+                                    style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)' }}>
                                     <Bell className="w-4 h-4 text-red-400" />
                                   </div>
                                   <div>
@@ -468,38 +463,16 @@ export function Navbar() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   {unreadCount > 0 && (
-                                    <button onClick={markAllRead} title="Tout marquer lu"
-                                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                                      style={{ color: 'rgba(255,255,255,0.3)' }}
-                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(52,211,153,0.1)'; e.currentTarget.style.color = 'rgb(52,211,153)' }}
-                                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
-                                      <Check className="w-3.5 h-3.5" />
-                                    </button>
+                                    <button onClick={markAllRead} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-green-500/10 hover:text-green-400 transition-all"><Check className="w-3.5 h-3.5" /></button>
                                   )}
                                   {notifications.length > 0 && (
-                                    <button onClick={clearAll} title="Tout effacer"
-                                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                                      style={{ color: 'rgba(255,255,255,0.3)' }}
-                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgb(239,68,68)' }}
-                                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
+                                    <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-red-500/10 hover:text-red-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                                   )}
-                                  <button onClick={() => setShowNotifications(false)}
-                                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                                    style={{ color: 'rgba(255,255,255,0.3)' }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'white' }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
+                                  <button onClick={() => setShowNotifications(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><X className="w-3.5 h-3.5" /></button>
                                 </div>
                               </div>
                             </div>
-
-                            {/* Separator */}
                             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
-
-                            {/* List */}
                             <div className="overflow-y-auto" style={{ maxHeight: '340px' }}>
                               {loadingNotifs ? (
                                 <div className="flex items-center justify-center py-12">
@@ -507,8 +480,7 @@ export function Navbar() {
                                 </div>
                               ) : notifications.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-14 gap-3">
-                                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                                     <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.15)' }} />
                                   </div>
                                   <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>Aucune notification</p>
@@ -516,87 +488,46 @@ export function Navbar() {
                               ) : (
                                 <div className="py-2">
                                   {notifications.map((notif, i) => (
-                                    <motion.div
-                                      key={notif.id}
-                                      initial={{ opacity: 0, x: -6 }}
-                                      animate={{ opacity: 1, x: 0 }}
-                                      transition={{ delay: i * 0.035 }}
-                                      className="group flex gap-3.5 px-5 py-3.5 cursor-pointer relative transition-all"
-                                      style={notif.is_read
-                                        ? { background: 'transparent' }
-                                        : { background: 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }
-                                      }
-                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-                                      onMouseLeave={e => { e.currentTarget.style.background = notif.is_read ? 'transparent' : 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }}
+                                    <motion.div key={notif.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.035 }}
+                                      className="group flex gap-3.5 px-5 py-3.5 cursor-pointer relative transition-all hover:bg-white/[0.03]"
+                                      style={notif.is_read ? {} : { background: 'linear-gradient(90deg, rgba(239,68,68,0.07), transparent)' }}
                                       onClick={async () => {
                                         await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notification_id: notif.id, user_id: user.id }) })
                                         setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
                                         if (notif.content_id && notif.content_type) { setShowNotifications(false); router.push(`/watch/${notif.content_type}/${notif.content_id}`) }
                                       }}
                                     >
-                                      {/* Unread bar */}
-                                      {!notif.is_read && (
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full"
-                                          style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))', boxShadow: '0 0 8px rgba(239,68,68,0.4)' }} />
-                                      )}
-
-                                      {/* Poster */}
+                                      {!notif.is_read && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full" style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))' }} />}
                                       {notif.image_url ? (
-                                        <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden"
-                                          style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
                                           <Image src={notif.image_url} alt="" fill className="object-cover" sizes="44px" />
-                                          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent 50%)' }} />
                                         </div>
                                       ) : (
-                                        <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center"
-                                          style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', border: '1px solid rgba(239,68,68,0.15)' }}>
+                                        <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', border: '1px solid rgba(239,68,68,0.15)' }}>
                                           <Bell className="w-4 h-4 text-red-400" />
                                         </div>
                                       )}
-
-                                      {/* Text */}
                                       <div className="flex-1 min-w-0 py-0.5">
-                                        <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>
-                                          {notif.title}
-                                        </p>
+                                        <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>{notif.title}</p>
                                         <p className="text-[12px] line-clamp-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>{notif.message}</p>
                                         <p className="text-[11px] mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(notif.created_at)}</p>
                                       </div>
-
-                                      {!notif.is_read && (
-                                        <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-                                          style={{ background: 'radial-gradient(circle, rgb(239,68,68), rgb(185,28,28))', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }} />
-                                      )}
+                                      {!notif.is_read && <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ background: 'radial-gradient(circle, rgb(239,68,68), rgb(185,28,28))', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }} />}
                                     </motion.div>
                                   ))}
                                 </div>
                               )}
                             </div>
-
-                            {/* Footer */}
                             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
-                            <button
-                              onClick={() => setShowNotifPrefsBell(true)}
-                              className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-medium transition-all"
-                              style={{ color: 'rgba(255,255,255,0.25)' }}
-                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.25)' }}
-                            >
-                              <Settings className="w-3.5 h-3.5" />
-                              Préférences d'alertes
+                            <button onClick={() => setShowNotifPrefsBell(true)}
+                              className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-medium text-white/25 hover:text-white/50 hover:bg-white/[0.03] transition-all">
+                              <Settings className="w-3.5 h-3.5" />Préférences d&apos;alertes
                             </button>
                           </>
                         ) : (
                           <>
-                            {/* Prefs header */}
-                            <div className="relative flex items-center gap-3 px-5 py-4">
-                              <button onClick={() => setShowNotifPrefsBell(false)}
-                                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                                style={{ color: 'rgba(255,255,255,0.3)' }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'white' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
-                                <ChevronRight className="w-4 h-4 rotate-180" />
-                              </button>
+                            <div className="flex items-center gap-3 px-5 py-4">
+                              <button onClick={() => setShowNotifPrefsBell(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><ChevronRight className="w-4 h-4 rotate-180" /></button>
                               <p className="font-bold text-white text-[15px]">Préférences</p>
                             </div>
                             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent)', margin: '0 20px' }} />
@@ -605,11 +536,8 @@ export function Navbar() {
                                 const Icon = pref.icon
                                 const enabled = notifPrefs[pref.key as keyof NotifPrefs]
                                 return (
-                                  <div key={pref.key} className="flex items-center gap-3 p-3.5 rounded-xl transition-all"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${pref.color}`}>
-                                      <Icon className="w-3.5 h-3.5" />
-                                    </div>
+                                  <div key={pref.key} className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${pref.color}`}><Icon className="w-3.5 h-3.5" /></div>
                                     <p className="text-sm font-medium flex-1" style={{ color: 'rgba(255,255,255,0.75)' }}>{pref.label}</p>
                                     <Toggle enabled={enabled} onChange={v => updatePref(pref.key, v)} />
                                   </div>
@@ -624,215 +552,19 @@ export function Navbar() {
                 </div>
 
                 {/* Avatar */}
-                <button
-                  onClick={openProfile}
-                  className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/10 hover:ring-white/30 transition-all flex-shrink-0"
-                >
+                <button onClick={openProfile} className="relative w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all flex-shrink-0">
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt={user.username} width={36} height={36} className="rounded-full object-cover" />
+                    <Image src={avatarUrl} alt={user.username} width={32} height={32} className="rounded-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-red-600 flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
+                      <User className="w-3.5 h-3.5 text-white" />
                     </div>
                   )}
                 </button>
-
-                {/* Profile panel */}
-                {mounted && createPortal(
-                  <AnimatePresence>
-                    {showProfile && (
-                      <>
-                        <motion.div
-                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
-                          onClick={closeProfile}
-                        />
-                        <motion.div
-                          initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                          transition={{ type: 'spring', stiffness: 340, damping: 38 }}
-                          className="fixed top-0 right-0 bottom-0 w-full md:w-[340px] z-[70] flex flex-col overflow-hidden"
-                          style={{ background: '#0e0e0f' }}
-                        >
-                          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                            {avatarUrl && (
-                              <div
-                                className="absolute inset-0 opacity-20"
-                                style={{
-                                  backgroundImage: `url(${avatarUrl})`,
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center top',
-                                  filter: 'blur(60px) saturate(2)',
-                                  transform: 'scale(1.4)',
-                                }}
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-[#0e0e0f]/80 to-[#0e0e0f]" />
-                          </div>
-
-                          <div className="relative flex-1 overflow-y-auto overscroll-contain">
-                            <div className="px-5 pt-10 pb-6">
-                              <div className="flex items-center gap-4">
-                                <div className="relative flex-shrink-0">
-                                  {avatarUrl ? (
-                                    <Image src={avatarUrl} alt={user.username} width={68} height={68} className="rounded-2xl ring-1 ring-white/10" />
-                                  ) : (
-                                    <div className="w-[68px] h-[68px] rounded-2xl bg-red-600 ring-1 ring-white/10 flex items-center justify-center">
-                                      <span className="text-white font-bold text-2xl">{user.username[0].toUpperCase()}</span>
-                                    </div>
-                                  )}
-                                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0e0e0f]" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-white font-bold text-lg leading-tight">{user.username}</p>
-                                  <p className="text-white/30 text-xs mt-0.5">{user.email || 'Compte Discord'}</p>
-                                </div>
-                                <button
-                                  onClick={closeProfile}
-                                  className="w-8 h-8 rounded-full bg-white/[0.07] hover:bg-white/10 flex items-center justify-center transition-colors self-start"
-                                >
-                                  <X className="w-4 h-4 text-white/50" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="px-4 space-y-2 mb-8">
-                              <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                                <button
-                                  onClick={() => setShowNotifPrefs(!showNotifPrefs)}
-                                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.04] transition-colors"
-                                >
-                                  <Settings className="w-4 h-4 text-white/40 flex-shrink-0" />
-                                  <span className="text-white/80 text-sm font-medium flex-1 text-left">Gérer les notifications</span>
-                                  <motion.div animate={{ rotate: showNotifPrefs ? 90 : 0 }} transition={{ duration: 0.2 }}>
-                                    <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                                  </motion.div>
-                                </button>
-                                <AnimatePresence>
-                                  {showNotifPrefs && (
-                                    <motion.div
-                                      initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                                      transition={{ duration: 0.22 }}
-                                      className="overflow-hidden"
-                                    >
-                                      <div className="border-t border-white/[0.05] px-4 py-3 space-y-3">
-                                        {prefConfig.map(pref => {
-                                          const Icon = pref.icon
-                                          const enabled = notifPrefs[pref.key as keyof NotifPrefs]
-                                          return (
-                                            <div key={pref.key} className="flex items-center gap-3">
-                                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${pref.color}`}>
-                                                <Icon className="w-3.5 h-3.5" />
-                                              </div>
-                                              <p className="text-white/60 text-xs font-medium flex-1">{pref.label}</p>
-                                              <Toggle enabled={enabled} onChange={v => updatePref(pref.key, v)} />
-                                            </div>
-                                          )
-                                        })}
-                                      </div>
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-
-                              <Link href="/favorites" onClick={closeProfile}
-                                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-white/[0.04] transition-colors group"
-                                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                              >
-                                <Heart className="w-4 h-4 text-white/40 flex-shrink-0" />
-                                <span className="text-white/80 text-sm font-medium flex-1">Mes favoris</span>
-                                <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
-                              </Link>
-
-                              {user.is_admin && (
-                                <Link href="/admin" onClick={closeProfile}
-                                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-white/[0.04] transition-colors group"
-                                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                                >
-                                  <Shield className="w-4 h-4 text-white/40 flex-shrink-0" />
-                                  <span className="text-white/80 text-sm font-medium flex-1">Administration</span>
-                                  <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
-                                </Link>
-                              )}
-
-                              <button
-                                onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
-                                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-red-500/[0.08] transition-colors"
-                                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}
-                              >
-                                <LogOut className="w-4 h-4 text-red-400/70 flex-shrink-0" />
-                                <span className="text-red-400/80 text-sm font-medium">Déconnexion</span>
-                              </button>
-                            </div>
-
-                            <div className="px-4 pb-10">
-                              <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mb-3 px-1">Derniers visionnages</p>
-                              {loadingHistory ? (
-                                <div className="flex justify-center py-10">
-                                  <div className="w-4 h-4 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" />
-                                </div>
-                              ) : watchHistory.length === 0 ? (
-                                <div className="text-center py-8 text-white/20 text-sm">Aucun visionnage récent</div>
-                              ) : (
-                                <div className="space-y-2">
-                                  {watchHistory.map(item => (
-                                    <Link
-                                      key={item.id}
-                                      href={`/watch/${item.content_type}/${item.content_id}`}
-                                      onClick={closeProfile}
-                                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative"
-                                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                                    >
-                                      {!item.finished && item.progress > 0 && (
-                                        <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
-                                      )}
-                                      <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
-                                        {item.poster_url ? (
-                                          <Image src={item.poster_url} alt={item.title} fill className="object-cover" sizes="40px" />
-                                        ) : (
-                                          <div className="w-full h-full flex items-center justify-center">
-                                            {item.content_type === 'movie' ? <Film className="w-4 h-4 text-zinc-600" /> : <Tv className="w-4 h-4 text-zinc-600" />}
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="flex-1 min-w-0 pr-4">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                          <span className={cn(
-                                            'inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded',
-                                            item.content_type === 'movie' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400'
-                                          )}>
-                                            {item.content_type === 'movie' ? <Film className="w-2 h-2" /> : <Tv className="w-2 h-2" />}
-                                            {item.content_type === 'movie' ? 'FILM' : 'SÉRIE'}
-                                          </span>
-                                          {item.content_type === 'series' && item.season && item.episode && (
-                                            <span className="text-[10px] text-white/30 font-medium">
-                                              S{String(item.season).padStart(2, '0')}·E{String(item.episode).padStart(2, '0')}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <p className="text-white/80 text-sm font-semibold truncate leading-tight">{item.title}</p>
-                                        <p className="text-white/30 text-xs mt-0.5">
-                                          {item.finished
-                                            ? <span className="flex items-center gap-1 text-green-400/60"><Check className="w-2.5 h-2.5" />Terminé</span>
-                                            : `${item.progress}% · ${timeAgo(item.watched_at)}`
-                                          }
-                                        </p>
-                                      </div>
-                                    </Link>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                  , document.body)}
               </>
             ) : (
               <Link href="/login">
-                <div className="flex items-center gap-2 bg-red-600 hover:bg-red-500 transition-colors px-4 py-2 rounded-full text-white font-semibold text-sm">
+                <div className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 transition-colors px-3.5 py-1.5 rounded-full text-white font-semibold text-[13px]">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                     <polyline points="10 17 15 12 10 7"/>
@@ -845,40 +577,162 @@ export function Navbar() {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all"
+              className="md:hidden w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
-          </div>
         </div>
       </div>
+
+      {/* Profile panel */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showProfile && (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" onClick={closeProfile} />
+              <motion.div
+                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 340, damping: 38 }}
+                className="fixed top-0 right-0 bottom-0 w-full md:w-[340px] z-[70] flex flex-col overflow-hidden"
+                style={{ background: '#0e0e0f' }}
+              >
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {avatarUrl && (
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${avatarUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'blur(60px) saturate(2)', transform: 'scale(1.4)' }} />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-[#0e0e0f]/80 to-[#0e0e0f]" />
+                </div>
+                <div className="relative flex-1 overflow-y-auto overscroll-contain">
+                  <div className="px-5 pt-10 pb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex-shrink-0">
+                        {avatarUrl ? (
+                          <Image src={avatarUrl} alt={user.username} width={68} height={68} className="rounded-2xl ring-1 ring-white/10" />
+                        ) : (
+                          <div className="w-[68px] h-[68px] rounded-2xl bg-red-600 ring-1 ring-white/10 flex items-center justify-center">
+                            <span className="text-white font-bold text-2xl">{user.username[0].toUpperCase()}</span>
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0e0e0f]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-lg leading-tight">{user.username}</p>
+                        <p className="text-white/30 text-xs mt-0.5">{user.email || 'Compte Discord'}</p>
+                      </div>
+                      <button onClick={closeProfile} className="w-8 h-8 rounded-full bg-white/[0.07] hover:bg-white/10 flex items-center justify-center transition-colors self-start">
+                        <X className="w-4 h-4 text-white/50" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="px-4 space-y-2 mb-8">
+                    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <button onClick={() => setShowNotifPrefs(!showNotifPrefs)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.04] transition-colors">
+                        <Settings className="w-4 h-4 text-white/40 flex-shrink-0" />
+                        <span className="text-white/80 text-sm font-medium flex-1 text-left">Gérer les notifications</span>
+                        <motion.div animate={{ rotate: showNotifPrefs ? 90 : 0 }} transition={{ duration: 0.2 }}><ChevronRight className="w-3.5 h-3.5 text-white/20" /></motion.div>
+                      </button>
+                      <AnimatePresence>
+                        {showNotifPrefs && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
+                            <div className="border-t border-white/[0.05] px-4 py-3 space-y-3">
+                              {prefConfig.map(pref => {
+                                const Icon = pref.icon
+                                const enabled = notifPrefs[pref.key as keyof NotifPrefs]
+                                return (
+                                  <div key={pref.key} className="flex items-center gap-3">
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${pref.color}`}><Icon className="w-3.5 h-3.5" /></div>
+                                    <p className="text-white/60 text-xs font-medium flex-1">{pref.label}</p>
+                                    <Toggle enabled={enabled} onChange={v => updatePref(pref.key, v)} />
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <Link href="/favorites" onClick={closeProfile} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-white/[0.04] transition-colors group" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <Heart className="w-4 h-4 text-white/40 flex-shrink-0" />
+                      <span className="text-white/80 text-sm font-medium flex-1">Mes favoris</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
+                    </Link>
+                    {user.is_admin && (
+                      <Link href="/admin" onClick={closeProfile} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-white/[0.04] transition-colors group" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <Shield className="w-4 h-4 text-white/40 flex-shrink-0" />
+                        <span className="text-white/80 text-sm font-medium flex-1">Administration</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
+                      </Link>
+                    )}
+                    <button onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-red-500/[0.08] transition-colors"
+                      style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}>
+                      <LogOut className="w-4 h-4 text-red-400/70 flex-shrink-0" />
+                      <span className="text-red-400/80 text-sm font-medium">Déconnexion</span>
+                    </button>
+                  </div>
+                  <div className="px-4 pb-10">
+                    <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mb-3 px-1">Derniers visionnages</p>
+                    {loadingHistory ? (
+                      <div className="flex justify-center py-10"><div className="w-4 h-4 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" /></div>
+                    ) : watchHistory.length === 0 ? (
+                      <div className="text-center py-8 text-white/20 text-sm">Aucun visionnage récent</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {watchHistory.map(item => (
+                          <Link key={item.id} href={`/watch/${item.content_type}/${item.content_id}`} onClick={closeProfile}
+                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />}
+                            <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
+                              {item.poster_url ? <Image src={item.poster_url} alt={item.title} fill className="object-cover" sizes="40px" /> : <div className="w-full h-full flex items-center justify-center">{item.content_type === 'movie' ? <Film className="w-4 h-4 text-zinc-600" /> : <Tv className="w-4 h-4 text-zinc-600" />}</div>}
+                            </div>
+                            <div className="flex-1 min-w-0 pr-4">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded', item.content_type === 'movie' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400')}>
+                                  {item.content_type === 'movie' ? <Film className="w-2 h-2" /> : <Tv className="w-2 h-2" />}
+                                  {item.content_type === 'movie' ? 'FILM' : 'SÉRIE'}
+                                </span>
+                                {item.content_type === 'series' && item.season && item.episode && (
+                                  <span className="text-[10px] text-white/30 font-medium">S{String(item.season).padStart(2, '0')}·E{String(item.episode).padStart(2, '0')}</span>
+                                )}
+                              </div>
+                              <p className="text-white/80 text-sm font-semibold truncate leading-tight">{item.title}</p>
+                              <p className="text-white/30 text-xs mt-0.5">
+                                {item.finished ? <span className="flex items-center gap-1 text-green-400/60"><Check className="w-2.5 h-2.5" />Terminé</span> : `${item.progress}% · ${timeAgo(item.watched_at)}`}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+        , document.body)}
 
       {/* Mobile bottom sheet */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={() => setIsMobileMenuOpen(false)} />
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 38 }}
               className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden pb-10"
               style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}
             >
-              <div className="flex justify-center pt-3 pb-4">
-                <div className="w-8 h-1 rounded-full bg-white/15" />
-              </div>
+              <div className="flex justify-center pt-3 pb-4"><div className="w-8 h-1 rounded-full bg-white/15" /></div>
               {!user && (
                 <div className="px-5 pb-4">
                   <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <div className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-500 transition-colors px-5 py-3.5 rounded-2xl text-white font-semibold text-sm">
-                      Connexion
-                    </div>
+                    <div className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-500 transition-colors px-5 py-3.5 rounded-2xl text-white font-semibold text-sm">Connexion</div>
                   </Link>
                 </div>
               )}
@@ -888,18 +742,9 @@ export function Navbar() {
                   const isActive = pathname === link.href
                   return (
                     <motion.div key={link.href} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                      <Link
-                        href={link.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={cn(
-                          'flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-colors',
-                          isActive ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'
-                        )}
-                      >
-                        <div className={cn(
-                          'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                          isActive ? 'bg-red-600' : 'bg-white/[0.07]'
-                        )}>
+                      <Link href={link.href} onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn('flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-colors', isActive ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]')}>
+                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', isActive ? 'bg-red-600' : 'bg-white/[0.07]')}>
                           <Icon className="w-4 h-4 text-white" />
                         </div>
                         <span className={cn('font-semibold text-base', isActive ? 'text-white' : 'text-white/50')}>{link.label}</span>
