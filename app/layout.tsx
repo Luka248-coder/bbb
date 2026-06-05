@@ -7,7 +7,6 @@ const HIDDEN_PATHS = [
   '/login',
   '/auth',
   '/admin',
-  '/watch',
 ]
 
 export function NavbarWrapper() {
