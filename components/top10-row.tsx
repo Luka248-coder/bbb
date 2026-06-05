@@ -30,9 +30,9 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
   return (
     <section className="relative py-6">
-      <div className="px-4 mb-5 flex items-center gap-3" style={{ paddingLeft: '2.5rem' }}>
-        <div className="w-[3px] rounded-sm self-stretch" style={{ background: accentColor, minHeight: '1.4rem' }} />
-        <h2 className="text-base md:text-lg font-semibold text-white tracking-wide">{title}</h2>
+      <div className="px-4 mb-5 flex items-center gap-3" style={{ paddingLeft: '1rem' }}>
+        <div className="w-[3px] rounded-sm" style={{ background: accentColor, height: '1rem' }} />
+        <h2 className="text-base md:text-lg font-bold text-white tracking-wide">{title}</h2>
       </div>
 
       <div className="relative group">

@@ -68,7 +68,7 @@ export function ContinueWatching() {
 
   return (
     <section className="relative py-6">
-      <div className="mb-4 px-4 flex items-center justify-between" style={{ paddingLeft: '2.5rem' }}>
+      <div className="mb-4 px-4 flex items-center justify-between" style={{ paddingLeft: '1rem' }}>
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -76,13 +76,13 @@ export function ContinueWatching() {
           className="flex items-center gap-2"
         >
           <div
-            className="w-[3px] rounded-sm self-stretch"
+            className="w-[3px] rounded-sm"
             style={{
               background: '#e53935',
-              minHeight: '2rem',
+              height: '1rem',
             }}
           />
-          <h2 className="text-base md:text-lg font-semibold text-white tracking-wide">
+          <h2 className="text-base md:text-lg font-bold text-white tracking-wide">
             Continuer à regarder
           </h2>
         </motion.div>
