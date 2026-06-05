@@ -152,31 +152,25 @@
 /* Grid background — keep visible */
 html { background: #12080a !important; }
 @media (min-width: 768px) {
-  html { zoom: 0.92; }
+  body {
+    transform: scale(0.92);
+    transform-origin: top left;
+    width: calc(100% / 0.92);
+  }
 }
 body { background: transparent !important; }
 .bg-background { background-color: rgba(18,8,10,0.82) !important; }
 .bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(18,8,10,0.82) !important; }
 .min-h-screen { background: transparent !important; }
 
-/* Player fullscreen — compensates for desktop zoom */
+/* Player fullscreen */
 .player-fullscreen {
   width: 100vw;
   height: 100dvh;
 }
-@media (min-width: 768px) {
-  .player-fullscreen {
-    width: calc(100vw / 0.92);
-    height: calc(100dvh / 0.92);
-  }
-}
+/* Hero full height */
 .hero-section {
   height: 100vh;
-}
-@media (min-width: 768px) {
-  .hero-section {
-    height: calc(100vh / 0.92);
-  }
 }
 #v0-badge,
 #v0-built-with-button-aec00727-a866-4b89-9314-a31381108bc4 {
