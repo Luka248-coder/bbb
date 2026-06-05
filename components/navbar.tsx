@@ -426,25 +426,28 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            {user && (
-              <>
-                <div className="w-px h-4 bg-white/10 mx-1" />
+          </div>
+        </div>
 
-                {/* Bell */}
-                <div ref={notifRef} className="relative">
-                  <button
-                    onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
-                    className="relative w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {(showNotifications || showNotifPrefsBell) && (
+        {/* Bell + Avatar — fixe à droite hors du pill */}
+        {user && (
+          <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
+
+            {/* Bell */}
+            <div ref={notifRef} className="relative">
+              <button
+                onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
+                className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all border border-white/10"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              <AnimatePresence>
+                {(showNotifications || showNotifPrefsBell) && (
                       <motion.div
                         initial={{ opacity: 0, y: 12, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -565,34 +568,32 @@ export function Navbar() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+            </div>
 
-                {/* Avatar pill */}
-                <button
-                  onClick={openProfile}
-                  className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10 ml-0.5"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
-                >
-                  <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
-                    {avatarUrl ? (
-                      <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-red-600 flex items-center justify-center">
-                        <User className="w-3 h-3 text-white" />
-                      </div>
-                    )}
+            {/* Avatar pill */}
+            <button
+              onClick={openProfile}
+              className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+            >
+              <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                    <User className="w-3 h-3 text-white" />
                   </div>
-                  <div className="text-left">
-                    <p className="text-white text-[12px] font-bold leading-tight">{user.username}</p>
-                    <p className="text-white/40 text-[10px] leading-tight">Cinéphile</p>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
-                </button>
-              </>
-            )}
+                )}
+              </div>
+              <div className="text-left">
+                <p className="text-white text-[12px] font-bold leading-tight">{user.username}</p>
+                <p className="text-white/40 text-[10px] leading-tight">Cinéphile</p>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
+            </button>
 
           </div>
-        </div>
+        )}
 
         {/* Connexion button — fixe à droite hors du pill */}
         {!user && (
