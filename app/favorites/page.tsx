@@ -1,8 +1,6 @@
 export const dynamic = 'force-dynamic'
-
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { FavoritesList } from '@/components/favorites-list'
 
@@ -13,19 +11,12 @@ export const metadata = {
 
 export default async function FavoritesPage() {
   const user = await getSession()
-
-  if (!user) {
-    redirect('/login')
-  }
-
+  if (!user) redirect('/login')
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      
       <main className="flex-1 pt-24">
         <FavoritesList userId={user.id} />
       </main>
-      
       <Footer />
     </div>
   )
