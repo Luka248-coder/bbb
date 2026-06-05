@@ -54,7 +54,7 @@ const navLinks = [
   { href: '/movies', label: 'Films', icon: Film },
   { href: '/series', label: 'Séries', icon: Tv },
   { href: '/request', label: 'Demander', icon: Plus },
-  { href: '/roulette', label: 'Roulette', icon: Shuffle, highlight: true },
+
 ]
 
 function timeAgo(date: string) {
@@ -285,39 +285,38 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pt-4 pointer-events-none" style={{ zIndex: 50 }}>
+    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none" style={{ zIndex: 50 }}>
+      <div className="relative flex items-center h-[60px] px-4 md:px-6">
 
-      {/* ─── Navbar pill centré ─── */}
-      <div className="pointer-events-auto w-full max-w-4xl mx-auto px-4">
-        <div
-          className="relative flex items-center h-[52px] px-2 gap-1 rounded-full transition-all duration-300"
-          style={{
-            background: isScrolled ? 'rgba(12,6,8,0.55)' : 'rgba(12,6,8,0.15)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: isScrolled ? '0 8px 32px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
-          }}
-        >
-          {/* Logo gauche */}
-          <Link href="/" className="flex-shrink-0 px-2">
+        {/* Logo — fixe à gauche */}
+        <div className="pointer-events-auto flex-shrink-0">
+          <Link href="/">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={280} height={84} className="h-6 w-auto"
+              alt="StreamSelf" width={280} height={84} className="h-7 w-auto"
             />
           </Link>
+        </div>
 
-          {/* Séparateur */}
-          <div className="hidden md:block w-px h-4 bg-white/10 mx-1" />
-
-          {/* Nav links — desktop */}
-          <nav className="hidden md:flex items-center gap-0.5 flex-1">
+        {/* Pill centré — position absolue */}
+        <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
+          <div
+            className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
+            style={{
+              background: isScrolled ? 'rgba(12,6,8,0.65)' : 'rgba(12,6,8,0.2)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              boxShadow: isScrolled ? '0 8px 32px rgba(0,0,0,0.5)' : '0 2px 12px rgba(0,0,0,0.2)',
+            }}
+          >
+            {/* Nav links */}
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
                 <Link key={link.href} href={link.href} className="select-none">
                   <div className={cn(
-                    'px-3 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold',
+                    'px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold',
                     isActive ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
                   )}>
                     {link.label}
@@ -325,13 +324,23 @@ export function Navbar() {
                 </Link>
               )
             })}
-          </nav>
 
-          {/* Spacer mobile */}
-          <div className="flex-1 md:hidden" />
+            <div className="w-px h-4 bg-white/10 mx-1" />
 
-          {/* Search inline */}
-          <div ref={searchRef} className="relative hidden md:flex items-center">
+            {/* Roulette dé */}
+            <Link href="/roulette" title="Roulette" className="select-none">
+              <div className={cn(
+                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 text-lg',
+                pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
+              )}>
+                🎲
+              </div>
+            </Link>
+
+            <div className="w-px h-4 bg-white/10 mx-1" />
+
+            {/* Search inline */}
+            <div ref={searchRef} className="relative flex items-center">
             <AnimatePresence mode="wait">
               {isSearchOpen ? (
                 <motion.div
@@ -405,11 +414,11 @@ export function Navbar() {
             </AnimatePresence>
           </div>
 
-          {/* Séparateur */}
-          <div className="hidden md:block w-px h-4 bg-white/10 mx-1" />
+            </div>{/* fin pill */}
+        </div>
 
-          {/* Actions droite */}
-          <div className="flex items-center gap-1">
+        {/* Actions droite — fixe à droite */}
+        <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-1">
             {user ? (
               <>
                 {/* Bell */}
@@ -575,14 +584,16 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            </button>
-          </div>
+        </div>{/* fin actions droite desktop */}
+
+        {/* Mobile menu button */}
+        <div className="pointer-events-auto ml-auto md:hidden">
+          <button
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
