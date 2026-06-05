@@ -668,11 +668,13 @@ export function Navbar() {
                   const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
                   return (
                     <button key={`${result.media_type}-${result.id}`}
-                      onClick={() => { 
+                      onPointerDown={() => { 
+                        const type = isMovie ? 'movie' : 'series'
+                        const id = result.id
                         setIsSearchOpen(false)
                         setSearchResults([])
                         setSearchQuery('')
-                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
+                        setTimeout(() => openDrawer(type, id), 400)
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent cursor-pointer"
                     >
