@@ -325,7 +325,7 @@ export function Navbar() {
                 <Link key={link.href} href={link.href} className="select-none">
                   <div className={cn(
                     'px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold whitespace-nowrap',
-                    isActive ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
+                    isActive ? 'bg-white text-black' : 'text-white/55 hover:text-white'
                   )}>
                     {link.label}
                   </div>
@@ -339,7 +339,7 @@ export function Navbar() {
             <Link href="/roulette" title="Roulette" className="select-none">
               <div className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
-                pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white hover:bg-white/10'
+                pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white'
               )}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="4"/>
@@ -382,7 +382,7 @@ export function Navbar() {
                   <motion.button
                     key="closed"
                     onClick={() => setIsSearchOpen(true)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all"
                   >
                     <Search className="w-4 h-4" />
                   </motion.button>
