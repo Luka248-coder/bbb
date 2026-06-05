@@ -152,7 +152,7 @@
 /* Grid background — keep visible */
 html { background: #12080a !important; }
 @media (min-width: 768px) {
-  body {
+  .page-scaled {
     transform: scale(0.92);
     transform-origin: top left;
     width: calc(100% / 0.92);

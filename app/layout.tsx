@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GridBackground />
         <SessionProvider>
           <MovieDrawerProvider>
-            <div className="relative" style={{zIndex:1}}>
+            <div className="relative page-scaled" style={{zIndex:1}}>
               {children}
             </div>
           </MovieDrawerProvider>
