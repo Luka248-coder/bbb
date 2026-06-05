@@ -350,8 +350,6 @@ export function Navbar() {
               </div>
             </Link>
 
-            <div className="w-px h-4 bg-white/10 mx-1" />
-
             {/* Search inline */}
             <div ref={searchRef} className="relative flex items-center">
               <AnimatePresence mode="wait">
@@ -581,19 +579,25 @@ export function Navbar() {
               </>
             )}
 
-            {!user && (
-              <>
-                <div className="w-px h-4 bg-white/10 mx-1" />
-                <Link href="/login">
-                  <div className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 transition-colors px-3.5 py-1.5 rounded-full text-white font-semibold text-[13px]">
-                    Connexion
-                  </div>
-                </Link>
-              </>
-            )}
 
           </div>
         </div>
+
+        {/* Connexion button — fixe à droite hors du pill */}
+        {!user && (
+          <div className="pointer-events-auto ml-auto hidden md:flex">
+            <Link href="/login">
+              <div className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 transition-colors px-3.5 py-1.5 rounded-full text-white font-semibold text-[13px]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Connexion
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Mobile menu button */}
         <div className="pointer-events-auto ml-auto md:hidden">
