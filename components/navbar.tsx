@@ -305,6 +305,7 @@ export function Navbar() {
           </Link>
         </div>
 
+        {/* Pill central */}
         <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
@@ -333,7 +334,7 @@ export function Navbar() {
 
             <div className="w-px h-4 bg-white/10 mx-1" />
 
-            {/* Roulette dé */}
+            {/* Roulette */}
             <Link href="/roulette" title="Roulette" className="select-none">
               <div className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
@@ -429,7 +430,7 @@ export function Navbar() {
               <>
                 <div className="w-px h-4 bg-white/10 mx-1" />
 
-                {/* Bell — dans le pill */}
+                {/* Bell */}
                 <div ref={notifRef} className="relative">
                   <button
                     onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
@@ -566,19 +567,29 @@ export function Navbar() {
                   </AnimatePresence>
                 </div>
 
-                {/* Avatar — dans le pill */}
-                <button onClick={openProfile} className="relative w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/20 hover:ring-white/50 transition-all flex-shrink-0 ml-0.5">
-                  {avatarUrl ? (
-                    <Image src={avatarUrl} alt={user.username} width={32} height={32} className="rounded-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-red-600 flex items-center justify-center">
-                      <User className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  )}
+                {/* Avatar pill */}
+                <button
+                  onClick={openProfile}
+                  className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10 ml-0.5"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+                >
+                  <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
+                    {avatarUrl ? (
+                      <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                        <User className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white text-[12px] font-bold leading-tight">{user.username}</p>
+                    <p className="text-white/40 text-[10px] leading-tight">Cinéphile</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
                 </button>
               </>
             )}
-
 
           </div>
         </div>
