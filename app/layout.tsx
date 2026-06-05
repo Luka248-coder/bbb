@@ -3,6 +3,7 @@ import { Inter, Barlow_Condensed } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SessionProvider } from '@/components/session-provider'
 import { MovieDrawerProvider } from '@/components/movie-drawer'
+import { Navbar } from '@/components/navbar'
 import './globals.css'
 import { GridBackground } from '@/components/grid-background'
 
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GridBackground />
         <SessionProvider>
           <MovieDrawerProvider>
-            <div className="relative page-scaled" style={{zIndex:1}}>
+            {/* Navbar HORS du div page-scaled — sinon fixed se casse avec transform */}
+            <Navbar />
+            <div className="relative page-scaled" style={{ zIndex: 1 }}>
               {children}
             </div>
           </MovieDrawerProvider>
