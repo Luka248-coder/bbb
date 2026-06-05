@@ -292,7 +292,16 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none" style={{ zIndex: 50 }}>
+    <header
+      className="fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-300"
+      style={{
+        zIndex: 50,
+        background: isScrolled ? 'rgba(8,4,6,0.85)' : 'transparent',
+        backdropFilter: isScrolled ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: isScrolled ? 'blur(20px)' : 'none',
+        borderBottom: isScrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+      }}
+    >
       <div className="relative flex items-center h-[60px] px-4 md:px-6">
 
         {/* Logo — fixe à gauche */}
