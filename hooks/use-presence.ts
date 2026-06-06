@@ -3,11 +3,22 @@
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
-export function usePresence(userId: string | null | undefined) {
+function getSessionId() {
+  if (typeof window === 'undefined') return null
+  let sid = localStorage.getItem('_sid')
+  if (!sid) {
+    sid = Math.random().toString(36).slice(2) + Date.now().toString(36)
+    localStorage.setItem('_sid', sid)
+  }
+  return sid
+}
+
+export function usePresence(userId?: string | null) {
   const pathname = usePathname()
 
   useEffect(() => {
-    if (!userId) return
+    const sid = getSessionId()
+    if (!sid) return
 
     const getPage = (path: string) => {
       if (path.startsWith('/watch/movie')) return 'watch_movie'
@@ -19,12 +30,12 @@ export function usePresence(userId: string | null | undefined) {
       fetch('/api/presence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, page: getPage(pathname) }),
+        body: JSON.stringify({ user_id: userId || sid, page: getPage(pathname) }),
       }).catch(() => {})
     }
 
     ping()
-    const interval = setInterval(ping, 60 * 1000)
+    const interval = setInterval(ping, 30 * 1000)
     return () => clearInterval(interval)
   }, [userId, pathname])
 }
