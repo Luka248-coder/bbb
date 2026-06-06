@@ -91,8 +91,11 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
   )
 }
 
+import { usePresence } from '@/hooks/use-presence'
+
 export function Navbar() {
   const { user } = useSession()
+  usePresence(user?.id)
   const { openDrawer } = useDrawer()
   const router = useRouter()
   const pathname = usePathname()
