@@ -91,6 +91,8 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
   )
 }
 
+import { usePresence } from '@/hooks/use-presence'
+
 export function Navbar() {
   const { user } = useSession()
   const { openDrawer } = useDrawer()
@@ -103,6 +105,8 @@ export function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
   const moreRef = useRef<HTMLDivElement>(null)
+
+  usePresence(user?.id)
 
   const [showMore, setShowMore] = useState(false)
   const [showProfile, setShowProfile] = useState(false)

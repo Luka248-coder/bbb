@@ -162,6 +162,17 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
     window.location.reload()
   }
 
+  const [presence, setPresence] = useState({ total: 0, watching_movie: 0, watching_series: 0 })
+
+  useEffect(() => {
+    const fetchPresence = () => {
+      fetch('/api/presence').then(r => r.json()).then(setPresence).catch(() => {})
+    }
+    fetchPresence()
+    const interval = setInterval(fetchPresence, 30000) // refresh toutes les 30s
+    return () => clearInterval(interval)
+  }, [])
+
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 16 },
     animate: { opacity: 1, y: 0 },
@@ -213,6 +224,24 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
 
   return (
     <div className="p-6 md:p-8 space-y-6 min-h-screen">
+
+      {/* ── Présence en temps réel ── */}
+      <motion.div {...fade(0.05)} className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Personnes actives', value: presence.total, color: '#22c55e', icon: '🟢' },
+          { label: 'Visionnent un film', value: presence.watching_movie, color: '#3b82f6', icon: '🎬' },
+          { label: 'Visionnent une série', value: presence.watching_series, color: '#a855f7', icon: '📺' },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 text-xs text-white/40 font-medium uppercase tracking-wide">
+              <span>{icon}</span>
+              <span>{label}</span>
+            </div>
+            <div className="text-3xl font-black" style={{ color }}>{value}</div>
+            <div className="text-[10px] text-white/20">Mis à jour toutes les 30s</div>
+          </div>
+        ))}
+      </motion.div>
 
       {/* ── Header ── */}
       <motion.div {...fade(0)} className="flex items-start justify-between flex-wrap gap-4">
