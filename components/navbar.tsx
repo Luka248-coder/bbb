@@ -653,80 +653,122 @@ export function Navbar() {
         document.body
       )}
 
-      {/* Overlay recherche mobile — dans un portal pour éviter les problèmes de z-index/touch */}
+      {/* Recherche — overlay plein écran style iOS */}
       {mounted && createPortal(
         <AnimatePresence>
           {isSearchOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="md:hidden fixed top-0 left-0 right-0 z-[200] px-4 pt-4 pb-3"
-              style={{ background: 'rgba(10,4,6,0.98)', backdropFilter: 'blur(20px)' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[200] flex flex-col"
+              style={{ background: 'rgba(8,3,5,0.96)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)' }}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                  <Search className="w-4 h-4 text-white/40 shrink-0" />
+              {/* Barre du haut */}
+              <div className="flex items-center gap-3 px-4 pt-14 pb-3">
+                <div
+                  className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  <Search className="w-4 h-4 text-white/30 shrink-0" />
                   <input
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
-                    placeholder="Rechercher un film, une série..."
-                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
+                    placeholder="Films, séries, animés..."
+                    className="bg-transparent text-white text-[15px] outline-none flex-1 placeholder-white/25 font-medium"
                     autoFocus
                   />
                   {searchQuery && (
-                    <button onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                      <X className="w-4 h-4 text-white/30" />
+                    <button
+                      onPointerDown={() => { setSearchQuery(''); setSearchResults([]) }}
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,0.15)' }}
+                    >
+                      <X className="w-3 h-3 text-white/70" />
                     </button>
                   )}
                 </div>
                 <button
-                  onClick={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
-                  className="text-white/50 text-sm font-medium shrink-0"
+                  onPointerDown={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
+                  className="text-white text-[15px] font-semibold shrink-0 px-1"
+                  style={{ color: 'rgba(255,255,255,0.6)' }}
                 >
                   Annuler
                 </button>
               </div>
-              {searchResults.length > 0 && (
-                <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                  {searchResults.map(result => {
-                    const title = result.title || result.name || ''
-                    const isMovie = result.media_type === 'movie'
-                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                    const handleSelect = () => {
-                      setIsSearchOpen(false)
-                      setSearchResults([])
-                      setSearchQuery('')
-                      setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
-                    }
-                    return (
-                      <div
-                        key={`${result.media_type}-${result.id}`}
-                        onPointerDown={(e) => {
-                          const startY = e.clientY
-                          const startX = e.clientX
-                          const el = e.currentTarget
-                          const onUp = (ev: PointerEvent) => {
-                            const dy = Math.abs(ev.clientY - startY)
-                            const dx = Math.abs(ev.clientX - startX)
-                            if (dy < 8 && dx < 8) handleSelect()
-                            el.removeEventListener('pointerup', onUp)
-                          }
-                          el.addEventListener('pointerup', onUp)
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer select-none"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                      >
-                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+
+              {/* Résultats */}
+              <div className="flex-1 overflow-y-auto px-4 pt-2">
+                {searchResults.length === 0 && searchQuery.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <Search className="w-7 h-7 text-white/20" />
+                    </div>
+                    <p className="text-white/25 text-sm font-medium">Recherchez un film ou une série</p>
+                  </div>
+                )}
+
+                {searchResults.length > 0 && (
+                  <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    {searchResults.map((result, i) => {
+                      const title = result.title || result.name || ''
+                      const isMovie = result.media_type === 'movie'
+                      const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                      const date = result.release_date || result.first_air_date || ''
+                      const year = date ? new Date(date).getFullYear() : ''
+                      const handleSelect = () => {
+                        setIsSearchOpen(false)
+                        setSearchResults([])
+                        setSearchQuery('')
+                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
+                      }
+                      return (
+                        <div
+                          key={`${result.media_type}-${result.id}`}
+                          onPointerDown={(e) => {
+                            const startY = e.clientY
+                            const el = e.currentTarget
+                            const onUp = (ev: PointerEvent) => {
+                              if (Math.abs(ev.clientY - startY) < 8) handleSelect()
+                              el.removeEventListener('pointerup', onUp)
+                            }
+                            el.addEventListener('pointerup', onUp)
+                          }}
+                          className="flex items-center gap-3.5 px-4 py-3.5 active:bg-white/[0.06] cursor-pointer select-none"
+                          style={{
+                            borderBottom: i < searchResults.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                            WebkitTapHighlightColor: 'transparent',
+                          }}
+                        >
+                          {/* Poster */}
+                          <div className="relative w-10 h-[58px] rounded-xl overflow-hidden flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                            {poster
+                              ? <Image src={poster} alt={title} fill className="object-cover" sizes="40px" />
+                              : <div className="w-full h-full flex items-center justify-center"><Search className="w-4 h-4 text-white/20" /></div>
+                            }
+                          </div>
+                          {/* Infos */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-semibold text-[14px] truncate">{title}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span
+                                className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                                style={{
+                                  background: isMovie ? 'rgba(59,130,246,0.15)' : 'rgba(168,85,247,0.15)',
+                                  color: isMovie ? 'rgba(147,197,253,0.9)' : 'rgba(216,180,254,0.9)',
+                                }}
+                              >
+                                {isMovie ? 'FILM' : 'SÉRIE'}
+                              </span>
+                              {year && <span className="text-white/25 text-[12px]">{year}</span>}
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-white/15 shrink-0" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-semibold text-sm truncate">{title}</p>
-                          <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>,
