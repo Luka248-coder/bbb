@@ -682,8 +682,19 @@ export function Navbar() {
                     return (
                       <div
                         key={`${result.media_type}-${result.id}`}
-                        onPointerDown={handleSelect}
-                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer"
+                        onPointerDown={(e) => {
+                          const startY = e.clientY
+                          const startX = e.clientX
+                          const el = e.currentTarget
+                          const onUp = (ev: PointerEvent) => {
+                            const dy = Math.abs(ev.clientY - startY)
+                            const dx = Math.abs(ev.clientX - startX)
+                            if (dy < 8 && dx < 8) handleSelect()
+                            el.removeEventListener('pointerup', onUp)
+                          }
+                          el.addEventListener('pointerup', onUp)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer select-none"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                       >
                         <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
