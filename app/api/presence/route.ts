@@ -13,8 +13,8 @@ export async function GET() {
   if (error) return NextResponse.json({ total: 0, watching_movie: 0, watching_series: 0 })
 
   const total = data.length
-  const watching_movie = data.filter(s => s.page === 'watch_movie').length
-  const watching_series = data.filter(s => s.page === 'watch_series').length
+  const watching_movie = data.filter((s: any) => s.page === 'watch_movie').length
+  const watching_series = data.filter((s: any) => s.page === 'watch_series').length
 
   return NextResponse.json({ total, watching_movie, watching_series })
 }
