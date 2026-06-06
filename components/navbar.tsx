@@ -635,72 +635,74 @@ export function Navbar() {
 
       </div>
 
-      {/* Overlay recherche mobile */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="md:hidden fixed top-0 left-0 right-0 z-[97] px-4 pt-4 pb-3"
-            style={{ background: 'rgba(10,4,6,0.97)', backdropFilter: 'blur(20px)' }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <Search className="w-4 h-4 text-white/40 shrink-0" />
-                <input
-                  value={searchQuery}
-                  onChange={e => handleSearchChange(e.target.value)}
-                  placeholder="Rechercher un film, une série..."
-                  className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
-                  autoFocus
-                />
-                {searchQuery && (
-                  <button onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                    <X className="w-4 h-4 text-white/30" />
-                  </button>
-                )}
-              </div>
-              <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }} className="text-white/50 text-sm font-medium">
-                Annuler
-              </button>
-            </div>
-            {searchResults.length > 0 && (
-              <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                {searchResults.map(result => {
-                  const title = result.title || result.name || ''
-                  const isMovie = result.media_type === 'movie'
-                  const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                  return (
-                    <button key={`${result.media_type}-${result.id}`}
-                      onTouchEnd={(e) => {
-                        e.preventDefault()
-                        setIsSearchOpen(false)
-                        setSearchResults([])
-                        setSearchQuery('')
-                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 350)
-                      }}
-                      onClick={() => {
-                        setIsSearchOpen(false)
-                        setSearchResults([])
-                        setSearchQuery('')
-                        setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 350)
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent cursor-pointer"
-                    >
-                      <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                        {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-sm truncate">{title}</p>
-                        <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
-                      </div>
+      {/* Overlay recherche mobile — dans un portal pour éviter les problèmes de z-index/touch */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isSearchOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="md:hidden fixed top-0 left-0 right-0 z-[200] px-4 pt-4 pb-3"
+              style={{ background: 'rgba(10,4,6,0.98)', backdropFilter: 'blur(20px)' }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  <Search className="w-4 h-4 text-white/40 shrink-0" />
+                  <input
+                    value={searchQuery}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    placeholder="Rechercher un film, une série..."
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                      <X className="w-4 h-4 text-white/30" />
                     </button>
-                  )
-                })}
+                  )}
+                </div>
+                <button
+                  onClick={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
+                  className="text-white/50 text-sm font-medium shrink-0"
+                >
+                  Annuler
+                </button>
               </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {searchResults.length > 0 && (
+                <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {searchResults.map(result => {
+                    const title = result.title || result.name || ''
+                    const isMovie = result.media_type === 'movie'
+                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                    const handleSelect = () => {
+                      setIsSearchOpen(false)
+                      setSearchResults([])
+                      setSearchQuery('')
+                      setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
+                    }
+                    return (
+                      <div
+                        key={`${result.media_type}-${result.id}`}
+                        onPointerDown={handleSelect}
+                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm truncate">{title}</p>
+                          <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
       {mounted && createPortal(
         <AnimatePresence>
           {showProfile && (
