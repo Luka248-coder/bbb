@@ -122,6 +122,7 @@ export function Navbar() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [mounted, setMounted] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
+  const mobileBellRef = useRef<HTMLButtonElement>(null)
   const unreadCount = notifications.filter(n => !n.is_read).length
 
   useEffect(() => {
@@ -179,7 +180,9 @@ export function Navbar() {
 
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+      const inNotif = notifRef.current && notifRef.current.contains(e.target as Node)
+      const inMobileBell = mobileBellRef.current && mobileBellRef.current.contains(e.target as Node)
+      if (!inNotif && !inMobileBell) {
         setShowNotifications(false)
         setShowNotifPrefsBell(false)
       }
@@ -305,7 +308,7 @@ export function Navbar() {
           <Link href="/">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={560} height={168} className="h-10 md:h-16 w-auto"
+              alt="StreamSelf" width={560} height={168} className="h-14 md:h-16 w-auto"
             />
           </Link>
         </div>
@@ -631,6 +634,7 @@ export function Navbar() {
           {/* Bell — uniquement si connecté */}
           {user && (
             <button
+              ref={mobileBellRef}
               onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
               className="relative w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
