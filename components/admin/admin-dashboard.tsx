@@ -169,7 +169,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
       fetch('/api/presence').then(r => r.json()).then(setPresence).catch(() => {})
     }
     fetchPresence()
-    const interval = setInterval(fetchPresence, 30000)
+    const interval = setInterval(fetchPresence, 5000)
     return () => clearInterval(interval)
   }, [])
 
@@ -237,7 +237,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
               <span>{icon}</span><span>{label}</span>
             </div>
             <div className="text-3xl font-black" style={{ color }}>{value}</div>
-            <div className="text-[10px] text-white/20">Mis à jour toutes les 30s</div>
+            <div className="text-[10px] text-white/20">Mis à jour toutes les 5s</div>
           </div>
         ))}
       </motion.div>
