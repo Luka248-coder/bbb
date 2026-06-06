@@ -301,7 +301,7 @@ export function Navbar() {
     <>
     <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-3">
 
-      <div className="relative flex items-center h-[56px] px-3 md:px-6">
+      <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
 
         {/* Logo — collé à gauche */}
         <div className="pointer-events-auto flex-shrink-0">
