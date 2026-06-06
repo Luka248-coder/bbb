@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { PlayerPage } from '@/components/player-page'
 import { NativePlayer } from '@/components/native-player'
 import { Loading } from '@/components/loading'
+import { PresenceTracker } from '@/components/presence-tracker'
 import { getEpisodeVideoUrl, getMovieById, getSeriesById, getPosterUrl, getMovieVideoUrl } from '@/lib/fastflux'
 import { getMovieDetails, getSeriesDetails } from '@/lib/tmdb'
 import { getSession } from '@/lib/auth'
@@ -151,14 +152,17 @@ async function WatchContent({
   }
 
   return (
-    <PlayerPage
-      type={type}
-      tmdbId={tmdbId}
-      playerUrl={playerUrl || ''}
-      initialSeason={season}
-      initialEpisode={episode}
-      userId={user?.id || null}
-    />
+    <>
+      <PresenceTracker page={type === 'movie' ? 'watch_movie' : 'watch_series'} />
+      <PlayerPage
+        type={type}
+        tmdbId={tmdbId}
+        playerUrl={playerUrl || ''}
+        initialSeason={season}
+        initialEpisode={episode}
+        userId={user?.id || null}
+      />
+    </>
   )
 }
 
