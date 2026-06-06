@@ -296,16 +296,16 @@ export function Navbar() {
 
   return (
     <>
-    <header className="fixed top-8 left-0 right-0 z-50 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-3">
 
-      <div className="relative flex items-center h-[60px] px-4 md:px-6">
+      <div className="relative flex items-center h-[56px] px-3 md:px-6">
 
-        {/* Logo — fixe à gauche */}
+        {/* Logo — collé à gauche */}
         <div className="pointer-events-auto flex-shrink-0">
           <Link href="/">
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={560} height={168} className="h-16 w-auto"
+              alt="StreamSelf" width={560} height={168} className="h-10 md:h-16 w-auto"
             />
           </Link>
         </div>
@@ -617,16 +617,37 @@ export function Navbar() {
         )}
 
         {/* Mobile menu button + search */}
-        <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-1.5">
-          {/* Search mobile */}
+        {/* Mobile — droite : search + bell + burger */}
+        <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
+          {/* Search */}
           <button
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
             onClick={() => setIsSearchOpen(!isSearchOpen)}
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-[17px] h-[17px]" />
           </button>
+
+          {/* Bell — uniquement si connecté */}
+          {user && (
+            <button
+              onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
+              className="relative w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <Bell className="w-[17px] h-[17px]" />
+              {unreadCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Burger */}
           <button
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
