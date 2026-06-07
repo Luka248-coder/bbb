@@ -15,10 +15,8 @@ const HEADERS = {
   'sec-fetch-site': 'same-origin',
 }
 
-// Exactement la même logique que /api/purstream/route.ts qui marche
 async function checkPurstream(title: string, tmdbId: number, type: 'movie' | 'series'): Promise<boolean> {
   try {
-    // 1. Recherche par titre (comme le player le fait)
     const searchRes = await fetch(
       `${PURSTREAM_BASE}/search-bar/search/${encodeURIComponent(title)}`,
       { headers: HEADERS, cache: 'no-store', signal: AbortSignal.timeout(10000) }
@@ -40,14 +38,13 @@ async function checkPurstream(title: string, tmdbId: number, type: 'movie' | 'se
 
     if (results.length === 0) return false
 
-    // 2. Match: tmdbId exact → titre exact → premier résultat (comme le player)
     let match: any
     match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId))
     if (!match) {
       const norm = title.toLowerCase().trim()
       match = results.find((r: any) => (r.title || r.name || '').toLowerCase().trim() === norm)
     }
-    if (!match) match = results[0] // fallback: premier résultat
+    if (!match) match = results[0]
 
     return !!(match?.id)
   } catch {
@@ -88,17 +85,10 @@ async function fetchTmdbItems(type: 'movie' | 'series') {
       title: i[titleField] || '',
       popularity: i.popularity || 0,
       poster_path: i.poster_path || null,
-      backdrop_path: i.backdrop_path || null,
-      overview: i.overview || '',
-      vote_average: i.vote_average || 0,
-      vote_count: i.vote_count || 0,
-      genre_ids: i.genre_ids || [],
-      release_date: i.release_date,
-      first_air_date: i.first_air_date,
     }))
 }
 
-// GET: pending items (TMDB items not in catalogue and not checked yet)
+// GET: stats + pending items
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const type = (req.nextUrl.searchParams.get('type') || 'movie') as 'movie' | 'series'
@@ -129,7 +119,7 @@ export async function GET(req: NextRequest) {
   })
 }
 
-// POST: check one item, auto-add to catalogue if available
+// POST: check one item, auto-add to catalogue if available on Purstream
 export async function POST(req: NextRequest) {
   const { tmdb_id, title, type } = await req.json()
   const supabase = await createClient()
@@ -137,7 +127,7 @@ export async function POST(req: NextRequest) {
 
   // Skip if already in catalogue
   const { data: inCat } = await supabase.from(table).select('id').eq('tmdb_id', tmdb_id).single()
-  if (inCat) return NextResponse.json({ tmdb_id, status: 'already_in_catalogue' })
+  if (inCat) return NextResponse.json({ tmdb_id, status: 'already_in_catalogue', available: true })
 
   // Skip if already checked
   const { data: prevCheck } = await supabase.from('purstream_verified')
@@ -146,45 +136,65 @@ export async function POST(req: NextRequest) {
 
   const available = await checkPurstream(title, tmdb_id, type as 'movie' | 'series')
 
-  // Save result
-  await supabase.from('purstream_verified').upsert({
-    tmdb_id, content_type: type, available, checked_at: new Date().toISOString(),
-  }, { onConflict: 'tmdb_id,content_type' })
+  // Save check result
+  await supabase.from('purstream_verified').upsert(
+    { tmdb_id, content_type: type, available, checked_at: new Date().toISOString() },
+    { onConflict: 'tmdb_id,content_type' }
+  )
 
   // Auto-add to catalogue if available
   if (available) {
-    try {
-      const endpoint = type === 'movie' ? 'movie' : 'tv'
-      const res = await fetch(`${TMDB}/${endpoint}/${tmdb_id}?api_key=${TMDB_KEY}&language=fr-FR`)
-      if (res.ok) {
-        const data = await res.json()
-        if (type === 'movie') {
-          await supabase.from('movies').upsert({
-            tmdb_id: data.id, title: data.title,
-            original_title: data.original_title || data.title,
-            overview: data.overview || '', poster_path: data.poster_path,
-            backdrop_path: data.backdrop_path, release_date: data.release_date,
-            vote_average: data.vote_average || 0, vote_count: data.vote_count || 0,
-            genre_ids: (data.genres || []).map((g: any) => g.id),
-            popularity: data.popularity || 0, adult: false, video_url: null,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'tmdb_id' })
-        } else {
-          await supabase.from('series').upsert({
-            tmdb_id: data.id, name: data.name,
-            original_name: data.original_name || data.name,
-            overview: data.overview || '', poster_path: data.poster_path,
-            backdrop_path: data.backdrop_path, first_air_date: data.first_air_date,
-            vote_average: data.vote_average || 0, vote_count: data.vote_count || 0,
-            genre_ids: (data.genres || []).map((g: any) => g.id),
-            popularity: data.popularity || 0,
-            number_of_seasons: data.number_of_seasons || 1,
-            number_of_episodes: data.number_of_episodes || 0,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'tmdb_id' })
-        }
+    const endpoint = type === 'movie' ? 'movie' : 'tv'
+    const tmdbRes = await fetch(`${TMDB}/${endpoint}/${tmdb_id}?api_key=${TMDB_KEY}&language=fr-FR`)
+    if (!tmdbRes.ok) {
+      return NextResponse.json({ tmdb_id, title, available, status: 'added_failed', error: 'TMDB fetch failed' })
+    }
+    const data = await tmdbRes.json()
+
+    if (type === 'movie') {
+      const { error } = await supabase.from('movies').upsert({
+        tmdb_id: data.id,
+        title: data.title,
+        original_title: data.original_title || data.title,
+        overview: data.overview || '',
+        poster_path: data.poster_path,
+        backdrop_path: data.backdrop_path,
+        release_date: data.release_date,
+        vote_average: data.vote_average || 0,
+        vote_count: data.vote_count || 0,
+        genre_ids: (data.genres || []).map((g: any) => g.id),
+        popularity: data.popularity || 0,
+        video_url: null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'tmdb_id' })
+
+      if (error) {
+        console.error('[purstream-check] movie upsert error:', error.message)
+        return NextResponse.json({ tmdb_id, title, available, status: 'added_failed', error: error.message })
       }
-    } catch {}
+    } else {
+      const { error } = await supabase.from('series').upsert({
+        tmdb_id: data.id,
+        name: data.name,
+        original_name: data.original_name || data.name,
+        overview: data.overview || '',
+        poster_path: data.poster_path,
+        backdrop_path: data.backdrop_path,
+        first_air_date: data.first_air_date,
+        vote_average: data.vote_average || 0,
+        vote_count: data.vote_count || 0,
+        genre_ids: (data.genres || []).map((g: any) => g.id),
+        popularity: data.popularity || 0,
+        number_of_seasons: data.number_of_seasons || 1,
+        number_of_episodes: data.number_of_episodes || 0,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'tmdb_id' })
+
+      if (error) {
+        console.error('[purstream-check] series upsert error:', error.message)
+        return NextResponse.json({ tmdb_id, title, available, status: 'added_failed', error: error.message })
+      }
+    }
   }
 
   return NextResponse.json({ tmdb_id, title, available, status: available ? 'added' : 'not_found' })
