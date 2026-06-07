@@ -42,13 +42,17 @@ async function HomeContent() {
 
   const heroContent = await getHeroContent(movies, series)
 
-  const ALLOWED_LANGUAGES = ['fr', 'en', 'es']
+  // Filtre : garde uniquement les contenus dont le titre original est en alphabet latin
+  // (exclut zh, ja, ko, hi, ar, ru, th, etc.)
+  const NON_LATIN = /[\u0400-\u04FF\u0600-\u06FF\u0900-\u097F\u0E00-\u0E7F\u3000-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/
+  const isLatinOrigin = (original: string) => !NON_LATIN.test(original || '')
+
   const topRatedMovies = [...movies]
-    .filter(m => !m.original_language || ALLOWED_LANGUAGES.includes(m.original_language))
+    .filter(m => isLatinOrigin(m.original_title))
     .sort((a, b) => b.vote_average - a.vote_average)
     .slice(0, 10)
   const topRatedSeries = [...series]
-    .filter(s => !s.original_language || ALLOWED_LANGUAGES.includes(s.original_language))
+    .filter(s => isLatinOrigin(s.original_name))
     .sort((a, b) => b.vote_average - a.vote_average)
     .slice(0, 10)
   const newMovies = [...movies].sort((a, b) => new Date(b.release_date || '').getTime() - new Date(a.release_date || '').getTime()).slice(0, 20)
