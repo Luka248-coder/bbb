@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import useSWR from 'swr'
 import { useDrawer } from '@/components/movie-drawer'
+import { TypewriterText } from '@/components/typewriter-text'
 import {
   getTMDBPosterUrl, getTMDBBackdropUrl, getTMDBProfileUrl,
   formatRuntime, formatYear, getDirectors,
@@ -223,7 +224,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
 
             {/* Synopsis — masqué sur mobile pour gagner de la place */}
             <p className="hidden md:block text-white/70 text-sm leading-relaxed mb-4 max-w-xl">
-              {showFullSynopsis ? overview : synopsisShort}
+              <TypewriterText text={showFullSynopsis ? overview : synopsisShort} />
               {overview.length > 200 && (
                 <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
                   {showFullSynopsis ? 'Moins' : 'Plus'}
@@ -317,7 +318,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               )}
 
               <p className="text-white/60 text-base leading-relaxed mb-6 max-w-xl">
-                {showFullSynopsis ? overview : synopsisShort}
+                <TypewriterText text={showFullSynopsis ? overview : synopsisShort} />
                 {overview.length > 200 && (
                   <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
                     {showFullSynopsis ? 'Moins' : 'Plus'}
@@ -388,7 +389,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                 Synopsis
               </h2>
               <p className="text-white/70 text-base leading-relaxed max-w-2xl">
-                {overview || 'Aucune description disponible.'}
+                <TypewriterText text={overview || 'Aucune description disponible.'} speed={14} />
               </p>
             </div>
 
