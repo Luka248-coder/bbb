@@ -652,17 +652,23 @@ export function Navbar() {
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="md:hidden fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
                 onClick={closeSearch}
               />
-              {/* Pill de recherche positionné en haut */}
+              {/* Pill de recherche centrée en haut */}
               <motion.div
                 initial={{ opacity: 0, y: -8, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className="md:hidden fixed z-[200]"
-                style={{ top: 16, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '440px' }}
+                className="fixed z-[200]"
+                style={{
+                  top: 16,
+                  left: 16,
+                  right: 16,
+                  maxWidth: '440px',
+                  margin: '0 auto',
+                }}
               >
                 <div
                   className="flex items-center h-[44px] px-3 gap-2 rounded-full"
