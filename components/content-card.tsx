@@ -25,6 +25,7 @@ function isMovie(item: Movie | Series): item is Movie {
 // Singleton gyroscope partagé — un seul listener pour toute la page
 let gyroListeners: ((x: number, y: number) => void)[] = []
 let gyroStarted = false
+let gyroPermissionGranted = false
 
 function startGyro() {
   if (gyroStarted) return
@@ -35,6 +36,23 @@ function startGyro() {
     gyroListeners.forEach(fn => fn(x * 0.5, y * 0.5))
   }
   window.addEventListener('deviceorientation', handler, true)
+}
+
+async function requestGyroPermission() {
+  if (gyroPermissionGranted) return
+  if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+    try {
+      const res = await (DeviceOrientationEvent as any).requestPermission()
+      if (res === 'granted') {
+        gyroPermissionGranted = true
+        startGyro()
+      }
+    } catch {}
+  } else {
+    // Android / non-iOS : pas besoin de permission
+    gyroPermissionGranted = true
+    startGyro()
+  }
 }
 
 export function ContentCard({
@@ -63,11 +81,10 @@ export function ContentCard({
       setGlare({ x: 50 + y * 4, y: 50 + x * 4 })
     }
     gyroListeners.push(fn)
-    // Demander permission iOS si nécessaire
-    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      (DeviceOrientationEvent as any).requestPermission().catch(() => {})
+    // Sur Android, démarrer directement
+    if (typeof (DeviceOrientationEvent as any).requestPermission !== 'function') {
+      startGyro()
     }
-    startGyro()
     return () => { gyroListeners = gyroListeners.filter(l => l !== fn) }
   }, [])
 
@@ -83,6 +100,8 @@ export function ContentCard({
   // Tap court = agrandir immédiatement. 2e tap = ouvrir drawer
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     e.preventDefault()
+    // Demande permission gyroscope iOS au premier tap (doit venir d'un geste)
+    requestGyroPermission()
     if (!hovered) {
       setHovered(true)
     } else {
