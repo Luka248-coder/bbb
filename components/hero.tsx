@@ -229,22 +229,22 @@ export function Hero({ content }: HeroProps) {
         <>
           <button
             onClick={() => setCurrentIndex((prev) => (prev - 1 + featured.length) % featured.length)}
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 group"
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 group"
             style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
           >
-            <ChevronLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-4 h-4 text-white" />
           </button>
 
           <button
             onClick={() => setCurrentIndex((prev) => (prev + 1) % featured.length)}
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200"
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
             style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
           >
-            <ChevronRight className="w-5 h-5 text-white" />
+            <ChevronRight className="w-4 h-4 text-white" />
           </button>
         </>
       )}
