@@ -389,7 +389,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
                 Synopsis
               </h2>
               <p className="text-white/70 text-base leading-relaxed max-w-2xl">
-                <TypewriterText text={overview || 'Aucune description disponible.'} speed={14} />
+                {overview || 'Aucune description disponible.'}
               </p>
             </div>
 
