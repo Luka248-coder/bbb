@@ -73,6 +73,8 @@ export function ContentCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
       className="relative group flex-shrink-0"
+    >
+    <div
       ref={cardRef}
       onMouseEnter={() => setHovered(true)}
       onMouseMove={!isTouchDevice ? handleMouseMove : undefined}
@@ -81,8 +83,9 @@ export function ContentCard({
         transform: hovered && !isTouchDevice
           ? `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(-6px)`
           : 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)',
-        transition: hovered ? 'transform 0.1s ease-out' : 'transform 0.4s ease-out',
+        transition: hovered ? 'transform 0.08s ease-out' : 'transform 0.4s ease-out',
         willChange: 'transform',
+        transformStyle: 'preserve-3d',
       }}
     >
       {/* Rank number */}
