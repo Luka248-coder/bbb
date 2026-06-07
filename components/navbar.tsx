@@ -417,20 +417,28 @@ export function Navbar() {
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
                 pathname === '/roulette' ? 'bg-white/15' : 'hover:bg-white/10'
               )}>
-                <img
-                  src="/dice.png"
-                  alt="Roulette"
-                  width={22}
-                  height={22}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                   id="navbar-dice"
-                  style={{ imageRendering: 'crisp-edges' }}
-                  onMouseDown={e => {
+                  onMouseDown={(e) => {
                     const el = e.currentTarget
                     el.style.animation = 'none'
                     void el.offsetWidth
                     el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
                   }}
-                />
+                >
+                  <rect x="7" y="1" width="14" height="14" rx="2.5" fill="white" opacity="0.75"/>
+                  <circle cx="11" cy="5" r="1.2" fill="#111"/>
+                  <circle cx="17" cy="5" r="1.2" fill="#111"/>
+                  <circle cx="14" cy="8" r="1.2" fill="#111"/>
+                  <circle cx="11" cy="11" r="1.2" fill="#111"/>
+                  <circle cx="17" cy="11" r="1.2" fill="#111"/>
+                  <rect x="3" y="9" width="14" height="14" rx="2.5" fill="white"/>
+                  <circle cx="7.5" cy="13.5" r="1.2" fill="#111"/>
+                  <circle cx="13.5" cy="13.5" r="1.2" fill="#111"/>
+                  <circle cx="10.5" cy="16.5" r="1.2" fill="#111"/>
+                  <circle cx="7.5" cy="19.5" r="1.2" fill="#111"/>
+                  <circle cx="13.5" cy="19.5" r="1.2" fill="#111"/>
+                </svg>
               </div>
             </button>
 
