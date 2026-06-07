@@ -5,15 +5,15 @@ import type { Movie, Series, Episode } from '@/lib/content-types'
 export type { Movie, Series, Episode } from '@/lib/content-types'
 export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/content-types'
 
-const PURSTREAM_BASE = 'https://api.purstream.ac/api/v1'
+const PURSTREAM_BASE = 'https://api.purstream.ch/api/v1'
 
 const PURSTREAM_HEADERS = {
   'Accept': 'application/json, text/plain, */*',
   'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
   'Accept-Encoding': 'gzip, deflate, br',
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Referer': 'https://purstream.ac/',
-  'Origin': 'https://purstream.ac',
+  'Referer': 'https://purstream.ch/',
+  'Origin': 'https://purstream.ch',
   'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
   'sec-ch-ua-mobile': '?0',
   'sec-ch-ua-platform': '"Windows"',

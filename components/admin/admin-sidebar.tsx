@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, Film, Tv, Users, MessageSquare,
+  LayoutDashboard, Database, Film, Tv, Users, MessageSquare,
   Settings, Home, LogOut, Bell, Headphones as HeadphonesIcon, Zap, Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,8 @@ const navItems = [
   { href: '/admin/support', label: 'Support', icon: HeadphonesIcon },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/api', label: 'API', icon: Zap },
+  { href: '/admin/api-catalogue', label: 'API Catalogue', icon: Database },
+  { href: '/admin/hero', label: 'Hero / Mise en avant', icon: Film },
   { href: '/admin/settings', label: 'Paramètres', icon: Settings },
 ]
 

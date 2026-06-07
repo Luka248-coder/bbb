@@ -129,9 +129,7 @@ async function WatchContent({
     poster = series?.poster_path ? getPosterUrl(series.poster_path) : null
   }
 
-  const backUrl = from
-    ? decodeURIComponent(from)
-    : type === 'series' ? `/watch/series/${id}?season=${season}&episode=${episode}` : '/'
+  const backUrl = '/'
 
   if (play) {
     return (

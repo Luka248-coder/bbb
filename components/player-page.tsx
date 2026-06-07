@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import useSWR from 'swr'
 import { useDrawer } from '@/components/movie-drawer'
+import { TypewriterText } from '@/components/typewriter-text'
 import {
   getTMDBPosterUrl, getTMDBBackdropUrl, getTMDBProfileUrl,
   formatRuntime, formatYear, getDirectors,
@@ -176,8 +177,8 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               onClick={() => {
                 const params = new URLSearchParams(window.location.search)
                 const from = params.get('from')
-                if (from) router.push(decodeURIComponent(from))
-                else router.back()
+                if (from && from === '/') router.push('/')
+                else router.push('/')
               }}
               className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-white/10 active:scale-95">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
@@ -223,7 +224,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
 
             {/* Synopsis — masqué sur mobile pour gagner de la place */}
             <p className="hidden md:block text-white/70 text-sm leading-relaxed mb-4 max-w-xl">
-              {showFullSynopsis ? overview : synopsisShort}
+              <TypewriterText text={showFullSynopsis ? overview : synopsisShort} />
               {overview.length > 200 && (
                 <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
                   {showFullSynopsis ? 'Moins' : 'Plus'}
@@ -317,7 +318,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
               )}
 
               <p className="text-white/60 text-base leading-relaxed mb-6 max-w-xl">
-                {showFullSynopsis ? overview : synopsisShort}
+                <TypewriterText text={showFullSynopsis ? overview : synopsisShort} />
                 {overview.length > 200 && (
                   <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary ml-1 hover:underline text-sm">
                     {showFullSynopsis ? 'Moins' : 'Plus'}

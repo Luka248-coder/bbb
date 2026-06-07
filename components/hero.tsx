@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Info, Bookmark, BookmarkCheck } from 'lucide-react'
+import { Play, Info, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
 import { useSession } from '@/components/session-provider'
+import { TypewriterText } from '@/components/typewriter-text'
 
 interface HeroProps {
   content: (Movie | Series)[]
@@ -164,7 +165,7 @@ export function Hero({ content }: HeroProps) {
               transition={{ delay: 0.35 }}
               className="text-white/55 text-[15px] leading-relaxed mb-2 line-clamp-2 max-w-lg"
             >
-              {current.overview || ''}
+              <TypewriterText text={current.overview || ''} speed={8} className="text-white/55 text-[15px] leading-relaxed" />
             </motion.p>
 
             {/* Année + note */}
@@ -223,6 +224,31 @@ export function Hero({ content }: HeroProps) {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Flèches navigation */}
+      {featured.length > 1 && (
+        <>
+          <button
+            onClick={() => setCurrentIndex((prev) => (prev - 1 + featured.length) % featured.length)}
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 group"
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+          >
+            <ChevronLeft className="w-4 h-4 text-white" />
+          </button>
+
+          <button
+            onClick={() => setCurrentIndex((prev) => (prev + 1) % featured.length)}
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+          >
+            <ChevronRight className="w-4 h-4 text-white" />
+          </button>
+        </>
+      )}
 
       {/* Indicateurs */}
       {featured.length > 1 && (
