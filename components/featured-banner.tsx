@@ -129,7 +129,15 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
             overflow: 'hidden',
             boxShadow: '0 8px 40px rgba(0,0,0,0.8)',
             zIndex: 2,
+            animation: 'posterFloat 4s ease-in-out infinite',
           }}>
+            <style>{`
+              @keyframes posterFloat {
+                0%   { transform: translateY(calc(-50% - 6px)); box-shadow: 0 16px 48px rgba(0,0,0,0.9); }
+                50%  { transform: translateY(calc(-50% + 6px)); box-shadow: 0 6px 28px rgba(0,0,0,0.6); }
+                100% { transform: translateY(calc(-50% - 6px)); box-shadow: 0 16px 48px rgba(0,0,0,0.9); }
+              }
+            `}</style>
             <Image
               src={`https://image.tmdb.org/t/p/w342${pick.poster_path}`}
               alt={title}
