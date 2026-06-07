@@ -307,8 +307,8 @@ export function Navbar() {
         <div className="pointer-events-auto flex-shrink-0">
           <Link href="/">
             <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-              alt="StreamSelf" width={560} height={168} className="h-16 md:h-16 w-auto"
+              src="/logo.png"
+              alt="StreamSelf" width={48} height={48} className="h-10 md:h-10 w-auto"
             />
           </Link>
         </div>
