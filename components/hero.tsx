@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,17 +18,61 @@ function isMovie(item: Movie | Series): item is Movie {
   return 'title' in item
 }
 
+function extractColor(imageUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = 50
+        canvas.height = 30
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { resolve('10,5,6'); return }
+        ctx.drawImage(img, 0, img.height * 0.6, img.width, img.height * 0.4, 0, 0, 50, 30)
+        const data = ctx.getImageData(0, 0, 50, 30).data
+        let r = 0, g = 0, b = 0, count = 0
+        for (let i = 0; i < data.length; i += 16) {
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; count++
+        }
+        r = Math.floor(r / count)
+        g = Math.floor(g / count)
+        b = Math.floor(b / count)
+        // Assombrir pour ne pas être trop criard
+        r = Math.floor(r * 0.4)
+        g = Math.floor(g * 0.4)
+        b = Math.floor(b * 0.4)
+        resolve(`${r},${g},${b}`)
+      } catch {
+        resolve('10,5,6')
+      }
+    }
+    img.onerror = () => resolve('10,5,6')
+    img.src = imageUrl
+  })
+}
+
 export function Hero({ content }: HeroProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFav, setIsFav] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  const [bgColor, setBgColor] = useState('10,5,6')
   const { openDrawer } = useDrawer()
   const { user } = useSession()
 
-  // Filtrer uniquement les contenus qui ont un backdrop OU un poster
   const featured = content
     .filter(item => item.backdrop_path || item.poster_path)
     .slice(0, 5)
+
+  // Extraire couleur dominante à chaque changement
+  useEffect(() => {
+    if (!featured[currentIndex]) return
+    const item = featured[currentIndex]
+    const url = item.backdrop_path
+      ? `https://image.tmdb.org/t/p/w300${item.backdrop_path}`
+      : `https://image.tmdb.org/t/p/w185${item.poster_path}`
+    extractColor(url).then(setBgColor)
+  }, [currentIndex, featured.length])
 
   useEffect(() => {
     if (featured.length <= 1) return
@@ -38,7 +82,6 @@ export function Hero({ content }: HeroProps) {
     return () => clearInterval(interval)
   }, [featured.length])
 
-  // Vérifier si le film courant est en favoris
   useEffect(() => {
     if (!user?.id || !featured[currentIndex]) return
     const current = featured[currentIndex]
@@ -88,9 +131,22 @@ export function Hero({ content }: HeroProps) {
   const genres = getGenreNames(current.genre_ids || []).slice(0, 3)
 
   return (
+    <>
+      {/* Fond dynamique global — derrière tout le reste de la page */}
+      <motion.div
+        key={bgColor}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.5 }}
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          zIndex: 0,
+          background: `radial-gradient(ellipse 120% 60% at 50% 0%, rgba(${bgColor},0.55) 0%, transparent 70%)`,
+        }}
+      />
+
     <section className="relative w-full overflow-hidden hero-section" style={{ minHeight: 600 }}>
 
-      {/* Préchargement des images suivantes */}
       {featured.map((item, i) => {
         if (i === currentIndex) return null
         const src = item.backdrop_path
@@ -99,7 +155,6 @@ export function Hero({ content }: HeroProps) {
         return <link key={i} rel="preload" as="image" href={src} />
       })}
 
-      {/* Backdrop plein écran */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
@@ -117,7 +172,6 @@ export function Hero({ content }: HeroProps) {
             fill priority
             className={current.backdrop_path ? "object-cover object-top" : "object-cover object-center"}
           />
-          {/* Dégradé bas uniquement — fondu vers le contenu */}
           <div className="absolute inset-x-0 bottom-0" style={{
             height: '75%',
             background: 'linear-gradient(to top, #0a0506 0%, #0a0506 8%, rgba(10,5,6,0.96) 20%, rgba(10,5,6,0.75) 38%, rgba(10,5,6,0.35) 58%, rgba(10,5,6,0.08) 78%, transparent 100%)'
@@ -125,7 +179,6 @@ export function Hero({ content }: HeroProps) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Contenu gauche */}
       <div className="relative h-full flex items-end pb-24 px-4 md:px-16 lg:px-24">
         <AnimatePresence mode="wait">
           <motion.div
@@ -136,7 +189,6 @@ export function Hero({ content }: HeroProps) {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="max-w-2xl w-full"
           >
-            {/* Genres */}
             {genres.length > 0 && (
               <motion.p
                 initial={{ opacity: 0 }}
@@ -148,7 +200,6 @@ export function Hero({ content }: HeroProps) {
               </motion.p>
             )}
 
-            {/* Logo ou titre */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -158,7 +209,6 @@ export function Hero({ content }: HeroProps) {
               <HeroLogo tmdbId={tmdbId} type={type} title={title} />
             </motion.div>
 
-            {/* Synopsis */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -168,7 +218,6 @@ export function Hero({ content }: HeroProps) {
               <TypewriterText text={current.overview || ''} speed={8} className="text-white/55 text-[15px] leading-relaxed" />
             </motion.p>
 
-            {/* Année + note */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -182,7 +231,6 @@ export function Hero({ content }: HeroProps) {
               )}
             </motion.div>
 
-            {/* Boutons */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -225,7 +273,6 @@ export function Hero({ content }: HeroProps) {
         </AnimatePresence>
       </div>
 
-      {/* Flèches navigation */}
       {featured.length > 1 && (
         <>
           <button
@@ -250,7 +297,6 @@ export function Hero({ content }: HeroProps) {
         </>
       )}
 
-      {/* Indicateurs */}
       {featured.length > 1 && (
         <div className="absolute bottom-8 right-8 md:right-16 flex gap-2 items-center">
           {featured.map((_, index) => (
@@ -267,6 +313,7 @@ export function Hero({ content }: HeroProps) {
         </div>
       )}
     </section>
+    </>
   )
 }
 
