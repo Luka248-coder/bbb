@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/server'
 async function getHeroContent(movies: any[], series: any[]) {
   try {
     const supabase = await createClient()
-    const { data: settings } = await supabase.from('settings').select('value').eq('key', 'hero_mode').single()
+    const { data: settings } = await supabase.from('site_settings').select('value').eq('key', 'hero_mode').single()
     if (settings?.value === 'manual') {
       const { data: items } = await supabase.from('hero_items').select('*').order('position').limit(5)
       if (items && items.length > 0) {

@@ -6,8 +6,15 @@ const TMDB = 'https://api.themoviedb.org/3'
 
 export async function GET() {
   const supabase = await createClient()
-  const { data: settings } = await supabase.from('settings').select('value').eq('key', 'hero_mode').single()
-  const { data: items } = await supabase.from('hero_items').select('*').order('position')
+  const { data: settings } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'hero_mode')
+    .single()
+  const { data: items } = await supabase
+    .from('hero_items')
+    .select('*')
+    .order('position')
   return NextResponse.json({ mode: settings?.value || 'auto', items: items || [] })
 }
 
@@ -17,11 +24,10 @@ export async function POST(req: NextRequest) {
 
   // Update hero mode
   if (body.mode !== undefined) {
-    // Try update first, insert if not exists
-    const { error: updateErr } = await supabase.from('settings').update({ value: body.mode, updated_at: new Date().toISOString() }).eq('key', 'hero_mode')
-    if (updateErr) {
-      await supabase.from('settings').insert({ key: 'hero_mode', value: body.mode })
-    }
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({ key: 'hero_mode', value: body.mode, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, mode: body.mode })
   }
 
@@ -32,7 +38,11 @@ export async function POST(req: NextRequest) {
     const data = await res.json()
     const title = data.title || data.name || ''
 
-    const { data: existing } = await supabase.from('hero_items').select('position').order('position', { ascending: false }).limit(1)
+    const { data: existing } = await supabase
+      .from('hero_items')
+      .select('position')
+      .order('position', { ascending: false })
+      .limit(1)
     const position = existing?.length ? (existing[0].position + 1) : 0
 
     const { error } = await supabase.from('hero_items').insert({
