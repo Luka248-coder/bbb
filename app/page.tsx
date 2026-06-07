@@ -42,8 +42,15 @@ async function HomeContent() {
 
   const heroContent = await getHeroContent(movies, series)
 
-  const topRatedMovies = [...movies].sort((a, b) => b.vote_average - a.vote_average).slice(0, 10)
-  const topRatedSeries = [...series].sort((a, b) => b.vote_average - a.vote_average).slice(0, 10)
+  const ALLOWED_LANGUAGES = ['fr', 'en', 'es']
+  const topRatedMovies = [...movies]
+    .filter(m => !m.original_language || ALLOWED_LANGUAGES.includes(m.original_language))
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .slice(0, 10)
+  const topRatedSeries = [...series]
+    .filter(s => !s.original_language || ALLOWED_LANGUAGES.includes(s.original_language))
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .slice(0, 10)
   const newMovies = [...movies].sort((a, b) => new Date(b.release_date || '').getTime() - new Date(a.release_date || '').getTime()).slice(0, 20)
   const newSeries = [...series].sort((a, b) => new Date(b.first_air_date || '').getTime() - new Date(a.first_air_date || '').getTime()).slice(0, 20)
   const popularMovies = [...movies].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 20)
