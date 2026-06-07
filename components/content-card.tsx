@@ -244,6 +244,7 @@ export function ContentCard({
         </AnimatePresence>
       </div>
       </div>
+    </div>
     </motion.div>
   )
 }
