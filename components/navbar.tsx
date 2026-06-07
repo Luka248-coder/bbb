@@ -663,8 +663,38 @@ export function Navbar() {
               className="fixed inset-0 z-[200] flex flex-col"
               style={{ background: 'rgba(8,3,5,0.96)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)' }}
             >
-              {/* Barre du haut */}
-              <div className="flex items-center gap-3 px-4 pt-14 pb-3">
+              {/* Barre du haut — centrée */}
+              <div className="flex items-center gap-3 px-4 pb-3" style={{ paddingTop: 'max(56px, env(safe-area-inset-top, 56px))' }}>
+                <div
+                  className="flex-1 flex items-center gap-3 px-4 rounded-2xl"
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', height: 48 }}
+                >
+                  <Search className="w-4 h-4 text-white/30 shrink-0" />
+                  <input
+                    value={searchQuery}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    placeholder="Films, séries, animés..."
+                    className="bg-transparent text-white text-[15px] outline-none flex-1 placeholder-white/25 font-medium"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button
+                      onPointerDown={() => { setSearchQuery(''); setSearchResults([]) }}
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,0.15)' }}
+                    >
+                      <X className="w-3 h-3 text-white/70" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  onPointerDown={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
+                  className="text-[15px] font-semibold shrink-0 px-1"
+                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                >
+                  Annuler
+                </button>
+              </div>
                 <div
                   className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
                   style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
@@ -904,7 +934,7 @@ export function Navbar() {
         , document.body)}
 
     </header>
-    {/* Mobile bottom sheet — outside <header> to escape pointer-events-none */}
+    {/* Mobile bottom sheet */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -919,32 +949,19 @@ export function Navbar() {
               onTouchStart={e => e.stopPropagation()}
               onTouchEnd={e => e.stopPropagation()}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-2"><div className="w-8 h-1 rounded-full bg-white/15" /></div>
-
-              {/* Profile section */}
               {user ? (
                 <div className="px-4 pt-2 pb-3">
                   <div className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <div className="relative flex-shrink-0">
-                      {avatarUrl ? (
-                        <Image src={avatarUrl} alt={user.username} width={44} height={44} className="rounded-xl object-cover" />
-                      ) : (
-                        <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center">
-                          <span className="text-white font-bold text-lg">{user.username[0].toUpperCase()}</span>
-                        </div>
-                      )}
+                      {avatarUrl ? <Image src={avatarUrl} alt={user.username} width={44} height={44} className="rounded-xl object-cover" /> : <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center"><span className="text-white font-bold text-lg">{user.username[0].toUpperCase()}</span></div>}
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111113]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm leading-tight truncate">{user.username}</p>
                       <p className="text-white/35 text-xs mt-0.5 truncate">{user.email || 'Compte Discord'}</p>
                     </div>
-                    <button
-                      onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                      style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}
-                    >
+                    <button onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }} className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
                       <LogOut className="w-4 h-4 text-red-400" />
                     </button>
                   </div>
@@ -956,22 +973,15 @@ export function Navbar() {
                   </Link>
                 </div>
               )}
-
-              {/* Divider */}
               <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 16px' }} />
-
-              {/* Navigation links */}
               <nav className="px-4 pt-3 flex flex-col gap-0.5">
                 {[...navLinks, ...(user ? [{ href: '/favorites', label: 'Favoris', icon: Heart }, { href: '/roulette', label: 'Roulette', icon: Shuffle }] : [])].map((link, i) => {
                   const Icon = link.icon
                   const isActive = pathname === link.href
                   return (
                     <motion.div key={link.href} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                      <Link href={link.href} onClick={() => setIsMobileMenuOpen(false)}
-                        className={cn('flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-colors', isActive ? 'bg-white/[0.07]' : 'active:bg-white/[0.04]')}>
-                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', isActive ? 'bg-red-600' : 'bg-white/[0.07]')}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
+                      <Link href={link.href} onClick={() => setIsMobileMenuOpen(false)} className={cn('flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-colors', isActive ? 'bg-white/[0.07]' : 'active:bg-white/[0.04]')}>
+                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', isActive ? 'bg-red-600' : 'bg-white/[0.07]')}><Icon className="w-4 h-4 text-white" /></div>
                         <span className={cn('font-semibold text-base', isActive ? 'text-white' : 'text-white/50')}>{link.label}</span>
                         {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500" />}
                       </Link>
@@ -979,25 +989,104 @@ export function Navbar() {
                   )
                 })}
               </nav>
-
-              {/* Admin link */}
               {user?.is_admin && (
                 <div className="px-4 pt-1">
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3.5 px-4 py-3 rounded-2xl active:bg-white/[0.04]">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.07]">
-                      <Shield className="w-4 h-4 text-white" />
-                    </div>
+                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3.5 px-4 py-3 rounded-2xl active:bg-white/[0.04]">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.07]"><Shield className="w-4 h-4 text-white" /></div>
                     <span className="font-semibold text-base text-white/50">Administration</span>
                   </Link>
                 </div>
               )}
-
               <div className="pb-4" />
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+    {/* Mobile Bottom Navbar */}
+    <nav className="md:hidden fixed z-[90] pointer-events-auto"
+      style={{
+        bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'calc(100% - 32px)',
+        maxWidth: '440px',
+      }}>
+      <div
+        className="flex items-center h-[68px] px-2 rounded-[26px]"
+        style={{
+          background: 'rgba(15,15,17,0.97)',
+          border: '1px solid rgba(255,255,255,0.09)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          boxShadow: '0 8px 48px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.04) inset',
+        }}>
+
+        {/* Accueil */}
+        <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-1 relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+          {pathname === '/' && (
+            <motion.div layoutId="bottomNavActive" className="absolute inset-1 rounded-[18px]"
+              style={{ background: 'rgba(220,38,38,0.12)' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }} />
+          )}
+          <Home className={`w-[22px] h-[22px] relative z-10 transition-colors ${pathname === '/' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.5 : 1.8} />
+          <span className={`text-[10px] font-bold tracking-wide relative z-10 transition-colors ${pathname === '/' ? 'text-white/90' : 'text-white/30'}`}>ACCUEIL</span>
+        </Link>
+
+        {/* Films */}
+        <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-1 relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+          {pathname === '/movies' && (
+            <motion.div layoutId="bottomNavActive" className="absolute inset-1 rounded-[18px]"
+              style={{ background: 'rgba(220,38,38,0.12)' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }} />
+          )}
+          <Film className={`w-[22px] h-[22px] relative z-10 transition-colors ${pathname === '/movies' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.5 : 1.8} />
+          <span className={`text-[10px] font-bold tracking-wide relative z-10 transition-colors ${pathname === '/movies' ? 'text-white/90' : 'text-white/30'}`}>FILMS</span>
+        </Link>
+
+        {/* Séries */}
+        <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-1 relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+          {pathname === '/series' && (
+            <motion.div layoutId="bottomNavActive" className="absolute inset-1 rounded-[18px]"
+              style={{ background: 'rgba(220,38,38,0.12)' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }} />
+          )}
+          <Tv className={`w-[22px] h-[22px] relative z-10 transition-colors ${pathname === '/series' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.5 : 1.8} />
+          <span className={`text-[10px] font-bold tracking-wide relative z-10 transition-colors ${pathname === '/series' ? 'text-white/90' : 'text-white/30'}`}>SÉRIES</span>
+        </Link>
+
+        {/* Recherche */}
+        <button
+          className="flex-1 flex flex-col items-center justify-center gap-1 relative py-2"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+          onClick={() => setIsSearchOpen(true)}
+        >
+          <Search className="w-[22px] h-[22px] text-white/35 transition-colors" strokeWidth={1.8} />
+          <span className="text-[10px] font-bold tracking-wide text-white/30">RECHERCHE</span>
+        </button>
+
+        {/* Profil */}
+        <button
+          className="flex-1 flex flex-col items-center justify-center gap-1 relative py-2"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+          onClick={user ? openProfile : () => { window.location.href = '/login' }}
+        >
+          {showProfile && (
+            <motion.div layoutId="bottomNavActive" className="absolute inset-1 rounded-[18px]"
+              style={{ background: 'rgba(220,38,38,0.12)' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }} />
+          )}
+          {user && avatarUrl ? (
+            <Image src={avatarUrl} alt={user.username} width={22} height={22}
+              className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 transition-all ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
+          ) : (
+            <User className={`w-[22px] h-[22px] relative z-10 transition-colors ${showProfile ? 'text-red-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.5 : 1.8} />
+          )}
+          <span className={`text-[10px] font-bold tracking-wide relative z-10 transition-colors ${showProfile ? 'text-white/90' : 'text-white/30'}`}>PROFIL</span>
+        </button>
+
+      </div>
+    </nav>
     </>
   )
 }
