@@ -8,6 +8,7 @@ import { Play, Info, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight } from '
 import { getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
 import { useSession } from '@/components/session-provider'
+import { TypewriterText } from '@/components/typewriter-text'
 
 interface HeroProps {
   content: (Movie | Series)[]
@@ -164,7 +165,7 @@ export function Hero({ content }: HeroProps) {
               transition={{ delay: 0.35 }}
               className="text-white/55 text-[15px] leading-relaxed mb-2 line-clamp-2 max-w-lg"
             >
-              {current.overview || ''}
+              <TypewriterText text={current.overview || ''} speed={8} className="text-white/55 text-[15px] leading-relaxed" />
             </motion.p>
 
             {/* Année + note */}
