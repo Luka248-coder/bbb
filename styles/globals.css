@@ -161,3 +161,21 @@ body { background: transparent !important; }
 .bg-background { background-color: transparent !important; }
 .bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: transparent !important; }
 .min-h-screen { background: transparent !important; }
+
+/* Top 10 floating number animations */
+@keyframes top10float0 {
+  0%, 100% { transform: translateY(-50%) translateY(0px); }
+  50% { transform: translateY(-50%) translateY(-7px); }
+}
+@keyframes top10float1 {
+  0%, 100% { transform: translateY(-50%) translateY(-3px); }
+  50% { transform: translateY(-50%) translateY(5px); }
+}
+@keyframes top10float2 {
+  0%, 100% { transform: translateY(-50%) translateY(2px); }
+  50% { transform: translateY(-50%) translateY(-6px); }
+}
+@keyframes top10float3 {
+  0%, 100% { transform: translateY(-50%) translateY(-5px); }
+  50% { transform: translateY(-50%) translateY(4px); }
+}
