@@ -841,8 +841,12 @@ export function Navbar() {
                     ) : (
                       <div className="space-y-2">
                         {watchHistory.map(item => (
-                          <Link key={item.id} href={`/watch/${item.content_type}/${item.content_id}`} onClick={closeProfile}
-                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative"
+                          <button key={item.id}
+                            onClick={() => {
+                              closeProfile()
+                              setTimeout(() => openDrawer(item.content_type as 'movie' | 'series', item.content_id), 200)
+                            }}
+                            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative text-left"
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />}
                             <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
@@ -863,7 +867,7 @@ export function Navbar() {
                                 {item.finished ? <span className="flex items-center gap-1 text-green-400/60"><Check className="w-2.5 h-2.5" />Terminé</span> : `${item.progress}% · ${timeAgo(item.watched_at)}`}
                               </p>
                             </div>
-                          </Link>
+                          </button>
                         ))}
                       </div>
                     )}
