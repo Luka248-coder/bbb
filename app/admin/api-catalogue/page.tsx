@@ -32,8 +32,9 @@ interface VerifItem {
 }
 
 interface VerifStats {
-  total: number
-  verified: number
+  total_tmdb: number
+  in_catalogue: number
+  already_checked: number
   pending: number
   items: VerifItem[]
 }
@@ -333,28 +334,29 @@ export default function ApiCataloguePage() {
                 <div className="flex items-center gap-3 text-zinc-500"><Loader2 className="w-5 h-5 animate-spin" /><span>Chargement...</span></div>
               ) : verifStats ? (
                 <div>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {[
-                      { label: 'Total catalogue', value: verifStats.total, color: 'text-white' },
-                      { label: 'Déjà vérifiés', value: verifStats.verified, color: 'text-green-400' },
+                      { label: 'Films TMDB trouvés', value: verifStats.total_tmdb, color: 'text-white' },
+                      { label: 'Déjà au catalogue', value: verifStats.in_catalogue, color: 'text-blue-400' },
+                      { label: 'Déjà vérifiés', value: verifStats.already_checked, color: 'text-zinc-400' },
                       { label: 'À vérifier', value: verifStats.pending, color: 'text-yellow-400' },
                     ].map(({ label, value, color }) => (
                       <div key={label} className="bg-zinc-800 rounded-xl p-4 text-center">
-                        <p className={`text-3xl font-black ${color}`}>{value}</p>
+                        <p className={`text-2xl font-black ${color}`}>{value}</p>
                         <p className="text-zinc-500 text-xs mt-1">{label}</p>
                       </div>
                     ))}
                   </div>
 
-                  {/* Overall progress bar */}
+                  {/* Progress bar */}
                   <div className="mb-4">
                     <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                      <span>Progression globale</span>
-                      <span>{verifStats.total > 0 ? Math.round((verifStats.verified / verifStats.total) * 100) : 0}%</span>
+                      <span>Progression de la vérification</span>
+                      <span>{verifStats.total_tmdb > 0 ? Math.round(((verifStats.in_catalogue + verifStats.already_checked) / verifStats.total_tmdb) * 100) : 0}%</span>
                     </div>
                     <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                       <div className="h-full bg-green-500 rounded-full transition-all duration-500"
-                        style={{ width: `${verifStats.total > 0 ? (verifStats.verified / verifStats.total) * 100 : 0}%` }} />
+                        style={{ width: `${verifStats.total_tmdb > 0 ? ((verifStats.in_catalogue + verifStats.already_checked) / verifStats.total_tmdb) * 100 : 0}%` }} />
                     </div>
                   </div>
 
@@ -365,7 +367,7 @@ export default function ApiCataloguePage() {
                         <button onClick={startVerification} disabled={verifStats.pending === 0}
                           className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-sm font-bold transition-all">
                           <Zap className="w-4 h-4" />
-                          {verifStats.pending === 0 ? 'Tout vérifié !' : `Lancer (${verifStats.pending} à vérifier)`}
+                          {verifStats.pending === 0 ? 'Tout vérifié !' : `Vérifier ${verifStats.pending} nouveaux contenus`}
                         </button>
                         <button onClick={resetVerification}
                           className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white transition-all">
@@ -441,10 +443,10 @@ export default function ApiCataloguePage() {
                 <div>
                   <p className="font-semibold text-blue-300 text-sm mb-1">Comment ça marche</p>
                   <ul className="text-blue-300/60 text-xs space-y-1">
-                    <li>• Les films/séries sont vérifiés par ordre de popularité (tendances en premier)</li>
-                    <li>• La progression est sauvegardée — tu peux faire une pause et reprendre plus tard</li>
-                    <li>• Les contenus déjà vérifiés ne sont pas re-vérifiés</li>
-                    <li>• Tous les contenus du catalogue streament via Purstream même sans lien direct</li>
+                    <li>• Cherche dans les tendances + populaires + mieux notés TMDB (~500 titres)</li>
+                    <li>• Vérifie uniquement les contenus <strong>pas encore</strong> dans ton catalogue</li>
+                    <li>• Si disponible sur Purstream → ajouté automatiquement au catalogue</li>
+                    <li>• Progression sauvegardée — pause et reprise sans re-vérifier les déjà faits</li>
                   </ul>
                 </div>
               </div>
