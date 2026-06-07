@@ -92,7 +92,7 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
         position: 'relative',
         borderRadius: '16px',
         overflow: 'hidden',
-        height: '420px',
+        height: '480px',
         background: '#111',
       }}>
 
@@ -123,7 +123,7 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
             right: '28px',
             top: '50%',
             transform: 'translateY(-50%)',
-            width: '130px',
+            width: '160px',
             aspectRatio: '2/3',
             borderRadius: '12px',
             overflow: 'hidden',
@@ -143,7 +143,7 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
         <div style={{
           position: 'absolute', inset: 0, zIndex: 3,
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          padding: '2rem 2.5rem',
+          padding: '2.5rem 3rem',
           maxWidth: '620px',
         }}>
 
