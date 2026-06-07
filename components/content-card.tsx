@@ -6,7 +6,7 @@ import { Play, Star, Check, Plus, Info } from 'lucide-react'
 import { getPosterUrl, type Movie, type Series } from '@/lib/content-types'
 import { cn } from '@/lib/utils'
 import { useDrawer } from '@/components/movie-drawer'
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface ContentCardProps {
   content: Movie | Series
@@ -22,39 +22,6 @@ function isMovie(item: Movie | Series): item is Movie {
   return 'title' in item
 }
 
-// Singleton gyroscope partagé — un seul listener pour toute la page
-let gyroListeners: ((x: number, y: number) => void)[] = []
-let gyroStarted = false
-let gyroPermissionGranted = false
-
-function startGyro() {
-  if (gyroStarted) return
-  gyroStarted = true
-  const handler = (e: DeviceOrientationEvent) => {
-    const x = Math.max(-15, Math.min(15, (e.beta ?? 0) - 30))
-    const y = Math.max(-15, Math.min(15, e.gamma ?? 0))
-    gyroListeners.forEach(fn => fn(x * 0.5, y * 0.5))
-  }
-  window.addEventListener('deviceorientation', handler, true)
-}
-
-async function requestGyroPermission() {
-  if (gyroPermissionGranted) return
-  if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-    try {
-      const res = await (DeviceOrientationEvent as any).requestPermission()
-      if (res === 'granted') {
-        gyroPermissionGranted = true
-        startGyro()
-      }
-    } catch {}
-  } else {
-    // Android / non-iOS : pas besoin de permission
-    gyroPermissionGranted = true
-    startGyro()
-  }
-}
-
 export function ContentCard({
   content, type, index = 0, showRank = false, isFavorite = false, onToggleFavorite, logoUrl,
 }: ContentCardProps) {
@@ -63,52 +30,22 @@ export function ContentCard({
   const year = releaseDate ? new Date(releaseDate).getFullYear() : ''
   const tmdbId = content.tmdb_id || content.id
   const { openDrawer } = useDrawer()
-
   const [hovered, setHovered] = useState(false)
-  const [tilt, setTilt] = useState({ x: 0, y: 0 })
-  const [glare, setGlare] = useState({ x: 50, y: 50 })
-  const cardRef = useRef<HTMLDivElement>(null)
   const isTouchRef = useRef(false)
 
   useEffect(() => {
     isTouchRef.current = window.matchMedia('(hover: none)').matches
   }, [])
 
-  // S'abonner au gyroscope singleton
-  useEffect(() => {
-    const fn = (x: number, y: number) => {
-      setTilt({ x, y })
-      setGlare({ x: 50 + y * 4, y: 50 + x * 4 })
-    }
-    gyroListeners.push(fn)
-    // Sur Android, démarrer directement
-    if (typeof (DeviceOrientationEvent as any).requestPermission !== 'function') {
-      startGyro()
-    }
-    return () => { gyroListeners = gyroListeners.filter(l => l !== fn) }
-  }, [])
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return
-    const rect = cardRef.current.getBoundingClientRect()
-    const dx = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)
-    const dy = (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)
-    setTilt({ x: -dy * 12, y: dx * 12 })
-    setGlare({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 })
-  }, [])
-
-  // Tap court = agrandir immédiatement. 2e tap = ouvrir drawer
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault()
-    // Demande permission gyroscope iOS au premier tap (doit venir d'un geste)
-    requestGyroPermission()
     if (!hovered) {
       setHovered(true)
     } else {
       setHovered(false)
       openDrawer(type, tmdbId)
     }
-  }, [hovered, openDrawer, type, tmdbId])
+  }
 
   const overview = (content as any).overview || ''
   const shortOverview = overview.length > 80 ? overview.slice(0, 80) + '...' : overview
@@ -123,17 +60,9 @@ export function ContentCard({
       style={{ zIndex: hovered ? 20 : 1 }}
     >
       <div
-        ref={cardRef}
         onMouseEnter={() => !isTouchRef.current && setHovered(true)}
-        onMouseMove={!isTouchRef.current ? handleMouseMove : undefined}
-        onMouseLeave={() => { if (!isTouchRef.current) { setHovered(false); setTilt({ x: 0, y: 0 }) } }}
-        onTouchEnd={isTouchRef.current ? handleTouchEnd : undefined}
-        style={{
-          transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          transition: 'transform 0.1s ease-out',
-          willChange: 'transform',
-          transformStyle: 'preserve-3d',
-        }}
+        onMouseLeave={() => !isTouchRef.current && setHovered(false)}
+        onTouchEnd={handleTouchEnd}
       >
         {showRank && (
           <div className="absolute -left-3 bottom-4 z-10 leading-none pointer-events-none select-none font-black text-primary/30"
@@ -146,33 +75,16 @@ export function ContentCard({
           className={cn(showRank ? 'w-40 md:w-52 ml-8' : 'w-44 md:w-56', 'aspect-[2/3]')}
           style={{
             borderRadius: '1rem',
-            boxShadow: hovered
-              ? '0 32px 64px rgba(0,0,0,0.9), 0 0 48px rgba(255,200,80,0.2)'
-              : '0 4px 16px rgba(0,0,0,0.4)',
-            transform: 'scale(1)',
-            transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
-            willChange: 'transform',
+            boxShadow: hovered ? '0 20px 48px rgba(0,0,0,0.7)' : '0 4px 16px rgba(0,0,0,0.4)',
+            transition: 'box-shadow 0.25s ease',
             border: '1px solid rgba(255,255,255,0.07)',
           }}
         >
           <div
             className="relative overflow-hidden cursor-pointer w-full h-full"
-            style={{
-              borderRadius: '1rem',
-              background: '#111',
-            }}
+            style={{ borderRadius: '1rem', background: '#111' }}
             onClick={() => !isTouchRef.current && openDrawer(type, tmdbId)}
           >
-            {/* Brillance gyroscope — toujours présente, plus forte au hover */}
-            <div
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,220,120,${hovered ? 0.3 : 0.1}) 0%, rgba(255,255,255,${hovered ? 0.08 : 0.02}) 45%, transparent 70%)`,
-                mixBlendMode: 'overlay',
-                transition: 'background 0.05s linear',
-              }}
-            />
-
             <Image src={getPosterUrl(content.poster_path)} alt={title} fill className="object-contain"
               sizes="(max-width: 768px) 160px, 192px" />
 
