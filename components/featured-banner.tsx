@@ -56,20 +56,33 @@ function FeaturedLogo({ tmdbId, type, title }: { tmdbId: number; type: string; t
 
 function TypewriterText({ text }: { text: string }) {
   const [displayed, setDisplayed] = useState('')
+  const [done, setDone] = useState(false)
   const indexRef = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    setDisplayed('')
+  const startTyping = (t: string) => {
     indexRef.current = 0
-    const interval = setInterval(() => {
-      if (indexRef.current < text.length) {
-        setDisplayed(text.slice(0, indexRef.current + 1))
+    setDone(false)
+    setDisplayed('')
+    timerRef.current = setInterval(() => {
+      if (indexRef.current < t.length) {
+        setDisplayed(t.slice(0, indexRef.current + 1))
         indexRef.current++
       } else {
-        clearInterval(interval)
+        if (timerRef.current) clearInterval(timerRef.current)
+        setDone(true)
+        timeoutRef.current = setTimeout(() => startTyping(t), 2500)
       }
     }, 18)
-    return () => clearInterval(interval)
+  }
+
+  useEffect(() => {
+    startTyping(text)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
   }, [text])
 
   return (
@@ -81,7 +94,7 @@ function TypewriterText({ text }: { text: string }) {
       minHeight: '4.5em',
     }}>
       {displayed}
-      {displayed.length < text.length && (
+      {!done && (
         <span style={{
           display: 'inline-block', width: '2px', height: '0.9em',
           background: 'rgba(255,255,255,0.6)', marginLeft: '2px',
