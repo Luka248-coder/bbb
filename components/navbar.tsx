@@ -924,7 +924,7 @@ export function Navbar() {
         </Link>
 
         {/* Profil */}
-        <button onClick={user ? openProfile : () => { window.location.href = '/login' }}
+        <button onClick={user ? (showProfile ? closeProfile : openProfile) : () => { window.location.href = '/login' }}
           className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2"
           style={{ WebkitTapHighlightColor: 'transparent' }}>
           {showProfile && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
