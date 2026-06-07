@@ -155,20 +155,6 @@ export function ContentCard({
               }}
             />
 
-            {/* Reflet arc-en-ciel holographique au hover */}
-            <AnimatePresence>
-              {hovered && (
-                <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="absolute inset-0 pointer-events-none z-10"
-                  style={{
-                    background: `linear-gradient(${120 + tilt.y * 4}deg, rgba(255,0,128,0.1) 0%, rgba(255,200,0,0.12) 25%, rgba(0,255,200,0.1) 50%, rgba(120,0,255,0.1) 75%, rgba(255,0,128,0.08) 100%)`,
-                    mixBlendMode: 'color-dodge',
-                  }}
-                />
-              )}
-            </AnimatePresence>
-
             <Image src={getPosterUrl(content.poster_path)} alt={title} fill className="object-cover object-top"
               sizes="(max-width: 768px) 160px, 192px" />
 
