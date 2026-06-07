@@ -73,12 +73,15 @@ export function AdminHeroManager() {
   const addItem = async (result: any) => {
     if (items.length >= 5) return
     setAddingId(result.id)
-    await fetch('/api/auth/admin/hero-settings', {
+    const res = await fetch('/api/auth/admin/hero-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tmdb_id: result.id, type: searchType === 'movie' ? 'movie' : 'series' }),
     })
-    await fetchSettings()
+    // Recharger uniquement les items, sans toucher au mode
+    const supaRes = await fetch('/api/auth/admin/hero-settings')
+    const data = await supaRes.json()
+    setItems(data.items || [])
     setAddingId(null)
   }
 
