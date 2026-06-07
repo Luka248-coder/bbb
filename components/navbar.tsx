@@ -448,10 +448,10 @@ export function Navbar() {
                 {isSearchOpen ? (
                   <motion.div
                     key="open"
-                    initial={{ width: 36, opacity: 0 }} animate={{ width: 200, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
+                    initial={{ width: 36, opacity: 0 }} animate={{ width: 240, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                     className="flex items-center rounded-full px-3 gap-2 h-8"
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', transformOrigin: 'left center' }}
                   >
                     <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
                     <input
@@ -479,12 +479,12 @@ export function Navbar() {
                 )}
               </AnimatePresence>
 
-              {/* Dropdown résultats desktop */}
+              {/* Dropdown résultats desktop — aligné à gauche de la barre */}
               <AnimatePresence>
                 {isSearchOpen && searchResults.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    className="absolute top-12 left-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
                     style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
                   >
                     {searchResults.map(result => {
