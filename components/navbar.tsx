@@ -426,18 +426,18 @@ export function Navbar() {
                     el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
                   }}
                 >
-                  <rect x="7" y="1" width="14" height="14" rx="2.5" fill="white" opacity="0.75"/>
-                  <circle cx="11" cy="5" r="1.2" fill="#111"/>
-                  <circle cx="17" cy="5" r="1.2" fill="#111"/>
-                  <circle cx="14" cy="8" r="1.2" fill="#111"/>
-                  <circle cx="11" cy="11" r="1.2" fill="#111"/>
-                  <circle cx="17" cy="11" r="1.2" fill="#111"/>
-                  <rect x="3" y="9" width="14" height="14" rx="2.5" fill="white"/>
-                  <circle cx="7.5" cy="13.5" r="1.2" fill="#111"/>
-                  <circle cx="13.5" cy="13.5" r="1.2" fill="#111"/>
-                  <circle cx="10.5" cy="16.5" r="1.2" fill="#111"/>
-                  <circle cx="7.5" cy="19.5" r="1.2" fill="#111"/>
-                  <circle cx="13.5" cy="19.5" r="1.2" fill="#111"/>
+                  {/* Dé arrière */}
+                  <rect x="8" y="1" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6"/>
+                  <circle cx="12" cy="5" r="1" fill="white" opacity="0.6"/>
+                  <circle cx="17" cy="5" r="1" fill="white" opacity="0.6"/>
+                  <circle cx="17" cy="10" r="1" fill="white" opacity="0.6"/>
+                  {/* Dé avant */}
+                  <rect x="3" y="10" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none"/>
+                  <circle cx="7" cy="14" r="1" fill="white"/>
+                  <circle cx="12" cy="14" r="1" fill="white"/>
+                  <circle cx="7" cy="19" r="1" fill="white"/>
+                  <circle cx="12" cy="19" r="1" fill="white"/>
+                  <circle cx="9.5" cy="16.5" r="1" fill="white"/>
                 </svg>
               </div>
             </button>
