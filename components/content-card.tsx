@@ -6,7 +6,7 @@ import { Play, Star, Check, Plus, Info } from 'lucide-react'
 import { getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { cn } from '@/lib/utils'
 import { useDrawer } from '@/components/movie-drawer'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 interface ContentCardProps {
   content: Movie | Series
@@ -34,6 +34,7 @@ export function ContentCard({
   const { openDrawer } = useDrawer()
   const [hovered, setHovered] = useState(false)
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const [glare, setGlare] = useState({ x: 50, y: 50 })
   const cardRef = useRef<HTMLDivElement>(null)
   const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
@@ -42,10 +43,27 @@ export function ContentCard({
     const rect = cardRef.current.getBoundingClientRect()
     const cx = rect.left + rect.width / 2
     const cy = rect.top + rect.height / 2
-    const dx = (e.clientX - cx) / (rect.width / 2)   // -1 à 1
-    const dy = (e.clientY - cy) / (rect.height / 2)  // -1 à 1
-    setTilt({ x: -dy * 12, y: dx * 12 }) // inclinaison max 12deg
+    const dx = (e.clientX - cx) / (rect.width / 2)
+    const dy = (e.clientY - cy) / (rect.height / 2)
+    setTilt({ x: -dy * 12, y: dx * 12 })
+    setGlare({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    })
   }, [])
+
+  // Gyroscope mobile
+  useEffect(() => {
+    if (!isTouchDevice) return
+    const handler = (e: DeviceOrientationEvent) => {
+      const x = Math.max(-10, Math.min(10, (e.beta ?? 0) - 30)) // inclinaison avant/arrière
+      const y = Math.max(-10, Math.min(10, e.gamma ?? 0))        // inclinaison gauche/droite
+      setTilt({ x: x * 0.6, y: y * 0.6 })
+      setGlare({ x: 50 + y * 2, y: 50 + x * 2 })
+    }
+    window.addEventListener('deviceorientation', handler, true)
+    return () => window.removeEventListener('deviceorientation', handler, true)
+  }, [isTouchDevice])
 
   const handleClick = () => {
     if (isTouchDevice) {
@@ -121,6 +139,16 @@ export function ContentCard({
         }}
         onClick={handleClick}
       >
+        {/* Reflet lumineux Pokémon-style */}
+        {hovered && (
+          <div
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{
+              background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 40%, transparent 70%)`,
+              mixBlendMode: 'overlay',
+            }}
+          />
+        )}
         {/* Poster */}
         <Image
           src={getPosterUrl(content.poster_path)}

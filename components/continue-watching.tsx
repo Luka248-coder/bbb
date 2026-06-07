@@ -27,7 +27,7 @@ export function ContinueWatching() {
   const [loading, setLoading] = useState(true)
   const [logos, setLogos] = useState<Record<number, string | null>>({})
 
-  useEffect(() => {
+  const fetchHistory = () => {
     if (!user) { setLoading(false); return }
     fetch(`/api/watch-history?user_id=${user.id}&limit=10`)
       .then(r => r.json())
@@ -40,7 +40,6 @@ export function ContinueWatching() {
             const r = await fetch(`/api/content/${apiType}/${item.content_id}`, { cache: 'force-cache' })
             if (!r.ok) return { id: item.content_id, logo: null, poster: null }
             const d = await r.json()
-            // Récupérer le poster TMDB si absent en BDD
             const poster = d.details?.poster_path
               ? `https://image.tmdb.org/t/p/w500${d.details.poster_path}`
               : null
@@ -48,6 +47,7 @@ export function ContinueWatching() {
           } catch { return { id: item.content_id, logo: null, poster: null } }
         })).then(results => {
           const logoMap: Record<number, string | null> = {}
+
           const posterMap: Record<number, string | null> = {}
           results.forEach(({ id, logo, poster }: { id: number; logo: string | null; poster: string | null }) => {
             logoMap[id] = logo
@@ -62,6 +62,17 @@ export function ContinueWatching() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchHistory()
+  }, [user])
+
+  // Rafraîchir quand la page redevient visible (retour du player)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchHistory() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [user])
 
   if (!user || loading || items.length === 0) return null

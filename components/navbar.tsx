@@ -591,7 +591,7 @@ export function Navbar() {
                             onClick={async () => {
                               await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notification_id: notif.id, user_id: user?.id }) })
                               setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
-                              if (notif.content_id && notif.content_type) { setShowNotifications(false); router.push(`/watch/${notif.content_type}/${notif.content_id}`) }
+                              if (notif.content_id && notif.content_type) { setShowNotifications(false); setTimeout(() => openDrawer(notif.content_type as 'movie' | 'series', notif.content_id!), 150) }
                             }}>
                             {!notif.is_read && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full" style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))' }} />}
                             {notif.image_url ? (
