@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -49,7 +49,7 @@ const navLinks = [
   { href: '/', label: 'Accueil', icon: Home },
   { href: '/movies', label: 'Films', icon: Film },
   { href: '/series', label: 'Séries', icon: Tv },
-  { href: '/request', label: "Souhaits", icon: Plus },
+  { href: '/request', label: "Demande d'ajout", icon: Plus },
 ]
 
 const moreLinks = [
@@ -97,53 +97,6 @@ export function Navbar() {
   const { user } = useSession()
   usePresence(user?.id)
   const { openDrawer } = useDrawer()
-
-  const [rouletteParticles, setRouletteParticles] = useState<{id:number,x:number,y:number,color:string,angle:number,speed:number,size:number}[]>([])
-
-  const playPopSound = useCallback(() => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination)
-      const notes = [
-        { freq: 523.25, t: 0, dur: 0.35, type: 'triangle' as OscillatorType, vol: 0.5 },
-        { freq: 659.25, t: 0.08, dur: 0.30, type: 'triangle' as OscillatorType, vol: 0.45 },
-        { freq: 783.99, t: 0.16, dur: 0.30, type: 'triangle' as OscillatorType, vol: 0.4 },
-        { freq: 1046.5, t: 0.24, dur: 0.5, type: 'sine' as OscillatorType, vol: 0.5 },
-        { freq: 1318.5, t: 0.28, dur: 0.5, type: 'sine' as OscillatorType, vol: 0.35 },
-      ]
-      notes.forEach(({ freq, t, dur, type, vol }) => {
-        const osc = ctx.createOscillator(); const gain = ctx.createGain()
-        osc.connect(gain); gain.connect(master); osc.type = type; osc.frequency.value = freq
-        gain.gain.setValueAtTime(0, ctx.currentTime + t)
-        gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + t + 0.015)
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + dur)
-        osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + dur + 0.05)
-      })
-    } catch {}
-  }, [])
-
-  const fireRouletteConfetti = useCallback(() => {
-    const colors = ['#ff4444','#ff8800','#ffdd00','#44ff44','#4488ff','#cc44ff','#ff44aa','#ffffff']
-    const burst = Array.from({ length: 60 }, (_, i) => ({
-      id: Date.now() + i, x: Math.random() * 100, y: Math.random() * 40,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      angle: Math.random() * 360, speed: 1 + Math.random() * 3,
-      size: 4 + Math.random() * 6,
-    }))
-    setRouletteParticles(burst)
-    setTimeout(() => setRouletteParticles([]), 4000)
-  }, [])
-
-  const handleRoulette = useCallback(async () => {
-    try {
-      const res = await fetch('/api/roulette/random')
-      const data = await res.json()
-      if (data?.tmdb_id && data?.type) {
-        openDrawer(data.type, data.tmdb_id)
-        setTimeout(() => { playPopSound(); fireRouletteConfetti() }, 300)
-      }
-    } catch {}
-  }, [openDrawer, playPopSound, fireRouletteConfetti])
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
@@ -168,6 +121,7 @@ export function Navbar() {
   const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const mobileBellRef = useRef<HTMLButtonElement>(null)
   const unreadCount = notifications.filter(n => !n.is_read).length
@@ -204,7 +158,13 @@ export function Navbar() {
     }
   }, [showProfile, isMobileMenuOpen])
 
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    setMounted(true)
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     let ticking = false
@@ -329,12 +289,6 @@ export function Navbar() {
     } catch {}
   }
 
-  const closeSearch = () => {
-    setIsSearchOpen(false)
-    setSearchQuery('')
-    setSearchResults([])
-  }
-
   const avatarUrl = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png` : null
 
   const openProfile = () => {
@@ -356,7 +310,7 @@ export function Navbar() {
 
       <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
 
-        {/* Logo */}
+        {/* Logo — décalé légèrement à droite */}
         <div className="pointer-events-auto flex-shrink-0 ml-4">
           <Link href="/">
             <Image
@@ -366,7 +320,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Pill central desktop */}
+        {/* Pill central */}
         <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
@@ -378,6 +332,7 @@ export function Navbar() {
               boxShadow: 'none',
             }}
           >
+            {/* Nav links */}
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
@@ -394,64 +349,33 @@ export function Navbar() {
 
             <div className="w-px h-4 bg-white/10 mx-1" />
 
-            {/* Confettis roulette */}
-            {rouletteParticles.length > 0 && typeof document !== 'undefined' && createPortal(
-              <div className="fixed inset-0 pointer-events-none z-[9999]">
-                {rouletteParticles.map(p => (
-                  <div key={p.id} style={{
-                    position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
-                    width: p.size, height: p.size, background: p.color, borderRadius: '2px',
-                    animation: `confettiFall ${2 + p.speed}s ease-in forwards`,
-                    transform: `rotate(${p.angle}deg)`,
-                  }} />
-                ))}
-                <style>{`@keyframes confettiFall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`}</style>
-              </div>,
-              document.body
-            )}
-
             {/* Roulette */}
-            <button onClick={handleRoulette} title="Roulette" className="select-none">
-              <style>{`@keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 40% { transform: rotate(200deg) scale(1.2); } 70% { transform: rotate(320deg) scale(0.95); } 100% { transform: rotate(360deg) scale(1); } }`}</style>
+            <Link href="/roulette" title="Roulette" className="select-none">
               <div className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
-                pathname === '/roulette' ? 'bg-white/15' : 'hover:bg-white/10'
+                pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white'
               )}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                  id="navbar-dice"
-                  onMouseDown={(e) => {
-                    const el = e.currentTarget
-                    el.style.animation = 'none'
-                    void el.offsetWidth
-                    el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
-                  }}
-                >
-                  {/* Dé arrière */}
-                  <rect x="8" y="1" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6"/>
-                  <circle cx="12" cy="5" r="1" fill="white" opacity="0.6"/>
-                  <circle cx="17" cy="5" r="1" fill="white" opacity="0.6"/>
-                  <circle cx="17" cy="10" r="1" fill="white" opacity="0.6"/>
-                  {/* Dé avant */}
-                  <rect x="3" y="10" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none"/>
-                  <circle cx="7" cy="14" r="1" fill="white"/>
-                  <circle cx="12" cy="14" r="1" fill="white"/>
-                  <circle cx="7" cy="19" r="1" fill="white"/>
-                  <circle cx="12" cy="19" r="1" fill="white"/>
-                  <circle cx="9.5" cy="16.5" r="1" fill="white"/>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="4"/>
+                  <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
                 </svg>
               </div>
-            </button>
+            </Link>
 
-            {/* Search inline desktop */}
+            {/* Search inline */}
             <div ref={searchRef} className="relative flex items-center">
               <AnimatePresence mode="wait">
                 {isSearchOpen ? (
                   <motion.div
                     key="open"
-                    initial={{ width: 36, opacity: 0 }} animate={{ width: 240, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
+                    initial={{ width: 36, opacity: 0 }} animate={{ width: 200, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                     className="flex items-center rounded-full px-3 gap-2 h-8"
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', transformOrigin: 'left center' }}
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
                   >
                     <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
                     <input
@@ -479,12 +403,12 @@ export function Navbar() {
                 )}
               </AnimatePresence>
 
-              {/* Dropdown résultats desktop — aligné à gauche de la barre */}
+              {/* Dropdown résultats */}
               <AnimatePresence>
                 {isSearchOpen && searchResults.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    className="absolute top-12 left-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
                     style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
                   >
                     {searchResults.map(result => {
@@ -520,9 +444,11 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Bell + Avatar desktop */}
+        {/* Bell + Avatar — fixe à droite hors du pill */}
         {user && (
           <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
+
+            {/* Bell */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
@@ -537,6 +463,7 @@ export function Navbar() {
               </button>
             </div>
 
+            {/* Avatar pill */}
             <button
               onClick={openProfile}
               className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10"
@@ -557,10 +484,11 @@ export function Navbar() {
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
             </button>
+
           </div>
         )}
 
-        {/* Connexion desktop */}
+        {/* Connexion button — fixe à droite hors du pill */}
         {!user && (
           <div className="pointer-events-auto ml-auto hidden md:flex">
             <Link href="/login">
@@ -576,18 +504,9 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Mobile — Search + Bell top right */}
+        {/* Mobile — Bell only (top right) */}
         {user && (
-          <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
-            {/* Search button */}
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <Search className="w-[17px] h-[17px]" />
-            </button>
-            {/* Bell */}
+          <div className="pointer-events-auto ml-auto md:hidden flex items-center">
             <button
               ref={mobileBellRef}
               onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
@@ -606,7 +525,7 @@ export function Navbar() {
 
       </div>
 
-      {/* Panel notifications — portal desktop + mobile */}
+      {/* Panel notifications — portal pour desktop ET mobile */}
       {mounted && createPortal(
         <AnimatePresence>
           {(showNotifications || showNotifPrefsBell) && (
@@ -669,7 +588,7 @@ export function Navbar() {
                             onClick={async () => {
                               await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notification_id: notif.id, user_id: user?.id }) })
                               setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
-                              if (notif.content_id && notif.content_type) { setShowNotifications(false); setTimeout(() => openDrawer(notif.content_type as 'movie' | 'series', notif.content_id!), 150) }
+                              if (notif.content_id && notif.content_type) { setShowNotifications(false); router.push(`/watch/${notif.content_type}/${notif.content_id}`) }
                             }}>
                             {!notif.is_read && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 rounded-r-full" style={{ background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), rgba(185,28,28,0.5))' }} />}
                             {notif.image_url ? (
@@ -721,109 +640,85 @@ export function Navbar() {
         document.body
       )}
 
-      {/* Recherche mobile — même comportement que PC */}
-      {mounted && createPortal(
+      {/* Overlay recherche mobile — dans un portal pour éviter les problèmes de z-index/touch */}
+      {mounted && isMobile && createPortal(
         <AnimatePresence>
           {isSearchOpen && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
-                onClick={closeSearch}
-              />
-              {/* Pill de recherche centrée en haut */}
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className="fixed z-[200]"
-                style={{
-                  top: 16,
-                  left: 16,
-                  right: 16,
-                  maxWidth: '440px',
-                  margin: '0 auto',
-                }}
-              >
-                <div
-                  className="flex items-center h-[44px] px-3 gap-2 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)' }}
-                >
-                  <Search className="w-4 h-4 text-white/50 shrink-0" />
+            <motion.div
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="md:hidden fixed top-0 left-0 right-0 z-[200] px-4 pt-4 pb-3"
+              style={{ background: 'rgba(10,4,6,0.98)', backdropFilter: 'blur(20px)' }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  <Search className="w-4 h-4 text-white/40 shrink-0" />
                   <input
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
                     placeholder="Rechercher un film, une série..."
-                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/35"
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
                     autoFocus
                   />
-                  {searchQuery ? (
-                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                      <X className="w-4 h-4 text-white/40 hover:text-white/70" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={closeSearch}
-                      className="text-white/40 text-sm font-medium shrink-0 pr-1"
-                    >
-                      Annuler
+                  {searchQuery && (
+                    <button onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                      <X className="w-4 h-4 text-white/30" />
                     </button>
                   )}
                 </div>
-
-                {/* Dropdown résultats — identique au PC */}
-                <AnimatePresence>
-                  {searchResults.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                      className="mt-2 rounded-2xl shadow-2xl overflow-hidden"
-                      style={{ background: 'rgba(12,6,8,0.97)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
-                    >
-                      {searchResults.map(result => {
-                        const title = result.title || result.name || ''
-                        const date = result.release_date || result.first_air_date || ''
-                        const year = date ? new Date(date).getFullYear() : ''
-                        const isMovieResult = result.media_type === 'movie'
-                        const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                        return (
-                          <button
-                            key={`${result.media_type}-${result.id}`}
-                            onClick={() => {
-                              closeSearch()
-                              setTimeout(() => openDrawer(isMovieResult ? 'movie' : 'series', result.id), 300)
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
-                          >
-                            <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                              {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white font-semibold text-sm truncate">{title}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
-                                {year && <span className="text-white/30 text-xs">{year}</span>}
-                              </div>
-                            </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                          </button>
-                        )
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </>
+                <button
+                  onClick={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
+                  className="text-white/50 text-sm font-medium shrink-0"
+                >
+                  Annuler
+                </button>
+              </div>
+              {searchResults.length > 0 && (
+                <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {searchResults.map(result => {
+                    const title = result.title || result.name || ''
+                    const isMovie = result.media_type === 'movie'
+                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                    const handleSelect = () => {
+                      setIsSearchOpen(false)
+                      setSearchResults([])
+                      setSearchQuery('')
+                      setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
+                    }
+                    return (
+                      <div
+                        key={`${result.media_type}-${result.id}`}
+                        onPointerDown={(e) => {
+                          const startY = e.clientY
+                          const startX = e.clientX
+                          const el = e.currentTarget
+                          const onUp = (ev: PointerEvent) => {
+                            const dy = Math.abs(ev.clientY - startY)
+                            const dx = Math.abs(ev.clientX - startX)
+                            if (dy < 8 && dx < 8) handleSelect()
+                            el.removeEventListener('pointerup', onUp)
+                          }
+                          el.addEventListener('pointerup', onUp)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer select-none"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm truncate">{title}</p>
+                          <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
           )}
         </AnimatePresence>,
         document.body
       )}
-
-      {/* Profile panel */}
       {mounted && createPortal(
         <AnimatePresence>
           {showProfile && (
@@ -919,12 +814,8 @@ export function Navbar() {
                     ) : (
                       <div className="space-y-2">
                         {watchHistory.map(item => (
-                          <button key={item.id}
-                            onClick={() => {
-                              closeProfile()
-                              setTimeout(() => openDrawer(item.content_type as 'movie' | 'series', item.content_id), 200)
-                            }}
-                            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative text-left"
+                          <Link key={item.id} href={`/watch/${item.content_type}/${item.content_id}`} onClick={closeProfile}
+                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative"
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />}
                             <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
@@ -945,7 +836,7 @@ export function Navbar() {
                                 {item.finished ? <span className="flex items-center gap-1 text-green-400/60"><Check className="w-2.5 h-2.5" />Terminé</span> : `${item.progress}% · ${timeAgo(item.watched_at)}`}
                               </p>
                             </div>
-                          </button>
+                          </Link>
                         ))}
                       </div>
                     )}
@@ -958,64 +849,113 @@ export function Navbar() {
         , document.body)}
 
     </header>
-
     {/* Mobile Bottom Navbar */}
-    <nav className="md:hidden fixed z-[90] pointer-events-auto"
-      style={{
-        bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 32px)',
-        maxWidth: '440px',
-      }}>
-      <div className="flex items-center h-[68px] px-1.5 rounded-[26px]"
+    <nav className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto"
+      style={{ width: 'calc(100% - 40px)', maxWidth: '420px' }}>
+      <div
+        className="flex items-center h-[68px] px-1.5 rounded-[32px]"
         style={{
-          background: 'rgba(13,13,15,0.98)',
-          border: '1px solid rgba(255,255,255,0.09)',
+          background: 'rgba(14,14,16,0.92)',
+          border: '1px solid rgba(255,255,255,0.07)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
-          boxShadow: '0 8px 48px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
         }}>
 
         {/* Accueil */}
-        <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Home className={`w-[22px] h-[22px] relative z-10 ${pathname === '/' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/' ? 'text-white/80' : 'text-white/28'}`}>Accueil</span>
-        </Link>
+        {(() => {
+          const isActive = pathname === '/'
+          return (
+            <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-[5px] group">
+              <div className={`flex flex-col items-center justify-center gap-[5px] w-full py-2.5 rounded-[24px] transition-all duration-200 ${isActive ? 'bg-white/[0.08]' : 'active:bg-white/[0.04]'}`}>
+                <div className={`p-1 rounded-full transition-all duration-200 ${isActive ? 'bg-red-500/20' : ''}`}>
+                  <Home strokeWidth={isActive ? 2.5 : 1.8} className={`w-[19px] h-[19px] transition-all duration-200 ${isActive ? 'text-red-400' : 'text-white/35'}`} />
+                </div>
+                <span className={`text-[9.5px] font-semibold tracking-wide transition-all duration-200 ${isActive ? 'text-white/90' : 'text-white/30'}`}>Accueil</span>
+              </div>
+            </Link>
+          )
+        })()}
 
         {/* Films */}
-        <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/movies' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Film className={`w-[22px] h-[22px] relative z-10 ${pathname === '/movies' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/movies' ? 'text-white/80' : 'text-white/28'}`}>Films</span>
-        </Link>
+        {(() => {
+          const isActive = pathname === '/movies'
+          return (
+            <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-[5px]">
+              <div className={`flex flex-col items-center justify-center gap-[5px] w-full py-2.5 rounded-[24px] transition-all duration-200 ${isActive ? 'bg-white/[0.08]' : 'active:bg-white/[0.04]'}`}>
+                <div className={`p-1 rounded-full transition-all duration-200 ${isActive ? 'bg-red-500/20' : ''}`}>
+                  <Film strokeWidth={isActive ? 2.5 : 1.8} className={`w-[19px] h-[19px] transition-all duration-200 ${isActive ? 'text-red-400' : 'text-white/35'}`} />
+                </div>
+                <span className={`text-[9.5px] font-semibold tracking-wide transition-all duration-200 ${isActive ? 'text-white/90' : 'text-white/30'}`}>Films</span>
+              </div>
+            </Link>
+          )
+        })()}
 
         {/* Séries */}
-        <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/series' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Tv className={`w-[22px] h-[22px] relative z-10 ${pathname === '/series' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/series' ? 'text-white/80' : 'text-white/28'}`}>Séries</span>
-        </Link>
+        {(() => {
+          const isActive = pathname === '/series'
+          return (
+            <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-[5px]">
+              <div className={`flex flex-col items-center justify-center gap-[5px] w-full py-2.5 rounded-[24px] transition-all duration-200 ${isActive ? 'bg-white/[0.08]' : 'active:bg-white/[0.04]'}`}>
+                <div className={`p-1 rounded-full transition-all duration-200 ${isActive ? 'bg-red-500/20' : ''}`}>
+                  <Tv strokeWidth={isActive ? 2.5 : 1.8} className={`w-[19px] h-[19px] transition-all duration-200 ${isActive ? 'text-red-400' : 'text-white/35'}`} />
+                </div>
+                <span className={`text-[9.5px] font-semibold tracking-wide transition-all duration-200 ${isActive ? 'text-white/90' : 'text-white/30'}`}>Séries</span>
+              </div>
+            </Link>
+          )
+        })()}
+
+        {/* Recherche */}
+        {(() => {
+          const isActive = isSearchOpen
+          return (
+            <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="flex-1 flex flex-col items-center justify-center gap-[5px]">
+              <div className={`flex flex-col items-center justify-center gap-[5px] w-full py-2.5 rounded-[24px] transition-all duration-200 ${isActive ? 'bg-white/[0.08]' : 'active:bg-white/[0.04]'}`}>
+                <div className={`p-1 rounded-full transition-all duration-200 ${isActive ? 'bg-red-500/20' : ''}`}>
+                  <Search strokeWidth={isActive ? 2.5 : 1.8} className={`w-[19px] h-[19px] transition-all duration-200 ${isActive ? 'text-red-400' : 'text-white/35'}`} />
+                </div>
+                <span className={`text-[9.5px] font-semibold tracking-wide transition-all duration-200 ${isActive ? 'text-white/90' : 'text-white/30'}`}>Recherche</span>
+              </div>
+            </button>
+          )
+        })()}
 
         {/* Souhaits */}
-        <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/request' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Plus className={`w-[22px] h-[22px] relative z-10 ${pathname === '/request' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/request' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/request' ? 'text-white/80' : 'text-white/28'}`}>Souhaits</span>
-        </Link>
+        {(() => {
+          const isActive = pathname === '/request'
+          return (
+            <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-[5px]">
+              <div className={`flex flex-col items-center justify-center gap-[5px] w-full py-2.5 rounded-[24px] transition-all duration-200 ${isActive ? 'bg-white/[0.08]' : 'active:bg-white/[0.04]'}`}>
+                <div className={`p-1 rounded-full transition-all duration-200 ${isActive ? 'bg-red-500/20' : ''}`}>
+                  <Plus strokeWidth={isActive ? 2.5 : 1.8} className={`w-[19px] h-[19px] transition-all duration-200 ${isActive ? 'text-red-400' : 'text-white/35'}`} />
+                </div>
+                <span className={`text-[9.5px] font-semibold tracking-wide transition-all duration-200 ${isActive ? 'text-white/90' : 'text-white/30'}`}>Souhaits</span>
+              </div>
+            </Link>
+          )
+        })()}
 
         {/* Profil */}
-        <button onClick={user ? (showProfile ? closeProfile : openProfile) : () => { window.location.href = '/login' }}
-          className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2"
-          style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {showProfile && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          {user && avatarUrl
-            ? <Image src={avatarUrl} alt={user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
-            : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-red-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
-          }
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${showProfile ? 'text-white/80' : 'text-white/28'}`}>Profil</span>
-        </button>
+        {(() => {
+          const isActive = showProfile
+          return (
+            <button onClick={user ? openProfile : () => { window.location.href = '/login' }}
+              className="flex-1 flex flex-col items-center justify-center gap-[5px]">
+              <div className={`flex flex-col items-center justify-center gap-[5px] w-full py-2.5 rounded-[24px] transition-all duration-200 ${isActive ? 'bg-white/[0.08]' : 'active:bg-white/[0.04]'}`}>
+                <div className={`p-1 rounded-full transition-all duration-200 ${isActive ? 'bg-red-500/20 ring-1 ring-red-500/30' : 'ring-1 ring-white/10'}`}>
+                  {user && avatarUrl ? (
+                    <Image src={avatarUrl} alt={user.username} width={19} height={19} className="w-[19px] h-[19px] rounded-full object-cover" />
+                  ) : (
+                    <User strokeWidth={isActive ? 2.5 : 1.8} className={`w-[19px] h-[19px] transition-all duration-200 ${isActive ? 'text-red-400' : 'text-white/35'}`} />
+                  )}
+                </div>
+                <span className={`text-[9.5px] font-semibold tracking-wide transition-all duration-200 ${isActive ? 'text-white/90' : 'text-white/30'}`}>Profil</span>
+              </div>
+            </button>
+          )
+        })()}
 
       </div>
     </nav>
