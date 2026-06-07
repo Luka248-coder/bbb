@@ -350,21 +350,36 @@ export function Navbar() {
             <div className="w-px h-4 bg-white/10 mx-1" />
 
             {/* Roulette */}
-            <Link href="/roulette" title="Roulette" className="select-none">
+            <button onClick={handleRoulette} title="Roulette" className="select-none">
+              <style>{`@keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 40% { transform: rotate(200deg) scale(1.2); } 70% { transform: rotate(320deg) scale(0.95); } 100% { transform: rotate(360deg) scale(1); } }`}</style>
               <div className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
-                pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white'
+                pathname === '/roulette' ? 'bg-white/15' : 'hover:bg-white/10'
               )}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="4"/>
-                  <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                  id="navbar-dice"
+                  onMouseDown={(e) => {
+                    const el = e.currentTarget
+                    el.style.animation = 'none'
+                    void el.offsetWidth
+                    el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
+                  }}
+                >
+                  {/* Dé arrière */}
+                  <rect x="8" y="1" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6"/>
+                  <circle cx="12" cy="5" r="1" fill="white" opacity="0.6"/>
+                  <circle cx="17" cy="5" r="1" fill="white" opacity="0.6"/>
+                  <circle cx="17" cy="10" r="1" fill="white" opacity="0.6"/>
+                  {/* Dé avant */}
+                  <rect x="3" y="10" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none"/>
+                  <circle cx="7" cy="14" r="1" fill="white"/>
+                  <circle cx="12" cy="14" r="1" fill="white"/>
+                  <circle cx="7" cy="19" r="1" fill="white"/>
+                  <circle cx="12" cy="19" r="1" fill="white"/>
+                  <circle cx="9.5" cy="16.5" r="1" fill="white"/>
                 </svg>
               </div>
-            </Link>
+            </button>
 
             {/* Search inline */}
             <div ref={searchRef} className="relative flex items-center">
