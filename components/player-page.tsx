@@ -629,19 +629,23 @@ function TrailerSection({ tmdbId, type }: { tmdbId: number; type: 'movie' | 'ser
     const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || '1a6aed55d15f2da7f2f0ff0586c52174'
     const base = type === 'movie' ? 'movie' : 'tv'
 
-    fetch(`https://api.themoviedb.org/3/${base}/${tmdbId}/videos?api_key=${TMDB_KEY}&language=fr-FR`)
+    const pickBest = (videos: any[], lang: string) => {
+      const yt = videos.filter(v => v.site === 'YouTube' && v.iso_639_1 === lang)
+      return (
+        yt.find(v => v.type === 'Trailer') ||
+        yt.find(v => v.type === 'Teaser') ||
+        yt[0] ||
+        null
+      )
+    }
+
+    fetch(`https://api.themoviedb.org/3/${base}/${tmdbId}/videos?api_key=${TMDB_KEY}&include_video_language=fr,en`)
       .then(r => r.json())
       .then(data => {
         const videos = data.results || []
-        const frTrailer = videos.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
-        if (frTrailer) { setTrailerKey(frTrailer.key); setLoading(false); return }
-
-        return fetch(`https://api.themoviedb.org/3/${base}/${tmdbId}/videos?api_key=${TMDB_KEY}&language=en-US`)
-          .then(r => r.json()).then(d => {
-            const en = (d.results || []).find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
-            setTrailerKey(en?.key || null)
-            setLoading(false)
-          })
+        const best = pickBest(videos, 'fr') || pickBest(videos, 'en')
+        setTrailerKey(best?.key || null)
+        setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [tmdbId, type])
