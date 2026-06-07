@@ -135,13 +135,12 @@ export function Navbar() {
   }, [])
 
   const handleRoulette = useCallback(async () => {
-    playPopSound()
-    fireRouletteConfetti()
     try {
       const res = await fetch('/api/roulette/random')
       const data = await res.json()
       if (data?.tmdb_id && data?.type) {
-        setTimeout(() => openDrawer(data.type, data.tmdb_id), 300)
+        openDrawer(data.type, data.tmdb_id)
+        setTimeout(() => { playPopSound(); fireRouletteConfetti() }, 300)
       }
     } catch {}
   }, [openDrawer, playPopSound, fireRouletteConfetti])
