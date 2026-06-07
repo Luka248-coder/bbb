@@ -303,12 +303,12 @@ export function Navbar() {
 
       <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
 
-        {/* Logo — collé à gauche */}
-        <div className="pointer-events-auto flex-shrink-0">
+        {/* Logo — décalé légèrement à droite */}
+        <div className="pointer-events-auto flex-shrink-0 ml-4">
           <Link href="/">
             <Image
               src="/logo.png"
-              alt="StreamSelf" width={48} height={48} className="h-10 md:h-10 w-auto"
+              alt="StreamSelf" width={64} height={64} className="h-14 md:h-14 w-auto"
             />
           </Link>
         </div>
