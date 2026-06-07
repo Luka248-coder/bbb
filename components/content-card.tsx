@@ -136,11 +136,12 @@ export function ContentCard({
           }}
         >
           <div
-            className="relative overflow-hidden cursor-pointer bg-card w-full h-full"
+            className="relative overflow-hidden cursor-pointer w-full h-full"
             style={{
               borderRadius: '1rem',
               border: hovered ? '1px solid rgba(255,200,80,0.4)' : '1px solid rgba(255,255,255,0.07)',
               transition: 'border 0.2s ease',
+              background: '#111',
             }}
             onClick={() => !isTouchRef.current && openDrawer(type, tmdbId)}
           >
@@ -168,7 +169,7 @@ export function ContentCard({
               )}
             </AnimatePresence>
 
-            <Image src={getPosterUrl(content.poster_path)} alt={title} fill className="object-cover"
+            <Image src={getPosterUrl(content.poster_path)} alt={title} fill className="object-cover object-top"
               sizes="(max-width: 768px) 160px, 192px" />
 
             <AnimatePresence>
