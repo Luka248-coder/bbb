@@ -6,7 +6,7 @@ import { Play, Star, Check, Plus, Info } from 'lucide-react'
 import { getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { cn } from '@/lib/utils'
 import { useDrawer } from '@/components/movie-drawer'
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 
 interface ContentCardProps {
   content: Movie | Series
@@ -33,7 +33,19 @@ export function ContentCard({
   const rank = index + 1
   const { openDrawer } = useDrawer()
   const [hovered, setHovered] = useState(false)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const cardRef = useRef<HTMLDivElement>(null)
   const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return
+    const rect = cardRef.current.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    const dx = (e.clientX - cx) / (rect.width / 2)   // -1 à 1
+    const dy = (e.clientY - cy) / (rect.height / 2)  // -1 à 1
+    setTilt({ x: -dy * 12, y: dx * 12 }) // inclinaison max 12deg
+  }, [])
 
   const handleClick = () => {
     if (isTouchDevice) {
@@ -61,8 +73,17 @@ export function ContentCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
       className="relative group flex-shrink-0"
+      ref={cardRef}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); handleBlur() }}
+      onMouseMove={!isTouchDevice ? handleMouseMove : undefined}
+      onMouseLeave={() => { setHovered(false); setTilt({ x: 0, y: 0 }); handleBlur() }}
+      style={{
+        transform: hovered && !isTouchDevice
+          ? `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(-6px)`
+          : 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)',
+        transition: hovered ? 'transform 0.1s ease-out' : 'transform 0.4s ease-out',
+        willChange: 'transform',
+      }}
     >
       {/* Rank number */}
       {showRank && (
