@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Play, ChevronRight, Film, Clapperboard } from 'lucide-react'
+import { Play, ChevronRight, Film, Clapperboard, Calendar } from 'lucide-react'
 import { type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
 
@@ -178,7 +178,8 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
                 display: 'inline-flex', alignItems: 'center', gap: '5px',
                 color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', fontWeight: 500,
               }}>
-                <span style={{ fontSize: '0.75rem' }}>🗓</span> {year}
+                <Calendar style={{ width: '13px', height: '13px', opacity: 0.7 }} />
+                {year}
               </span>
             )}
             <span style={{
@@ -187,7 +188,8 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
               color: 'rgba(255,255,255,0.65)', fontSize: '0.72rem', fontWeight: 600,
               padding: '2px 10px', borderRadius: '100px', letterSpacing: '0.05em',
             }}>
-              🎬 {typeLabel}
+              <Clapperboard style={{ width: '11px', height: '11px' }} />
+              {typeLabel}
             </span>
           </div>
 
