@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -97,6 +97,54 @@ export function Navbar() {
   const { user } = useSession()
   usePresence(user?.id)
   const { openDrawer } = useDrawer()
+
+  const [rouletteParticles, setRouletteParticles] = useState<{id:number,x:number,y:number,color:string,angle:number,speed:number,size:number}[]>([])
+
+  const playPopSound = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination)
+      const notes = [
+        { freq: 523.25, t: 0, dur: 0.35, type: 'triangle' as OscillatorType, vol: 0.5 },
+        { freq: 659.25, t: 0.08, dur: 0.30, type: 'triangle' as OscillatorType, vol: 0.45 },
+        { freq: 783.99, t: 0.16, dur: 0.30, type: 'triangle' as OscillatorType, vol: 0.4 },
+        { freq: 1046.5, t: 0.24, dur: 0.5, type: 'sine' as OscillatorType, vol: 0.5 },
+        { freq: 1318.5, t: 0.28, dur: 0.5, type: 'sine' as OscillatorType, vol: 0.35 },
+      ]
+      notes.forEach(({ freq, t, dur, type, vol }) => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain()
+        osc.connect(gain); gain.connect(master); osc.type = type; osc.frequency.value = freq
+        gain.gain.setValueAtTime(0, ctx.currentTime + t)
+        gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + t + 0.015)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + dur)
+        osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + dur + 0.05)
+      })
+    } catch {}
+  }, [])
+
+  const fireRouletteConfetti = useCallback(() => {
+    const colors = ['#ff4444','#ff8800','#ffdd00','#44ff44','#4488ff','#cc44ff','#ff44aa','#ffffff']
+    const burst = Array.from({ length: 60 }, (_, i) => ({
+      id: Date.now() + i, x: Math.random() * 100, y: Math.random() * 40,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      angle: Math.random() * 360, speed: 1 + Math.random() * 3,
+      size: 4 + Math.random() * 6,
+    }))
+    setRouletteParticles(burst)
+    setTimeout(() => setRouletteParticles([]), 4000)
+  }, [])
+
+  const handleRoulette = useCallback(async () => {
+    playPopSound()
+    fireRouletteConfetti()
+    try {
+      const res = await fetch('/api/roulette/random')
+      const data = await res.json()
+      if (data?.tmdb_id && data?.type) {
+        setTimeout(() => openDrawer(data.type, data.tmdb_id), 300)
+      }
+    } catch {}
+  }, [openDrawer, playPopSound, fireRouletteConfetti])
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
@@ -347,8 +395,24 @@ export function Navbar() {
 
             <div className="w-px h-4 bg-white/10 mx-1" />
 
+            {/* Confettis roulette */}
+            {rouletteParticles.length > 0 && typeof document !== 'undefined' && createPortal(
+              <div className="fixed inset-0 pointer-events-none z-[9999]">
+                {rouletteParticles.map(p => (
+                  <div key={p.id} style={{
+                    position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
+                    width: p.size, height: p.size, background: p.color, borderRadius: '2px',
+                    animation: `confettiFall ${2 + p.speed}s ease-in forwards`,
+                    transform: `rotate(${p.angle}deg)`,
+                  }} />
+                ))}
+                <style>{`@keyframes confettiFall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`}</style>
+              </div>,
+              document.body
+            )}
+
             {/* Roulette */}
-            <Link href="/roulette" title="Roulette" className="select-none">
+            <button onClick={handleRoulette} title="Roulette" className="select-none">
               <div className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
                 pathname === '/roulette' ? 'bg-white text-black' : 'text-white/55 hover:text-white'
@@ -362,7 +426,7 @@ export function Navbar() {
                   <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
                 </svg>
               </div>
-            </Link>
+            </button>
 
             {/* Search inline desktop */}
             <div ref={searchRef} className="relative flex items-center">
