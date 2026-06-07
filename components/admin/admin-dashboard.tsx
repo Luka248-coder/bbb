@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import type { ContentRequest } from '@/lib/types'
 
-/* ─── Types ─────────────────────────────────────────────────── */
 interface Stats {
   movies: number; series: number; users: number; requests: number
   pendingRequests: number; approvedRequests: number; rejectedRequests: number
@@ -26,7 +25,6 @@ interface PlayerError {
   episode: number | null
   created_at: string
 }
-
 interface AdminDashboardProps {
   stats: Stats
   recentRequests: ContentRequest[]
@@ -37,7 +35,6 @@ interface AdminDashboardProps {
   playerErrors: PlayerError[]
 }
 
-/* ─── Mini Sparkline (SVG pur, pas de lib) ───────────────────── */
 function Sparkline({ data, color = '#ef4444', height = 40 }: { data: number[]; color?: string; height?: number }) {
   if (!data.length) return null
   const max = Math.max(...data, 1)
@@ -57,19 +54,15 @@ function Sparkline({ data, color = '#ef4444', height = 40 }: { data: number[]; c
   )
 }
 
-/* ─── Mini Bar Chart ─────────────────────────────────────────── */
 function BarChart({ data, color = '#ef4444' }: { data: { label: string; value: number }[]; color?: string }) {
   const max = Math.max(...data.map(d => d.value), 1)
   return (
     <div className="flex items-end gap-1 h-16 w-full">
       {data.map((d, i) => (
         <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group relative">
-          <div
-            className="w-full rounded-sm transition-all"
-            style={{ height: `${Math.max((d.value / max) * 56, 2)}px`, backgroundColor: color, opacity: d.value ? 0.7 : 0.15 }}
-          />
+          <div className="w-full rounded-sm transition-all"
+            style={{ height: `${Math.max((d.value / max) * 56, 2)}px`, backgroundColor: color, opacity: d.value ? 0.7 : 0.15 }} />
           <span className="text-[8px] text-white/20 group-hover:text-white/50 transition-colors">{d.label}</span>
-          {/* Tooltip */}
           {d.value > 0 && (
             <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-zinc-900 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
               {d.value}
@@ -81,7 +74,6 @@ function BarChart({ data, color = '#ef4444' }: { data: { label: string; value: n
   )
 }
 
-/* ─── Donut Chart (SVG) ──────────────────────────────────────── */
 function DonutChart({ segments }: { segments: { value: number; color: string; label: string }[] }) {
   const total = segments.reduce((a, b) => a + b.value, 0) || 1
   const r = 30; const cx = 40; const cy = 40
@@ -118,10 +110,8 @@ function DonutChart({ segments }: { segments: { value: number; color: string; la
   )
 }
 
-/* ─── Main Dashboard ─────────────────────────────────────────── */
 export function AdminDashboard({ stats, recentRequests, recentUsers, recentTickets, requestsByDay, usersByDay, playerErrors }: AdminDashboardProps) {
 
-  // Build last-14-days buckets for requests
   const reqChartData = useMemo(() => {
     const days: { label: string; value: number }[] = []
     for (let i = 13; i >= 0; i--) {
@@ -163,7 +153,6 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
   }
 
   const [presence, setPresence] = useState({ total: 0, watching_movie: 0, watching_series: 0 })
-
   useEffect(() => {
     const fetchPresence = () => {
       fetch('/api/presence').then(r => r.json()).then(setPresence).catch(() => {})
@@ -189,7 +178,6 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
     let totalUpdated = 0
     let offset = 0
     let contentType = 'movie'
-
     try {
       while (true) {
         setFixProgress(`${contentType === 'movie' ? 'Films' : 'Séries'} — lot à partir de ${offset}...`)
@@ -200,15 +188,9 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
         })
         const data = await res.json()
         totalUpdated += data.updated ?? 0
-
         if (data.done) {
-          if (contentType === 'movie') {
-            // Passer aux séries
-            contentType = 'series'
-            offset = 0
-          } else {
-            break
-          }
+          if (contentType === 'movie') { contentType = 'series'; offset = 0 }
+          else break
         } else {
           offset = data.nextOffset
         }
@@ -223,57 +205,54 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6 min-h-screen">
-
-      {/* ── Présence en temps réel ── */}
-      <motion.div {...fade(0.05)} className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Personnes actives', value: presence.total, color: '#22c55e', icon: '🟢' },
-          { label: 'Visionnent un film', value: presence.watching_movie, color: '#3b82f6', icon: '🎬' },
-          { label: 'Visionnent une série', value: presence.watching_series, color: '#a855f7', icon: '📺' },
-        ].map(({ label, value, color, icon }) => (
-          <div key={label} className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <div className="flex items-center gap-2 text-xs text-white/40 font-medium uppercase tracking-wide">
-              <span>{icon}</span><span>{label}</span>
-            </div>
-            <div className="text-3xl font-black" style={{ color }}>{value}</div>
-            <div className="text-[10px] text-white/20">Mis à jour toutes les 5s</div>
-          </div>
-        ))}
-      </motion.div>
+    <div className="p-4 md:p-8 space-y-4 md:space-y-6 min-h-screen">
 
       {/* ── Header ── */}
-      <motion.div {...fade(0)} className="flex items-start justify-between flex-wrap gap-4">
+      <motion.div {...fade(0)} className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-white/40 text-sm mb-0.5">{greeting} 👋</p>
-          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-white/30 text-sm mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-white/30 text-xs mt-1">
             {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Bouton fix backdrops */}
-          <div className="flex flex-col items-end gap-1">
-            <button
-              onClick={handleFixBackdrops}
-              disabled={fixingBackdrops}
-              className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/25 rounded-xl px-4 py-2.5 text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${fixingBackdrops ? 'animate-spin' : ''}`} />
-              {fixingBackdrops ? 'Correction...' : 'Corriger les bannières'}
-            </button>
-            {fixProgress && <p className="text-xs text-white/40">{fixProgress}</p>}
-            {fixResult && <p className="text-xs text-white/60">{fixResult}</p>}
-          </div>
+        <div className="flex flex-col gap-2 sm:items-end">
+          <button
+            onClick={handleFixBackdrops}
+            disabled={fixingBackdrops}
+            className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/25 rounded-xl px-4 py-2.5 text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
+          >
+            <RefreshCw className={`w-4 h-4 ${fixingBackdrops ? 'animate-spin' : ''}`} />
+            {fixingBackdrops ? 'Correction...' : 'Corriger les bannières'}
+          </button>
+          {fixProgress && <p className="text-xs text-white/40 text-center sm:text-right">{fixProgress}</p>}
+          {fixResult && <p className="text-xs text-white/60 text-center sm:text-right">{fixResult}</p>}
           {stats.pendingRequests > 0 && (
-            <Link href="/admin/requests">
-              <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/25 rounded-xl px-4 py-2.5 text-amber-400 text-sm font-semibold hover:bg-amber-400/15 transition-colors cursor-pointer">
+            <Link href="/admin/requests" className="w-full sm:w-auto">
+              <div className="flex items-center justify-center gap-2 bg-amber-400/10 border border-amber-400/25 rounded-xl px-4 py-2.5 text-amber-400 text-sm font-semibold hover:bg-amber-400/15 transition-colors cursor-pointer">
                 <Clock className="w-4 h-4" />
                 {stats.pendingRequests} demande{stats.pendingRequests > 1 ? 's' : ''} en attente
               </div>
             </Link>
           )}
         </div>
+      </motion.div>
+
+      {/* ── Présence en temps réel ── */}
+      <motion.div {...fade(0.05)} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { label: 'Personnes actives', value: presence.total, color: '#22c55e', icon: '🟢' },
+          { label: 'Visionnent un film', value: presence.watching_movie, color: '#3b82f6', icon: '🎬' },
+          { label: 'Visionnent une série', value: presence.watching_series, color: '#a855f7', icon: '📺' },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} className="rounded-2xl p-4 flex items-center gap-4 sm:flex-col sm:items-start sm:gap-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 text-xs text-white/40 font-medium uppercase tracking-wide sm:w-full">
+              <span>{icon}</span><span>{label}</span>
+            </div>
+            <div className="text-3xl font-black ml-auto sm:ml-0" style={{ color }}>{value}</div>
+            <div className="hidden sm:block text-[10px] text-white/20">Mis à jour toutes les 5s</div>
+          </div>
+        ))}
       </motion.div>
 
       {/* ── KPI Grid ── */}
@@ -287,18 +266,18 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
           <motion.div key={label} {...fade(0.05 + i * 0.04)}
             className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 overflow-hidden relative group hover:border-white/15 transition-all"
           >
-            <div className="flex items-start justify-between mb-3">
+            <div className="flex items-start justify-between mb-2">
               <div>
-                <p className="text-white/40 text-xs font-medium mb-1">{label}</p>
-                <p className="text-3xl font-bold text-white">{value.toLocaleString()}</p>
+                <p className="text-white/40 text-xs font-medium mb-1 leading-tight">{label}</p>
+                <p className="text-2xl md:text-3xl font-bold text-white">{value.toLocaleString()}</p>
               </div>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color + '22', border: `1px solid ${color}33` }}>
-                <Icon className="w-4 h-4" style={{ color }} />
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color + '22', border: `1px solid ${color}33` }}>
+                <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" style={{ color }} />
               </div>
             </div>
             {spark.length > 0 && (
               <div className="opacity-60 group-hover:opacity-100 transition-opacity -mx-1">
-                <Sparkline data={spark} color={color} height={32} />
+                <Sparkline data={spark} color={color} height={28} />
               </div>
             )}
           </motion.div>
@@ -307,12 +286,10 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
 
       {/* ── Charts Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-
-        {/* Demandes 14j */}
-        <motion.div {...fade(0.1)} className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
+        <motion.div {...fade(0.1)} className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white font-semibold">Demandes de contenu</p>
+              <p className="text-white font-semibold text-sm md:text-base">Demandes de contenu</p>
               <p className="text-white/30 text-xs">14 derniers jours</p>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
@@ -323,9 +300,8 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
           <BarChart data={reqChartData} color="#ef4444" />
         </motion.div>
 
-        {/* Répartition demandes */}
-        <motion.div {...fade(0.12)} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
-          <p className="text-white font-semibold mb-1">Répartition</p>
+        <motion.div {...fade(0.12)} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 md:p-5">
+          <p className="text-white font-semibold mb-1 text-sm md:text-base">Répartition</p>
           <p className="text-white/30 text-xs mb-4">Statuts des demandes</p>
           <DonutChart segments={[
             { value: stats.pendingRequests,  color: '#f59e0b', label: 'En attente' },
@@ -341,15 +317,15 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
           { label: 'Tickets ouverts',  value: stats.openTickets,   icon: Headphones,  color: '#f59e0b' },
           { label: 'Tickets résolus',  value: stats.closedTickets, icon: CheckCircle, color: '#10b981' },
           { label: 'Users bannis',     value: stats.bannedUsers,   icon: ShieldAlert, color: '#ef4444' },
-          { label: 'Inscriptions / mois', value: usersByDay.length, icon: TrendingUp, color: '#8b5cf6' },
+          { label: 'Inscrits / mois',  value: usersByDay.length,   icon: TrendingUp,  color: '#8b5cf6' },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 flex items-center gap-3 hover:border-white/15 transition-all">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color + '20', border: `1px solid ${color}30` }}>
-              <Icon className="w-4 h-4" style={{ color }} />
+          <div key={label} className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 md:p-4 flex items-center gap-3 hover:border-white/15 transition-all">
+            <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color + '20', border: `1px solid ${color}30` }}>
+              <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" style={{ color }} />
             </div>
-            <div>
-              <p className="text-xl font-bold text-white">{value}</p>
-              <p className="text-white/35 text-xs">{label}</p>
+            <div className="min-w-0">
+              <p className="text-lg md:text-xl font-bold text-white">{value}</p>
+              <p className="text-white/35 text-[10px] md:text-xs truncate">{label}</p>
             </div>
           </div>
         ))}
@@ -360,7 +336,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
 
         {/* Demandes en attente */}
         <motion.div {...fade(0.16)} className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
+          <div className="flex items-center justify-between px-4 md:px-5 py-4 border-b border-white/[0.07]">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-400" />
               <span className="font-semibold text-white text-sm">Demandes en attente</span>
@@ -376,7 +352,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
           </div>
 
           {recentRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center justify-center py-10 text-center">
               <MessageSquare className="w-8 h-8 text-white/15 mb-2" />
               <p className="text-white/30 text-sm">Aucune demande en attente</p>
             </div>
@@ -391,9 +367,8 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
                   : null
                 return (
                   <motion.div key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.03] transition-colors"
+                    className="flex items-center gap-3 px-4 md:px-5 py-3 hover:bg-white/[0.03] transition-colors"
                   >
-                    {/* Poster */}
                     <div className="w-8 h-11 rounded-lg overflow-hidden bg-white/5 border border-white/10 relative flex-shrink-0">
                       {posterUrl
                         ? <Image src={posterUrl} alt={req.title} fill sizes="32px" className="object-cover" />
@@ -402,7 +377,6 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
                           </div>
                       }
                     </div>
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-sm font-medium truncate">{req.title}</p>
                       <div className="flex items-center gap-1.5 text-xs text-white/30">
@@ -410,12 +384,11 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
                           ? <Image src={avatarUrl} alt="" width={12} height={12} className="rounded-full" />
                           : <Users className="w-3 h-3" />
                         }
-                        <span>{req.user?.username || 'Inconnu'}</span>
+                        <span className="truncate max-w-[80px]">{req.user?.username || 'Inconnu'}</span>
                         <span>•</span>
-                        <span>{new Date(req.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                        <span className="flex-shrink-0">{new Date(req.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                       </div>
                     </div>
-                    {/* Actions */}
                     <div className="flex gap-1.5 flex-shrink-0">
                       <button onClick={() => handleRequestAction(req.id, 'approved')}
                         className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 transition-all">
@@ -460,7 +433,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
                       <p className="text-white text-xs font-medium truncate">{ticket.subject || 'Sans titre'}</p>
                       <p className="text-white/30 text-[10px]">{ticket.users?.username || 'Inconnu'}</p>
                     </div>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0 ${
                       ticket.status === 'open'
                         ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
                         : 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20'
@@ -502,7 +475,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
                       <p className="text-white/30 text-[10px]">{new Date(u.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
                     </div>
                     {u.is_admin && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/20">ADMIN</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/20 flex-shrink-0">ADMIN</span>
                     )}
                     {u.is_banned && (
                       <Ban className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
@@ -513,7 +486,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
             </div>
           </motion.div>
 
-          {/* ─── Erreurs de lecture ─── */}
+          {/* Erreurs de lecture */}
           <motion.div {...fade(0.22)} className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(229,9,20,0.2)', background: 'rgba(229,9,20,0.04)' }}>
             <div className="flex items-center justify-between px-4 py-3.5 border-b" style={{ borderColor: 'rgba(229,9,20,0.15)' }}>
               <div className="flex items-center gap-2">
@@ -556,8 +529,6 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
           </motion.div>
 
         </div>
-
-
       </div>
     </div>
   )
