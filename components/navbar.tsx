@@ -52,6 +52,11 @@ const navLinks = [
   { href: '/request', label: "Demande d'ajout", icon: Plus },
 ]
 
+const moreLinks = [
+  { href: '/favorites', label: 'Favoris', icon: Heart },
+  { href: '/roulette', label: 'Roulette', icon: Shuffle },
+]
+
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
   const days = Math.floor(diff / 86400000)
@@ -320,6 +325,7 @@ export function Navbar() {
               boxShadow: 'none',
             }}
           >
+            {/* Nav links */}
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
@@ -390,6 +396,7 @@ export function Navbar() {
                 )}
               </AnimatePresence>
 
+              {/* Dropdown résultats */}
               <AnimatePresence>
                 {isSearchOpen && searchResults.length > 0 && (
                   <motion.div
@@ -430,9 +437,11 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Bell + Avatar desktop */}
+        {/* Bell + Avatar — fixe à droite hors du pill */}
         {user && (
           <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
+
+            {/* Bell */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
@@ -447,6 +456,7 @@ export function Navbar() {
               </button>
             </div>
 
+            {/* Avatar pill */}
             <button
               onClick={openProfile}
               className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10"
@@ -467,9 +477,11 @@ export function Navbar() {
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
             </button>
+
           </div>
         )}
 
+        {/* Connexion button — fixe à droite hors du pill */}
         {!user && (
           <div className="pointer-events-auto ml-auto hidden md:flex">
             <Link href="/login">
@@ -485,8 +497,10 @@ export function Navbar() {
           </div>
         )}
 
+        {/* Mobile menu button + search */}
         {/* Mobile — droite : search + bell + burger */}
         <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
+          {/* Search */}
           <button
             className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -495,6 +509,7 @@ export function Navbar() {
             <Search className="w-[17px] h-[17px]" />
           </button>
 
+          {/* Bell — uniquement si connecté */}
           {user && (
             <button
               ref={mobileBellRef}
@@ -511,6 +526,7 @@ export function Navbar() {
             </button>
           )}
 
+          {/* Burger */}
           <button
             className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -522,7 +538,7 @@ export function Navbar() {
 
       </div>
 
-      {/* Panel notifications — portal desktop + mobile */}
+      {/* Panel notifications — portal pour desktop ET mobile */}
       {mounted && createPortal(
         <AnimatePresence>
           {(showNotifications || showNotifPrefsBell) && (
@@ -534,7 +550,8 @@ export function Navbar() {
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
               className="fixed z-[150] overflow-hidden rounded-2xl"
               style={{
-                top: 70, right: 16,
+                top: 70,
+                right: 16,
                 width: 'min(380px, calc(100vw - 32px))',
                 background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
                 border: '1px solid rgba(255,255,255,0.12)',
@@ -636,116 +653,85 @@ export function Navbar() {
         document.body
       )}
 
-      {/* Recherche — overlay plein écran style iOS */}
+      {/* Overlay recherche mobile — dans un portal pour éviter les problèmes de z-index/touch */}
       {mounted && createPortal(
         <AnimatePresence>
           {isSearchOpen && (
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[200] flex flex-col"
-              style={{ background: 'rgba(8,3,5,0.96)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)' }}
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="md:hidden fixed top-0 left-0 right-0 z-[200] px-4 pt-4 pb-3"
+              style={{ background: 'rgba(10,4,6,0.98)', backdropFilter: 'blur(20px)' }}
             >
-              <div className="flex items-center gap-3 px-4 pt-14 pb-3">
-                <div
-                  className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
-                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
-                >
-                  <Search className="w-4 h-4 text-white/30 shrink-0" />
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  <Search className="w-4 h-4 text-white/40 shrink-0" />
                   <input
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
-                    placeholder="Films, séries, animés..."
-                    className="bg-transparent text-white text-[15px] outline-none flex-1 placeholder-white/25 font-medium"
+                    placeholder="Rechercher un film, une série..."
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
                     autoFocus
                   />
                   {searchQuery && (
-                    <button
-                      onPointerDown={() => { setSearchQuery(''); setSearchResults([]) }}
-                      className="w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(255,255,255,0.15)' }}
-                    >
-                      <X className="w-3 h-3 text-white/70" />
+                    <button onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                      <X className="w-4 h-4 text-white/30" />
                     </button>
                   )}
                 </div>
                 <button
-                  onPointerDown={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
-                  className="text-white text-[15px] font-semibold shrink-0 px-1"
-                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  onClick={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
+                  className="text-white/50 text-sm font-medium shrink-0"
                 >
                   Annuler
                 </button>
               </div>
-
-              <div className="flex-1 overflow-y-auto px-4 pt-2">
-                {searchResults.length === 0 && searchQuery.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                      <Search className="w-7 h-7 text-white/20" />
-                    </div>
-                    <p className="text-white/25 text-sm font-medium">Recherchez un film ou une série</p>
-                  </div>
-                )}
-
-                {searchResults.length > 0 && (
-                  <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    {searchResults.map((result, i) => {
-                      const title = result.title || result.name || ''
-                      const isMovieR = result.media_type === 'movie'
-                      const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                      const date = result.release_date || result.first_air_date || ''
-                      const year = date ? new Date(date).getFullYear() : ''
-                      const handleSelect = () => {
-                        setIsSearchOpen(false)
-                        setSearchResults([])
-                        setSearchQuery('')
-                        setTimeout(() => openDrawer(isMovieR ? 'movie' : 'series', result.id), 300)
-                      }
-                      return (
-                        <div
-                          key={`${result.media_type}-${result.id}`}
-                          onPointerDown={(e) => {
-                            const startY = e.clientY
-                            const el = e.currentTarget
-                            const onUp = (ev: PointerEvent) => {
-                              if (Math.abs(ev.clientY - startY) < 8) handleSelect()
-                              el.removeEventListener('pointerup', onUp)
-                            }
-                            el.addEventListener('pointerup', onUp)
-                          }}
-                          className="flex items-center gap-3.5 px-4 py-3.5 active:bg-white/[0.06] cursor-pointer select-none"
-                          style={{
-                            borderBottom: i < searchResults.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                            WebkitTapHighlightColor: 'transparent',
-                          }}
-                        >
-                          <div className="relative w-10 h-[58px] rounded-xl overflow-hidden flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                            {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="40px" /> : <div className="w-full h-full flex items-center justify-center"><Search className="w-4 h-4 text-white/20" /></div>}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white font-semibold text-[14px] truncate">{title}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: isMovieR ? 'rgba(59,130,246,0.15)' : 'rgba(168,85,247,0.15)', color: isMovieR ? 'rgba(147,197,253,0.9)' : 'rgba(216,180,254,0.9)' }}>
-                                {isMovieR ? 'FILM' : 'SÉRIE'}
-                              </span>
-                              {year && <span className="text-white/25 text-[12px]">{year}</span>}
-                            </div>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-white/15 shrink-0" />
+              {searchResults.length > 0 && (
+                <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {searchResults.map(result => {
+                    const title = result.title || result.name || ''
+                    const isMovie = result.media_type === 'movie'
+                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                    const handleSelect = () => {
+                      setIsSearchOpen(false)
+                      setSearchResults([])
+                      setSearchQuery('')
+                      setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
+                    }
+                    return (
+                      <div
+                        key={`${result.media_type}-${result.id}`}
+                        onPointerDown={(e) => {
+                          const startY = e.clientY
+                          const startX = e.clientX
+                          const el = e.currentTarget
+                          const onUp = (ev: PointerEvent) => {
+                            const dy = Math.abs(ev.clientY - startY)
+                            const dx = Math.abs(ev.clientX - startX)
+                            if (dy < 8 && dx < 8) handleSelect()
+                            el.removeEventListener('pointerup', onUp)
+                          }
+                          el.addEventListener('pointerup', onUp)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer select-none"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
                         </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm truncate">{title}</p>
+                          <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>,
         document.body
       )}
-
-      {/* Profile panel desktop */}
       {mounted && createPortal(
         <AnimatePresence>
           {showProfile && (
@@ -841,12 +827,8 @@ export function Navbar() {
                     ) : (
                       <div className="space-y-2">
                         {watchHistory.map(item => (
-                          <button key={item.id}
-                            onClick={() => {
-                              closeProfile()
-                              setTimeout(() => openDrawer(item.content_type, item.content_id), 200)
-                            }}
-                            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative text-left"
+                          <Link key={item.id} href={`/watch/${item.content_type}/${item.content_id}`} onClick={closeProfile}
+                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative"
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />}
                             <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
@@ -867,7 +849,7 @@ export function Navbar() {
                                 {item.finished ? <span className="flex items-center gap-1 text-green-400/60"><Check className="w-2.5 h-2.5" />Terminé</span> : `${item.progress}% · ${timeAgo(item.watched_at)}`}
                               </p>
                             </div>
-                          </button>
+                          </Link>
                         ))}
                       </div>
                     )}
@@ -876,101 +858,104 @@ export function Navbar() {
               </motion.div>
             </>
           )}
-        </AnimatePresence>,
-        document.body
-      )}
+        </AnimatePresence>
+        , document.body)}
 
     </header>
+    {/* Mobile bottom sheet — outside <header> to escape pointer-events-none */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[95] pointer-events-auto" onClick={() => setIsMobileMenuOpen(false)} onTouchEnd={() => setIsMobileMenuOpen(false)} />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 38 }}
+              className="md:hidden fixed bottom-0 left-0 right-0 z-[96] rounded-t-3xl overflow-y-auto pointer-events-auto"
+              style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none', maxHeight: '90vh', paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}
+              onClick={e => e.stopPropagation()}
+              onTouchStart={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-2"><div className="w-8 h-1 rounded-full bg-white/15" /></div>
 
-    {/* Mobile bottom sheet */}
-    <AnimatePresence>
-      {isMobileMenuOpen && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[95] pointer-events-auto" onClick={() => setIsMobileMenuOpen(false)} onTouchEnd={() => setIsMobileMenuOpen(false)} />
-          <motion.div
-            initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 400, damping: 38 }}
-            className="md:hidden fixed bottom-0 left-0 right-0 z-[96] rounded-t-3xl overflow-y-auto pointer-events-auto"
-            style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none', maxHeight: '90vh', paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}
-            onClick={e => e.stopPropagation()}
-            onTouchStart={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-          >
-            <div className="flex justify-center pt-3 pb-2"><div className="w-8 h-1 rounded-full bg-white/15" /></div>
-
-            {user ? (
-              <div className="px-4 pt-2 pb-3">
-                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="relative flex-shrink-0">
-                    {avatarUrl ? (
-                      <Image src={avatarUrl} alt={user.username} width={44} height={44} className="rounded-xl object-cover" />
-                    ) : (
-                      <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">{user.username[0].toUpperCase()}</span>
-                      </div>
-                    )}
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111113]" />
+              {/* Profile section */}
+              {user ? (
+                <div className="px-4 pt-2 pb-3">
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="relative flex-shrink-0">
+                      {avatarUrl ? (
+                        <Image src={avatarUrl} alt={user.username} width={44} height={44} className="rounded-xl object-cover" />
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center">
+                          <span className="text-white font-bold text-lg">{user.username[0].toUpperCase()}</span>
+                        </div>
+                      )}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111113]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm leading-tight truncate">{user.username}</p>
+                      <p className="text-white/35 text-xs mt-0.5 truncate">{user.email || 'Compte Discord'}</p>
+                    </div>
+                    <button
+                      onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
+                      style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}
+                    >
+                      <LogOut className="w-4 h-4 text-red-400" />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-sm leading-tight truncate">{user.username}</p>
-                    <p className="text-white/35 text-xs mt-0.5 truncate">{user.email || 'Compte Discord'}</p>
-                  </div>
-                  <button
-                    onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}
-                  >
-                    <LogOut className="w-4 h-4 text-red-400" />
-                  </button>
                 </div>
-              </div>
-            ) : (
-              <div className="px-4 pt-2 pb-3">
-                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <div className="flex items-center justify-center gap-2 w-full bg-red-600 px-5 py-3.5 rounded-2xl text-white font-semibold text-sm">Connexion</div>
-                </Link>
-              </div>
-            )}
+              ) : (
+                <div className="px-4 pt-2 pb-3">
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <div className="flex items-center justify-center gap-2 w-full bg-red-600 px-5 py-3.5 rounded-2xl text-white font-semibold text-sm">Connexion</div>
+                  </Link>
+                </div>
+              )}
 
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 16px' }} />
+              {/* Divider */}
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 16px' }} />
 
-            <nav className="px-4 pt-3 flex flex-col gap-0.5">
-              {[...navLinks, ...(user ? [{ href: '/favorites', label: 'Favoris', icon: Heart }, { href: '/roulette', label: 'Roulette', icon: Shuffle }] : [])].map((link, i) => {
-                const Icon = link.icon
-                const isActive = pathname === link.href
-                return (
-                  <motion.div key={link.href} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                    <Link href={link.href} onClick={() => setIsMobileMenuOpen(false)}
-                      className={cn('flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-colors', isActive ? 'bg-white/[0.07]' : 'active:bg-white/[0.04]')}>
-                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', isActive ? 'bg-red-600' : 'bg-white/[0.07]')}>
-                        <Icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className={cn('font-semibold text-base', isActive ? 'text-white' : 'text-white/50')}>{link.label}</span>
-                      {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500" />}
-                    </Link>
-                  </motion.div>
-                )
-              })}
-            </nav>
+              {/* Navigation links */}
+              <nav className="px-4 pt-3 flex flex-col gap-0.5">
+                {[...navLinks, ...(user ? [{ href: '/favorites', label: 'Favoris', icon: Heart }, { href: '/roulette', label: 'Roulette', icon: Shuffle }] : [])].map((link, i) => {
+                  const Icon = link.icon
+                  const isActive = pathname === link.href
+                  return (
+                    <motion.div key={link.href} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                      <Link href={link.href} onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn('flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-colors', isActive ? 'bg-white/[0.07]' : 'active:bg-white/[0.04]')}>
+                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', isActive ? 'bg-red-600' : 'bg-white/[0.07]')}>
+                          <Icon className="w-4 h-4 text-white" />
+                        </div>
+                        <span className={cn('font-semibold text-base', isActive ? 'text-white' : 'text-white/50')}>{link.label}</span>
+                        {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500" />}
+                      </Link>
+                    </motion.div>
+                  )
+                })}
+              </nav>
 
-            {user?.is_admin && (
-              <div className="px-4 pt-1">
-                <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3.5 px-4 py-3 rounded-2xl active:bg-white/[0.04]">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.07]">
-                    <Shield className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="font-semibold text-base text-white/50">Administration</span>
-                </Link>
-              </div>
-            )}
+              {/* Admin link */}
+              {user?.is_admin && (
+                <div className="px-4 pt-1">
+                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3.5 px-4 py-3 rounded-2xl active:bg-white/[0.04]">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.07]">
+                      <Shield className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-semibold text-base text-white/50">Administration</span>
+                  </Link>
+                </div>
+              )}
 
-            <div className="pb-4" />
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+              <div className="pb-4" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }
