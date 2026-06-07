@@ -154,7 +154,7 @@ export function ContentCard({
               }}
             />
 
-            <Image src={getPosterUrl(content.poster_path)} alt={title} fill className="object-cover object-top"
+            <Image src={getPosterUrl(content.poster_path)} alt={title} fill className="object-contain"
               sizes="(max-width: 768px) 160px, 192px" />
 
             <AnimatePresence>
