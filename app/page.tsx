@@ -9,6 +9,7 @@ import { HeroSkeleton, RowSkeleton } from '@/components/loading'
 import { GenreExplorer } from '@/components/genre-explorer'
 import { DiscordBanner } from '@/components/discord-banner'
 import { ContinueWatching } from '@/components/continue-watching'
+import { FeaturedBanner } from '@/components/featured-banner'
 import { createClient } from '@/lib/supabase/server'
 
 async function getHeroContent(movies: any[], series: any[]) {
@@ -68,6 +69,7 @@ async function HomeContent() {
         <ContinueWatching />
         <ContentRow title="Top 10 Films de la semaine" content={topRatedMovies} type="movie" showRank accentColor="#e53935" />
         <ContentRow title="Top 10 Séries de la semaine" content={topRatedSeries} type="series" showRank accentColor="#e53935" />
+        <FeaturedBanner movies={movies} series={series} />
         <ContentRow title="Nouveautés Films" content={newMovies} type="movie" />
         <ContentRow title="Nouveautés Séries" content={newSeries} type="series" />
         <ContentRow title="Films populaires" content={popularMovies} type="movie" />
