@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,38 +18,34 @@ function isMovie(item: Movie | Series): item is Movie {
   return 'title' in item
 }
 
-function extractColor(imageUrl: string): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new window.Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = 50
-        canvas.height = 30
-        const ctx = canvas.getContext('2d')
-        if (!ctx) { resolve('10,5,6'); return }
-        ctx.drawImage(img, 0, img.height * 0.6, img.width, img.height * 0.4, 0, 0, 50, 30)
-        const data = ctx.getImageData(0, 0, 50, 30).data
-        let r = 0, g = 0, b = 0, count = 0
-        for (let i = 0; i < data.length; i += 16) {
-          r += data[i]; g += data[i + 1]; b += data[i + 2]; count++
-        }
-        r = Math.floor(r / count)
-        g = Math.floor(g / count)
-        b = Math.floor(b / count)
-        // Assombrir pour ne pas être trop criard
-        r = Math.floor(r * 0.4)
-        g = Math.floor(g * 0.4)
-        b = Math.floor(b * 0.4)
-        resolve(`${r},${g},${b}`)
-      } catch {
-        resolve('10,5,6')
-      }
-    }
-    img.onerror = () => resolve('10,5,6')
-    img.src = imageUrl
-  })
+// Couleur par genre_id TMDB
+const GENRE_COLORS: Record<number, string> = {
+  28:  '180,30,30',   // Action
+  12:  '30,100,180',  // Aventure
+  16:  '200,120,20',  // Animation
+  35:  '180,140,20',  // Comédie
+  80:  '60,60,80',    // Crime
+  99:  '20,100,80',   // Documentaire
+  18:  '100,40,140',  // Drame
+  10751:'180,100,20', // Famille
+  14:  '80,40,180',   // Fantastique
+  36:  '140,90,20',   // Histoire
+  27:  '80,10,10',    // Horreur
+  10402:'160,60,160', // Musique
+  9648: '20,60,120',  // Mystère
+  10749:'180,40,80',  // Romance
+  878: '20,80,160',   // Science-Fiction
+  10770:'100,60,20',  // Téléfilm
+  53:  '40,40,80',    // Thriller
+  10752:'80,60,20',   // Guerre
+  37:  '120,80,20',   // Western
+}
+
+function getGenreColor(genreIds: number[]): string {
+  for (const id of genreIds) {
+    if (GENRE_COLORS[id]) return GENRE_COLORS[id]
+  }
+  return '60,20,20'
 }
 
 export function Hero({ content }: HeroProps) {
@@ -64,15 +60,13 @@ export function Hero({ content }: HeroProps) {
     .filter(item => item.backdrop_path || item.poster_path)
     .slice(0, 5)
 
-  // Extraire couleur dominante à chaque changement
+  // Couleur basée sur le genre du contenu courant
   useEffect(() => {
     if (!featured[currentIndex]) return
     const item = featured[currentIndex]
-    const url = item.backdrop_path
-      ? `https://image.tmdb.org/t/p/w300${item.backdrop_path}`
-      : `https://image.tmdb.org/t/p/w185${item.poster_path}`
-    extractColor(url).then(setBgColor)
-  }, [currentIndex, featured.length])
+    const color = getGenreColor(item.genre_ids || [])
+    setBgColor(color)
+  }, [currentIndex])
 
   useEffect(() => {
     if (featured.length <= 1) return
