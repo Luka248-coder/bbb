@@ -30,6 +30,12 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
 
   return (
     <section className="relative py-6">
+      <style>{`
+        @keyframes top10float0 { 0%,100% { transform: translateY(-6px); } 50% { transform: translateY(6px); } }
+        @keyframes top10float1 { 0%,100% { transform: translateY(-8px); } 50% { transform: translateY(4px); } }
+        @keyframes top10float2 { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(8px); } }
+        @keyframes top10float3 { 0%,100% { transform: translateY(-7px); } 50% { transform: translateY(5px); } }
+      `}</style>
       <div className="px-4 mb-5 flex items-center gap-3" style={{ paddingLeft: '1rem' }}>
         <div className="w-[3px] rounded-sm" style={{ background: accentColor, height: '1rem' }} />
         <h2 className="text-base md:text-lg font-bold text-white tracking-wide">{title}</h2>
