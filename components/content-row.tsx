@@ -132,6 +132,7 @@ export function ContentRow({ title, content, type, showRank = false, accentColor
         <div
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto hide-scrollbar pb-4"
+          style={{ overflowY: 'visible' }}
           style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
         >
           {content.map((item, index) => (
