@@ -26,6 +26,7 @@ const navItems = [
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/api', label: 'API', icon: Zap },
   { href: '/admin/api-catalogue', label: 'API Catalogue', icon: Database },
+  { href: '/admin/hero', label: 'Hero / Mise en avant', icon: Film },
   { href: '/admin/settings', label: 'Paramètres', icon: Settings },
 ]
 
