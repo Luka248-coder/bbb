@@ -511,6 +511,9 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           </div>
         )}
 
+        {/* Bande-annonce */}
+        <TrailerSection tmdbId={tmdbId} type={type} />
+
         {/* Saga / Collection */}
         {collection && collection.parts.length > 1 && (
           <div>
@@ -611,6 +614,61 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           </div>
         )}
 
+      </div>
+    </div>
+  )
+}
+
+function TrailerSection({ tmdbId, type }: { tmdbId: number; type: 'movie' | 'series' }) {
+  const [trailerKey, setTrailerKey] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    setTrailerKey(null)
+    const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || '1a6aed55d15f2da7f2f0ff0586c52174'
+    const base = type === 'movie' ? 'movie' : 'tv'
+
+    fetch(`https://api.themoviedb.org/3/${base}/${tmdbId}/videos?api_key=${TMDB_KEY}&language=fr-FR`)
+      .then(r => r.json())
+      .then(data => {
+        const videos = data.results || []
+        const frTrailer = videos.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
+        if (frTrailer) { setTrailerKey(frTrailer.key); setLoading(false); return }
+
+        return fetch(`https://api.themoviedb.org/3/${base}/${tmdbId}/videos?api_key=${TMDB_KEY}&language=en-US`)
+          .then(r => r.json()).then(d => {
+            const en = (d.results || []).find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
+            setTrailerKey(en?.key || null)
+            setLoading(false)
+          })
+      })
+      .catch(() => setLoading(false))
+  }, [tmdbId, type])
+
+  if (loading) return (
+    <div className="flex items-center gap-2 text-white/20 text-sm py-4">
+      <div className="w-4 h-4 rounded-full border-2 border-white/10 border-t-white/40 animate-spin" />
+      Chargement de la bande-annonce...
+    </div>
+  )
+
+  if (!trailerKey) return null
+
+  return (
+    <div>
+      <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 mb-4">
+        <span className="w-[3px] h-4 bg-red-500 rounded-full inline-block" />
+        Bande-annonce
+      </h2>
+      <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
+        <iframe
+          src={`https://www.youtube.com/embed/${trailerKey}?rel=0&modestbranding=1`}
+          title="Bande-annonce"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 w-full h-full"
+        />
       </div>
     </div>
   )
