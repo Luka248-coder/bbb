@@ -49,7 +49,7 @@ const navLinks = [
   { href: '/', label: 'Accueil', icon: Home },
   { href: '/movies', label: 'Films', icon: Film },
   { href: '/series', label: 'Séries', icon: Tv },
-  { href: '/request', label: "Demande d'ajout", icon: Plus },
+  { href: '/request', label: "Souhaits", icon: Plus },
 ]
 
 const moreLinks = [
