@@ -497,20 +497,9 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Mobile menu button + search */}
-        {/* Mobile — droite : search + bell + burger */}
-        <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
-          {/* Search */}
-          <button
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-          >
-            <Search className="w-[17px] h-[17px]" />
-          </button>
-
-          {/* Bell — uniquement si connecté */}
-          {user && (
+        {/* Mobile — Bell only (top right) */}
+        {user && (
+          <div className="pointer-events-auto ml-auto md:hidden flex items-center">
             <button
               ref={mobileBellRef}
               onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
@@ -524,17 +513,8 @@ export function Navbar() {
                 </span>
               )}
             </button>
-          )}
-
-          {/* Burger */}
-          <button
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
-        </div>
+          </div>
+        )}
 
       </div>
 
@@ -862,100 +842,91 @@ export function Navbar() {
         , document.body)}
 
     </header>
-    {/* Mobile bottom sheet — outside <header> to escape pointer-events-none */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[95] pointer-events-auto" onClick={() => setIsMobileMenuOpen(false)} onTouchEnd={() => setIsMobileMenuOpen(false)} />
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 400, damping: 38 }}
-              className="md:hidden fixed bottom-0 left-0 right-0 z-[96] rounded-t-3xl overflow-y-auto pointer-events-auto"
-              style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none', maxHeight: '90vh', paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}
-              onClick={e => e.stopPropagation()}
-              onTouchStart={e => e.stopPropagation()}
-              onTouchEnd={e => e.stopPropagation()}
-            >
-              {/* Drag handle */}
-              <div className="flex justify-center pt-3 pb-2"><div className="w-8 h-1 rounded-full bg-white/15" /></div>
+    {/* Mobile Bottom Navbar */}
+    <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto"
+      style={{ width: 'calc(100% - 32px)', maxWidth: '440px' }}>
+      <div className="flex items-center h-[64px] px-2 rounded-[28px]"
+        style={{ background: 'rgba(18,18,20,0.95)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(24px)', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}>
 
-              {/* Profile section */}
-              {user ? (
-                <div className="px-4 pt-2 pb-3">
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="relative flex-shrink-0">
-                      {avatarUrl ? (
-                        <Image src={avatarUrl} alt={user.username} width={44} height={44} className="rounded-xl object-cover" />
-                      ) : (
-                        <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center">
-                          <span className="text-white font-bold text-lg">{user.username[0].toUpperCase()}</span>
-                        </div>
-                      )}
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111113]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm leading-tight truncate">{user.username}</p>
-                      <p className="text-white/35 text-xs mt-0.5 truncate">{user.email || 'Compte Discord'}</p>
-                    </div>
-                    <button
-                      onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                      style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}
-                    >
-                      <LogOut className="w-4 h-4 text-red-400" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="px-4 pt-2 pb-3">
-                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <div className="flex items-center justify-center gap-2 w-full bg-red-600 px-5 py-3.5 rounded-2xl text-white font-semibold text-sm">Connexion</div>
-                  </Link>
-                </div>
-              )}
+        {/* Accueil */}
+        {(() => {
+          const isActive = pathname === '/'
+          return (
+            <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-1 relative"
+              style={{ transition: 'opacity .15s' }}>
+              <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                <Home className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Accueil</span>
+                {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
+              </div>
+            </Link>
+          )
+        })()}
 
-              {/* Divider */}
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 16px' }} />
+        {/* Films */}
+        {(() => {
+          const isActive = pathname === '/movies'
+          return (
+            <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-1 relative">
+              <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                <Film className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Films</span>
+                {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
+              </div>
+            </Link>
+          )
+        })()}
 
-              {/* Navigation links */}
-              <nav className="px-4 pt-3 flex flex-col gap-0.5">
-                {[...navLinks, ...(user ? [{ href: '/favorites', label: 'Favoris', icon: Heart }, { href: '/roulette', label: 'Roulette', icon: Shuffle }] : [])].map((link, i) => {
-                  const Icon = link.icon
-                  const isActive = pathname === link.href
-                  return (
-                    <motion.div key={link.href} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                      <Link href={link.href} onClick={() => setIsMobileMenuOpen(false)}
-                        className={cn('flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-colors', isActive ? 'bg-white/[0.07]' : 'active:bg-white/[0.04]')}>
-                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', isActive ? 'bg-red-600' : 'bg-white/[0.07]')}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
-                        <span className={cn('font-semibold text-base', isActive ? 'text-white' : 'text-white/50')}>{link.label}</span>
-                        {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500" />}
-                      </Link>
-                    </motion.div>
-                  )
-                })}
-              </nav>
+        {/* Séries */}
+        {(() => {
+          const isActive = pathname === '/series'
+          return (
+            <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-1 relative">
+              <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                <Tv className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Séries</span>
+                {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
+              </div>
+            </Link>
+          )
+        })()}
 
-              {/* Admin link */}
-              {user?.is_admin && (
-                <div className="px-4 pt-1">
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3.5 px-4 py-3 rounded-2xl active:bg-white/[0.04]">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.07]">
-                      <Shield className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="font-semibold text-base text-white/50">Administration</span>
-                  </Link>
-                </div>
-              )}
+        {/* Souhait */}
+        {(() => {
+          const isActive = pathname === '/request'
+          return (
+            <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-1 relative">
+              <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                <Plus className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Souhait</span>
+                {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
+              </div>
+            </Link>
+          )
+        })()}
 
-              <div className="pb-4" />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+        {/* Profil */}
+        {(() => {
+          const isActive = showProfile
+          return (
+            <button onClick={user ? openProfile : () => { window.location.href = '/login' }}
+              className="flex-1 flex flex-col items-center justify-center gap-1 relative">
+              <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                {user && avatarUrl ? (
+                  <Image src={avatarUrl} alt={user.username} width={20} height={20} className="w-5 h-5 rounded-full object-cover ring-1 ring-white/20" />
+                ) : (
+                  <User className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
+                )}
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Profil</span>
+                {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
+              </div>
+            </button>
+          )
+        })()}
+
+      </div>
+    </nav>
+
     </>
   )
 }
