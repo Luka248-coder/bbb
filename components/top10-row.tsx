@@ -80,37 +80,45 @@ function Top10Card({ item, rank, title, genres, accentColor, index, onOpen }: {
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Chiffre — animation CSS pure */}
+      {/* Chiffre — wrapper positionnel + inner animé séparés */}
       <div
         className="absolute select-none pointer-events-none"
         style={{
           left: 0,
           top: '50%',
+          transform: 'translateY(-50%)',
           width: numWidth,
           textAlign: 'center',
           zIndex: 10,
-          transform: `translateY(-50%) scale(${hovered ? 1.07 : 1})`,
-          transition: 'transform 0.35s cubic-bezier(0.34,1.4,0.64,1)',
-          animation: `top10float${rank % 4} ${3.5 + (rank % 3) * 0.6}s ease-in-out infinite`,
-          animationDelay: `${-rank * 0.4}s`,
         }}
       >
-        <span
+        {/* Inner : scale hover + float animation indépendants */}
+        <div
           style={{
-            display: 'block',
-            fontSize: rank >= 10 ? '6.8rem' : '7.5rem',
-            lineHeight: 1,
-            fontFamily: 'Arial Black, Impact, sans-serif',
-            fontWeight: 900,
-            color: numColor,
-            textShadow: rank <= 3
-              ? `0 0 40px ${accentColor}99, 0 0 12px ${accentColor}60, 3px 6px 0 rgba(0,0,0,0.95)`
-              : '3px 6px 0 rgba(0,0,0,0.95)',
-            WebkitTextStroke: rank <= 3 ? '0px' : '1.5px rgba(140,140,140,0.35)',
+            display: 'inline-block',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
+            transition: 'transform 0.35s cubic-bezier(0.34,1.4,0.64,1)',
+            animation: `top10float${rank % 4} ${3.5 + (rank % 3) * 0.7}s ease-in-out infinite`,
+            animationDelay: `${-(rank * 0.55).toFixed(2)}s`,
           }}
         >
-          {rank}
-        </span>
+          <span
+            style={{
+              display: 'block',
+              fontSize: rank >= 10 ? '6.8rem' : '7.5rem',
+              lineHeight: 1,
+              fontFamily: 'Arial Black, Impact, sans-serif',
+              fontWeight: 900,
+              color: numColor,
+              textShadow: rank <= 3
+                ? `0 0 40px ${accentColor}99, 0 0 12px ${accentColor}60, 3px 6px 0 rgba(0,0,0,0.95)`
+                : '3px 6px 0 rgba(0,0,0,0.95)',
+              WebkitTextStroke: rank <= 3 ? '0px' : '1.5px rgba(140,140,140,0.35)',
+            }}
+          >
+            {rank}
+          </span>
+        </div>
       </div>
 
       {/* Wrapper : gère scale + border-radius SANS overflow-hidden */}
