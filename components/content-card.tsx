@@ -110,7 +110,7 @@ export function ContentCard({
         onMouseLeave={() => { if (!isTouchRef.current) { setHovered(false); setTilt({ x: 0, y: 0 }) } }}
         onTouchEnd={isTouchRef.current ? handleTouchEnd : undefined}
         style={{
-          transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)${!isTouchRef.current && hovered ? ' translateY(-6px)' : ''}`,
+          transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transition: 'transform 0.1s ease-out',
           willChange: 'transform',
           transformStyle: 'preserve-3d',
@@ -130,7 +130,7 @@ export function ContentCard({
             boxShadow: hovered
               ? '0 32px 64px rgba(0,0,0,0.9), 0 0 48px rgba(255,200,80,0.2)'
               : '0 4px 16px rgba(0,0,0,0.4)',
-            transform: `scale(${hovered ? 1.1 : 1})`,
+            transform: 'scale(1)',
             transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
             willChange: 'transform',
             border: '1px solid rgba(255,255,255,0.07)',
