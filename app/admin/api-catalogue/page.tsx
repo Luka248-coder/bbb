@@ -63,6 +63,7 @@ export default function ApiCataloguePage() {
   const [results, setResults] = useState<{ title: string; available: boolean }[]>([])
   const [foundCount, setFoundCount] = useState(0)
   const [checkedCount, setCheckedCount] = useState(0)
+  const [extended, setExtended] = useState(false)
   const pauseRef = useRef(false)
   const runningRef = useRef(false)
 
@@ -111,10 +112,11 @@ export default function ApiCataloguePage() {
   }
 
   // ── Verification ──
-  const loadStats = async () => {
+  const loadStats = async (ext?: boolean) => {
     setLoadingStats(true)
+    const isExt = ext !== undefined ? ext : extended
     try {
-      const res = await fetch(`/api/auth/admin/purstream-check?type=${verifType}`)
+      const res = await fetch(`/api/auth/admin/purstream-check?type=${verifType}&extended=${isExt}`)
       const data = await res.json()
       setVerifStats(data)
     } catch {}
@@ -186,13 +188,18 @@ export default function ApiCataloguePage() {
   }
 
   const resetVerification = async () => {
-    if (!confirm(`Réinitialiser la vérification pour les ${verifType === 'movie' ? 'films' : 'séries'} ?`)) return
     await fetch(`/api/auth/admin/purstream-check?type=${verifType}`, { method: 'DELETE' })
     loadStats()
     setResults([])
     setProgress(0)
     setCheckedCount(0)
     setFoundCount(0)
+  }
+
+  const toggleExtended = () => {
+    const next = !extended
+    setExtended(next)
+    loadStats(next)
   }
 
   const year = (d?: string) => d ? new Date(d).getFullYear() : ''
@@ -371,7 +378,11 @@ export default function ApiCataloguePage() {
                         </button>
                         <button onClick={resetVerification}
                           className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white transition-all">
-                          <Trash2 className="w-4 h-4" /> Réinitialiser
+                          <RefreshCw className="w-4 h-4" /> Remettre à 0
+                        </button>
+                        <button onClick={toggleExtended}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${extended ? 'bg-purple-600 hover:bg-purple-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white'}`}>
+                          <Plus className="w-4 h-4" /> {extended ? 'Mode étendu actif' : 'Pousser plus loin'}
                         </button>
                       </>
                     ) : (
