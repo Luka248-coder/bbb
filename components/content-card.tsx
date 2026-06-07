@@ -133,7 +133,7 @@ export function ContentCard({
             transform: `scale(${hovered ? 1.1 : 1})`,
             transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
             willChange: 'transform',
-            border: hovered ? '1px solid rgba(255,200,80,0.4)' : '1px solid rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.07)',
           }}
         >
           <div
