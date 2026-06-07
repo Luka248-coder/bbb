@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -58,6 +58,86 @@ export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top1
   )
 }
 
+function FloatingNumber({ rank, numWidth, hovered, accentColor, numColor }: {
+  rank: number; numWidth: number; hovered: boolean; accentColor: string; numColor: string
+}) {
+  const [tick, setTick] = useState(0)
+  const animRef = useRef<number | null>(null)
+  const startRef = useRef<number>(0)
+
+  useEffect(() => {
+    startRef.current = performance.now() + rank * 400 // offset par rang pour désynchroniser
+    const loop = (now: number) => {
+      setTick(now)
+      animRef.current = requestAnimationFrame(loop)
+    }
+    animRef.current = requestAnimationFrame(loop)
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current) }
+  }, [rank])
+
+  // Flottement sinusoïdal lent
+  const elapsed = tick - startRef.current
+  const floatY = Math.sin(elapsed / 1800) * 5   // ±5px, période ~11s
+  const floatX = Math.sin(elapsed / 2600) * 1.5  // légère dérive X
+
+  // Opacité pulsante de la lueur
+  const glowPulse = 0.45 + Math.sin(elapsed / 1400) * 0.25
+
+  const isTop3 = rank <= 3
+  const fontSize = rank >= 10 ? '6.8rem' : '7.5rem'
+
+  return (
+    <div
+      className="absolute select-none pointer-events-none"
+      style={{
+        left: 0,
+        top: '50%',
+        width: numWidth,
+        textAlign: 'center',
+        zIndex: 10,
+        // Flottement + hover scale
+        transform: `translateY(calc(-50% + ${floatY}px)) translateX(${floatX}px) scale(${hovered ? 1.08 : 1})`,
+        transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+        willChange: 'transform',
+      }}
+    >
+      {/* Lueur derrière le chiffre */}
+      {isTop3 && (
+        <div
+          className="absolute inset-0 -z-10 blur-2xl rounded-full"
+          style={{
+            background: accentColor,
+            opacity: glowPulse * (hovered ? 1.4 : 1),
+            transform: 'scale(1.4)',
+            transition: 'opacity 0.3s',
+          }}
+        />
+      )}
+
+      {/* Chiffre principal */}
+      <span
+        style={{
+          display: 'block',
+          fontSize,
+          lineHeight: 1,
+          fontFamily: 'Arial Black, Impact, sans-serif',
+          fontWeight: 900,
+          color: numColor,
+          textShadow: isTop3
+            ? `0 0 60px ${accentColor}${Math.round(glowPulse * 255).toString(16).padStart(2,'0')}, 0 0 20px ${accentColor}80, 3px 6px 0 rgba(0,0,0,0.95)`
+            : '3px 6px 0 rgba(0,0,0,0.95), 0 0 0 2px rgba(180,180,180,0.15)',
+          WebkitTextStroke: isTop3 ? '0px' : '1.5px rgba(140,140,140,0.4)',
+          // Légère rotation oscillante
+          transform: `rotate(${Math.sin(elapsed / 3000) * 1.2}deg)`,
+          transition: 'transform 0.6s ease',
+        }}
+      >
+        {rank}
+      </span>
+    </div>
+  )
+}
+
 function Top10Card({ item, rank, title, genres, accentColor, index, onOpen }: {
   item: Movie | Series; rank: number; title: string; tmdbId: number; type: string; genres: string[]; accentColor: string; index: number; onOpen: () => void
 }) {
@@ -80,27 +160,8 @@ function Top10Card({ item, rank, title, genres, accentColor, index, onOpen }: {
       onMouseLeave={() => setHovered(false)}
       onClick={onOpen}
     >
-      {/* Chiffre */}
-      <div
-        className="absolute font-black leading-none select-none pointer-events-none"
-        style={{
-          fontSize: '7.5rem',
-          lineHeight: 1,
-          fontFamily: 'Arial Black, Impact, sans-serif',
-          color: numColor,
-          textShadow: numShadow,
-          WebkitTextStroke: rank <= 3 ? '0px' : '2px rgba(120,120,120,0.5)',
-          left: 0,
-          top: '50%',
-          transform: `translateY(-50%) ${hovered ? 'scale(1.06)' : 'scale(1)'}`,
-          transition: 'transform 0.3s',
-          zIndex: 10,
-          width: numWidth,
-          textAlign: 'center',
-        }}
-      >
-        {rank}
-      </div>
+      {/* Chiffre animé */}
+      <FloatingNumber rank={rank} numWidth={numWidth} hovered={hovered} accentColor={accentColor} numColor={numColor} />
 
       {/* Wrapper : gère scale + border-radius SANS overflow-hidden */}
       <div
