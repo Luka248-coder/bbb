@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Play, ChevronRight, Clapperboard, Calendar, Sparkles } from 'lucide-react'
@@ -54,6 +54,44 @@ function FeaturedLogo({ tmdbId, type, title }: { tmdbId: number; type: string; t
   )
 }
 
+function TypewriterText({ text }: { text: string }) {
+  const [displayed, setDisplayed] = useState('')
+  const indexRef = useRef(0)
+
+  useEffect(() => {
+    setDisplayed('')
+    indexRef.current = 0
+    const interval = setInterval(() => {
+      if (indexRef.current < text.length) {
+        setDisplayed(text.slice(0, indexRef.current + 1))
+        indexRef.current++
+      } else {
+        clearInterval(interval)
+      }
+    }, 18)
+    return () => clearInterval(interval)
+  }, [text])
+
+  return (
+    <p style={{
+      color: 'rgba(255,255,255,0.45)',
+      fontSize: '0.855rem', lineHeight: 1.7,
+      marginBottom: '24px',
+      maxWidth: '460px',
+      minHeight: '4.5em',
+    }}>
+      {displayed}
+      {displayed.length < text.length && (
+        <span style={{
+          display: 'inline-block', width: '2px', height: '0.9em',
+          background: 'rgba(255,255,255,0.6)', marginLeft: '2px',
+          verticalAlign: 'text-bottom', animation: 'cursorBlink 0.7s step-end infinite',
+        }} />
+      )}
+    </p>
+  )
+}
+
 export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
   const { openDrawer } = useDrawer()
 
@@ -80,7 +118,10 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
           50%  { transform: rotate(4deg) translateY(8px);  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06); }
           100% { transform: rotate(4deg) translateY(-8px); box-shadow: 0 24px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06); }
         }
-        @keyframes badgePulse {
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0; }
+        }
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
         }
@@ -186,18 +227,8 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
               </span>
             </div>
 
-            {/* Synopsis */}
-            {pick.overview && (
-              <p style={{
-                color: 'rgba(255,255,255,0.45)',
-                fontSize: '0.855rem', lineHeight: 1.7,
-                marginBottom: '24px',
-                display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                maxWidth: '460px',
-              }}>
-                {pick.overview}
-              </p>
-            )}
+            {/* Synopsis animé */}
+            {pick.overview && <TypewriterText text={pick.overview.slice(0, 180) + (pick.overview.length > 180 ? '...' : '')} />}
 
             {/* Boutons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
