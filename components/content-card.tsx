@@ -133,14 +133,13 @@ export function ContentCard({
             transform: `scale(${hovered ? 1.1 : 1})`,
             transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
             willChange: 'transform',
+            border: hovered ? '1px solid rgba(255,200,80,0.4)' : '1px solid rgba(255,255,255,0.07)',
           }}
         >
           <div
             className="relative overflow-hidden cursor-pointer w-full h-full"
             style={{
               borderRadius: '1rem',
-              border: hovered ? '1px solid rgba(255,200,80,0.4)' : '1px solid rgba(255,255,255,0.07)',
-              transition: 'border 0.2s ease',
               background: '#111',
             }}
             onClick={() => !isTouchRef.current && openDrawer(type, tmdbId)}
