@@ -282,6 +282,12 @@ export function Navbar() {
     } catch {}
   }
 
+  const closeSearch = () => {
+    setIsSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
+  }
+
   const avatarUrl = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png` : null
 
   const openProfile = () => {
@@ -303,7 +309,7 @@ export function Navbar() {
 
       <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
 
-        {/* Logo — décalé légèrement à droite */}
+        {/* Logo */}
         <div className="pointer-events-auto flex-shrink-0 ml-4">
           <Link href="/">
             <Image
@@ -313,7 +319,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Pill central */}
+        {/* Pill central desktop */}
         <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
@@ -325,7 +331,6 @@ export function Navbar() {
               boxShadow: 'none',
             }}
           >
-            {/* Nav links */}
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
@@ -359,7 +364,7 @@ export function Navbar() {
               </div>
             </Link>
 
-            {/* Search inline */}
+            {/* Search inline desktop */}
             <div ref={searchRef} className="relative flex items-center">
               <AnimatePresence mode="wait">
                 {isSearchOpen ? (
@@ -396,7 +401,7 @@ export function Navbar() {
                 )}
               </AnimatePresence>
 
-              {/* Dropdown résultats */}
+              {/* Dropdown résultats desktop */}
               <AnimatePresence>
                 {isSearchOpen && searchResults.length > 0 && (
                   <motion.div
@@ -437,11 +442,9 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Bell + Avatar — fixe à droite hors du pill */}
+        {/* Bell + Avatar desktop */}
         {user && (
           <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
-
-            {/* Bell */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
@@ -456,7 +459,6 @@ export function Navbar() {
               </button>
             </div>
 
-            {/* Avatar pill */}
             <button
               onClick={openProfile}
               className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10"
@@ -477,11 +479,10 @@ export function Navbar() {
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
             </button>
-
           </div>
         )}
 
-        {/* Connexion button — fixe à droite hors du pill */}
+        {/* Connexion desktop */}
         {!user && (
           <div className="pointer-events-auto ml-auto hidden md:flex">
             <Link href="/login">
@@ -497,7 +498,7 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Mobile — Bell only (top right) */}
+        {/* Mobile — Bell top right */}
         {user && (
           <div className="pointer-events-auto ml-auto md:hidden flex items-center">
             <button
@@ -518,7 +519,7 @@ export function Navbar() {
 
       </div>
 
-      {/* Panel notifications — portal pour desktop ET mobile */}
+      {/* Panel notifications — portal desktop + mobile */}
       {mounted && createPortal(
         <AnimatePresence>
           {(showNotifications || showNotifPrefsBell) && (
@@ -633,85 +634,103 @@ export function Navbar() {
         document.body
       )}
 
-      {/* Overlay recherche mobile — dans un portal pour éviter les problèmes de z-index/touch */}
+      {/* Recherche mobile — même comportement que PC */}
       {mounted && createPortal(
         <AnimatePresence>
           {isSearchOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="md:hidden fixed top-0 left-0 right-0 z-[200] px-4 pt-4 pb-3"
-              style={{ background: 'rgba(10,4,6,0.98)', backdropFilter: 'blur(20px)' }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                  <Search className="w-4 h-4 text-white/40 shrink-0" />
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="md:hidden fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
+                onClick={closeSearch}
+              />
+              {/* Pill de recherche positionné en haut */}
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="md:hidden fixed z-[200]"
+                style={{ top: 16, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '440px' }}
+              >
+                <div
+                  className="flex items-center h-[44px] px-3 gap-2 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)' }}
+                >
+                  <Search className="w-4 h-4 text-white/50 shrink-0" />
                   <input
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
                     placeholder="Rechercher un film, une série..."
-                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/35"
                     autoFocus
                   />
-                  {searchQuery && (
-                    <button onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                      <X className="w-4 h-4 text-white/30" />
+                  {searchQuery ? (
+                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                      <X className="w-4 h-4 text-white/40 hover:text-white/70" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={closeSearch}
+                      className="text-white/40 text-sm font-medium shrink-0 pr-1"
+                    >
+                      Annuler
                     </button>
                   )}
                 </div>
-                <button
-                  onClick={() => { setIsSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
-                  className="text-white/50 text-sm font-medium shrink-0"
-                >
-                  Annuler
-                </button>
-              </div>
-              {searchResults.length > 0 && (
-                <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                  {searchResults.map(result => {
-                    const title = result.title || result.name || ''
-                    const isMovie = result.media_type === 'movie'
-                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                    const handleSelect = () => {
-                      setIsSearchOpen(false)
-                      setSearchResults([])
-                      setSearchQuery('')
-                      setTimeout(() => openDrawer(isMovie ? 'movie' : 'series', result.id), 300)
-                    }
-                    return (
-                      <div
-                        key={`${result.media_type}-${result.id}`}
-                        onPointerDown={(e) => {
-                          const startY = e.clientY
-                          const startX = e.clientX
-                          const el = e.currentTarget
-                          const onUp = (ev: PointerEvent) => {
-                            const dy = Math.abs(ev.clientY - startY)
-                            const dx = Math.abs(ev.clientX - startX)
-                            if (dy < 8 && dx < 8) handleSelect()
-                            el.removeEventListener('pointerup', onUp)
-                          }
-                          el.addEventListener('pointerup', onUp)
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-4 active:bg-white/10 border-b border-white/[0.05] last:border-0 cursor-pointer select-none"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                      >
-                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-semibold text-sm truncate">{title}</p>
-                          <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovie ? 'FILM' : 'SÉRIE'}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </motion.div>
+
+                {/* Dropdown résultats — identique au PC */}
+                <AnimatePresence>
+                  {searchResults.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                      className="mt-2 rounded-2xl shadow-2xl overflow-hidden"
+                      style={{ background: 'rgba(12,6,8,0.97)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
+                    >
+                      {searchResults.map(result => {
+                        const title = result.title || result.name || ''
+                        const date = result.release_date || result.first_air_date || ''
+                        const year = date ? new Date(date).getFullYear() : ''
+                        const isMovieResult = result.media_type === 'movie'
+                        const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                        return (
+                          <button
+                            key={`${result.media_type}-${result.id}`}
+                            onClick={() => {
+                              closeSearch()
+                              setTimeout(() => openDrawer(isMovieResult ? 'movie' : 'series', result.id), 300)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
+                          >
+                            <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                              {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-semibold text-sm truncate">{title}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
+                                {year && <span className="text-white/30 text-xs">{year}</span>}
+                              </div>
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-white/20" />
+                          </button>
+                        )
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>,
         document.body
       )}
+
+      {/* Profile panel */}
       {mounted && createPortal(
         <AnimatePresence>
           {showProfile && (
@@ -842,6 +861,7 @@ export function Navbar() {
         , document.body)}
 
     </header>
+
     {/* Mobile Bottom Navbar */}
     <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto"
       style={{ width: 'calc(100% - 32px)', maxWidth: '440px' }}>
@@ -891,14 +911,31 @@ export function Navbar() {
           )
         })()}
 
-        {/* Souhait */}
+        {/* Recherche */}
+        {(() => {
+          const isActive = isSearchOpen
+          return (
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="flex-1 flex flex-col items-center justify-center gap-1 relative"
+            >
+              <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                <Search className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Recherche</span>
+                {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
+              </div>
+            </button>
+          )
+        })()}
+
+        {/* Souhaits */}
         {(() => {
           const isActive = pathname === '/request'
           return (
             <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-1 relative">
               <div className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[20px] w-full transition-all ${isActive ? 'bg-white/10' : ''}`}>
                 <Plus className={`w-5 h-5 ${isActive ? 'text-red-400' : 'text-white/45'}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Souhait</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white' : 'text-white/40'}`}>Souhaits</span>
                 {isActive && <div className="absolute bottom-1 w-5 h-0.5 rounded-full bg-red-500" />}
               </div>
             </Link>
