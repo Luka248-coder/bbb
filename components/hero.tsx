@@ -126,18 +126,8 @@ export function Hero({ content }: HeroProps) {
 
   return (
     <>
-      {/* Fond dynamique global — derrière tout le reste de la page */}
-      <motion.div
-        key={bgColor}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          zIndex: 0,
-          background: `radial-gradient(ellipse 120% 60% at 50% 0%, rgba(${bgColor},0.55) 0%, transparent 70%)`,
-        }}
-      />
+      {/* Fond dynamique — appliqué sur html via CSS var */}
+      <DynamicBg color={bgColor} />
 
     <section className="relative w-full overflow-hidden hero-section" style={{ minHeight: 600 }}>
 
@@ -311,7 +301,21 @@ export function Hero({ content }: HeroProps) {
   )
 }
 
-function HeroLogo({ tmdbId, type, title }: { tmdbId: number; type: string; title: string }) {
+function DynamicBg({ color }: { color: string }) {
+  useEffect(() => {
+    const html = document.documentElement
+    html.style.setProperty('--hero-color', color)
+    html.style.transition = 'background 1.5s ease'
+    html.style.background = `
+      radial-gradient(ellipse 140% 55% at 50% 0%, rgba(${color},0.6) 0%, transparent 65%),
+      #12080a
+    `
+    return () => {
+      html.style.background = '#12080a'
+    }
+  }, [color])
+  return null
+}({ tmdbId, type, title }: { tmdbId: number; type: string; title: string }) {
   const [logoPath, setLogoPath] = useState<string | null>(null)
 
   useEffect(() => {

@@ -150,7 +150,7 @@
 }
 
 /* Grid background — keep visible */
-html { background: #12080a !important; }
+html { background: #12080a; }
 @media (min-width: 768px) {
   .page-scaled {
     transform: scale(0.92);
