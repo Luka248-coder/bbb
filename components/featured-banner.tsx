@@ -92,7 +92,7 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
         position: 'relative',
         borderRadius: '16px',
         overflow: 'hidden',
-        height: '300px',
+        height: '420px',
         background: '#111',
       }}>
 
