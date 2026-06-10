@@ -148,8 +148,8 @@ export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)       // desktop only
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false) // mobile only
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -240,7 +240,6 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
-  // Close desktop search on outside click
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -585,18 +584,18 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Mobile — Search + Bell top right */}
-        {user && (
-          <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
-            {/* Search button — ouvre isMobileSearchOpen uniquement */}
-            <button
-              onClick={() => setIsMobileSearchOpen(true)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <Search className="w-[17px] h-[17px]" />
-            </button>
-            {/* Bell */}
+        {/* Mobile — Search toujours visible + Bell si connecté */}
+        <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
+          {/* Search button — toujours visible */}
+          <button
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <Search className="w-[17px] h-[17px]" />
+          </button>
+          {/* Bell — uniquement si connecté */}
+          {user && (
             <button
               ref={mobileBellRef}
               onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
@@ -610,8 +609,8 @@ export function Navbar() {
                 </span>
               )}
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
       </div>
 
