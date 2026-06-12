@@ -166,18 +166,7 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
     if (!editDownloadUrl.trim()) return
     setResolvingEpisode(episodeId)
     try {
-      let finalUrl = editDownloadUrl
-      if (editDownloadUrl.includes('fileditchfiles.me') || !editDownloadUrl.includes('.mp4')) {
-        const res = await fetch('/api/admin/resolve-download', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: editDownloadUrl }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.url) finalUrl = data.url
-        }
-      }
+      const finalUrl = editDownloadUrl.trim()
       const res = await fetch('/api/auth/admin/episodes', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -572,7 +561,7 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
                                           <Input
                                             value={editDownloadUrl}
                                             onChange={e => setEditDownloadUrl(e.target.value)}
-                                            placeholder="https://fileditchfiles.me/..."
+                                            placeholder="Clic droit vidéo → Copier l'adresse"
                                             className="h-7 text-xs"
                                             autoFocus
                                           />

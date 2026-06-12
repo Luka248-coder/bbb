@@ -104,20 +104,7 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
     if (!editDownloadUrl.trim()) return
     setResolvingId(item.id)
     try {
-      // Tenter de résoudre le vrai lien MP4
-      let finalUrl = editDownloadUrl
-      if (editDownloadUrl.includes('fileditchfiles.me') || !editDownloadUrl.includes('.mp4')) {
-        const res = await fetch('/api/admin/resolve-download', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: editDownloadUrl }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.url) finalUrl = data.url
-        }
-      }
-      // Sauvegarder
+      const finalUrl = editDownloadUrl.trim()
       const res = await fetch('/api/auth/admin/content', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -343,7 +330,7 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
                             autoFocus
                             value={editDownloadUrl}
                             onChange={e => setEditDownloadUrl(e.target.value)}
-                            placeholder="https://fileditchfiles.me/..."
+                            placeholder="Clic droit sur la vidéo → Copier l'adresse de la vidéo"
                             className="flex-1 bg-secondary border border-border rounded-lg px-2 py-1 text-xs text-foreground outline-none focus:border-blue-500/50 transition-colors min-w-0"
                           />
                           <button onClick={() => resolveAndSaveDownloadUrl(item)} disabled={resolvingId === item.id}

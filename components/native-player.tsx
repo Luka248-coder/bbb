@@ -1263,17 +1263,23 @@ export function NativePlayer({
                 </button>
 
                 {currentDownloadUrl && (
-                  <a
-                    href={currentDownloadUrl}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      const filename = (title || 'video').replace(/[^a-z0-9]/gi, '_') + '.mp4'
+                      const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(currentDownloadUrl)}&filename=${encodeURIComponent(filename)}`
+                      const a = document.createElement('a')
+                      a.href = proxyUrl
+                      a.download = filename
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                    }}
                     className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
                     title="Télécharger"
-                    onClick={e => e.stopPropagation()}
                   >
                     <Download className="w-5 h-5" />
-                  </a>
+                  </button>
                 )}
 
                 <div ref={settingsRef} className="relative">
