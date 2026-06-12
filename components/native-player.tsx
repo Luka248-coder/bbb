@@ -1264,16 +1264,40 @@ export function NativePlayer({
 
                 {currentDownloadUrl && (
                   <button
-                    onClick={e => {
+                    onClick={async e => {
                       e.stopPropagation()
-                      const filename = (title || 'video').replace(/[^a-z0-9]/gi, '_') + '.mp4'
-                      const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(currentDownloadUrl)}&filename=${encodeURIComponent(filename)}`
-                      const a = document.createElement('a')
-                      a.href = proxyUrl
-                      a.download = filename
-                      document.body.appendChild(a)
-                      a.click()
-                      document.body.removeChild(a)
+                      const filename = (title || 'video').replace(/[^a-z0-9\s]/gi, '').trim().replace(/\s+/g, '_') + '.mp4'
+                      // Tente un fetch avec blob pour forcer le nom de fichier
+                      // Si le fichier est trop gros ou que CORS bloque, fallback en nouvel onglet
+                      try {
+                        const controller = new AbortController()
+                        const resp = await fetch(currentDownloadUrl, { signal: controller.signal })
+                        if (!resp.ok) throw new Error('http')
+                        const contentLength = resp.headers.get('content-length')
+                        // Si >500MB, ne pas charger en mémoire → ouvrir directement
+                        if (contentLength && parseInt(contentLength) > 500 * 1024 * 1024) {
+                          controller.abort()
+                          throw new Error('too_large')
+                        }
+                        const blob = await resp.blob()
+                        const objectUrl = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = objectUrl
+                        a.download = filename
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                        setTimeout(() => URL.revokeObjectURL(objectUrl), 30000)
+                      } catch {
+                        // Fallback : ouvre l'URL directement, le navigateur télécharge le MP4
+                        const a = document.createElement('a')
+                        a.href = currentDownloadUrl
+                        a.download = filename
+                        a.target = '_blank'
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                      }
                     }}
                     className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
                     title="Télécharger"
