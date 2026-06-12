@@ -135,13 +135,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const { type, tmdbId, videoUrl } = await request.json()
+  const { type, tmdbId, videoUrl, downloadUrl } = await request.json()
   const supabase = await createClient()
   const table = type === 'movie' ? 'movies' : 'series'
 
+  const updatePayload: Record<string, any> = { updated_at: new Date().toISOString() }
+  if (videoUrl !== undefined) updatePayload.video_url = videoUrl
+  if (downloadUrl !== undefined) updatePayload.download_url = downloadUrl
+
   const { data, error } = await supabase
     .from(table)
-    .update({ video_url: videoUrl, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq('tmdb_id', tmdbId)
     .select()
     .single()

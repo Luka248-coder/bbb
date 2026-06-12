@@ -104,12 +104,16 @@ export async function GET(request: NextRequest) {
 
 // Mettre à jour le lien vidéo d'un épisode
 export async function PATCH(request: NextRequest) {
-  const { episodeId, videoUrl } = await request.json()
+  const { episodeId, videoUrl, downloadUrl } = await request.json()
   const supabase = await createClient()
+
+  const updatePayload: Record<string, any> = {}
+  if (videoUrl !== undefined) updatePayload.video_url = videoUrl
+  if (downloadUrl !== undefined) updatePayload.download_url = downloadUrl
 
   const { data, error } = await supabase
     .from('episodes')
-    .update({ video_url: videoUrl })
+    .update(updatePayload)
     .eq('id', episodeId)
     .select()
     .single()

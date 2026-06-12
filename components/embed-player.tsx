@@ -7,7 +7,7 @@ import {
   Play, Pause, Volume2, VolumeX,
   Maximize, Minimize, SkipBack, SkipForward, Cast,
   Film, Loader2, List, X, ChevronDown, ChevronUp, Settings,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Download
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -32,6 +32,7 @@ interface EmbedPlayerProps {
   currentSeason?: number
   currentEpisode?: number
   seriesName?: string | null
+  downloadUrl?: string | null
 }
 
 // Reuse episodes panel from native-player logic inline
@@ -138,6 +139,7 @@ export function EmbedPlayer({
   type = 'movie', tmdbId, seriesDbId,
   currentSeason: initialSeason = 1, currentEpisode: initialEpisode = 1,
   seriesName = null,
+  downloadUrl = null,
 }: EmbedPlayerProps) {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -150,6 +152,7 @@ export function EmbedPlayer({
   const [title, setTitle] = useState(initialTitle)
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
+  const [currentDownloadUrl, setCurrentDownloadUrl] = useState<string | null>(downloadUrl)
 
   const getDisplayTitle = (season: number, episode: number) =>
     type === 'series' && seriesName
@@ -585,6 +588,19 @@ export function EmbedPlayer({
                 </div>
                 <span className="text-white/50 text-sm font-mono ml-2 tabular-nums">{fmt(currentTime)} / {fmt(duration)}</span>
                 <div className="flex-1" />
+                {currentDownloadUrl && (
+                  <a
+                    href={currentDownloadUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
+                    title="Télécharger"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                )}
                 <button onClick={toggleFs} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
                   {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                 </button>

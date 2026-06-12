@@ -31,6 +31,7 @@ interface Episode {
   episode_number: number
   title: string | null
   video_url: string | null
+  download_url: string | null
 }
 
 interface SeriesItem {
@@ -64,6 +65,9 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
   const [editingEpisode, setEditingEpisode] = useState<number | null>(null)
   const [editVideoUrl, setEditVideoUrl] = useState('')
   const [savingEpisode, setSavingEpisode] = useState(false)
+  const [editingEpisodeDownload, setEditingEpisodeDownload] = useState<number | null>(null)
+  const [editDownloadUrl, setEditDownloadUrl] = useState('')
+  const [resolvingEpisode, setResolvingEpisode] = useState<number | null>(null)
   const [speedMode, setSpeedMode] = useState(false)
   const [speedText, setSpeedText] = useState('')
   const [speedSaving, setSpeedSaving] = useState(false)
@@ -155,6 +159,41 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
       console.error(err)
     } finally {
       setSavingEpisode(false)
+    }
+  }
+
+  const resolveAndSaveEpisodeDownload = async (episodeId: number) => {
+    if (!editDownloadUrl.trim()) return
+    setResolvingEpisode(episodeId)
+    try {
+      let finalUrl = editDownloadUrl
+      if (editDownloadUrl.includes('fileditchfiles.me') || !editDownloadUrl.includes('.mp4')) {
+        const res = await fetch('/api/admin/resolve-download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: editDownloadUrl }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.url) finalUrl = data.url
+        }
+      }
+      const res = await fetch('/api/auth/admin/episodes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId, downloadUrl: finalUrl }),
+      })
+      if (res.ok) {
+        setEpisodes(prev => prev.map(ep =>
+          ep.id === episodeId ? { ...ep, download_url: finalUrl } : ep
+        ))
+        setEditingEpisodeDownload(null)
+        setEditDownloadUrl('')
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setResolvingEpisode(null)
     }
   }
 
@@ -513,7 +552,7 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
                                         </div>
                                       ) : (
                                         <div
-                                          className={`text-xs px-2 py-1 rounded cursor-pointer border flex items-center gap-1 ${
+                                          className={`text-xs px-2 py-1 rounded cursor-pointer border flex items-center gap-1 shrink-0 ${
                                             ep.video_url
                                               ? 'border-green-500/30 bg-green-500/10 text-green-400'
                                               : 'border-red-500/30 bg-red-500/10 text-red-400'
@@ -523,7 +562,51 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
                                             setEditVideoUrl(ep.video_url || '')
                                           }}
                                         >
-                                          {ep.video_url ? '✓ Lien défini' : '+ Ajouter lien'}
+                                          {ep.video_url ? '✓ Lien' : '+ Lien'}
+                                        </div>
+                                      )}
+
+                                      {/* Download URL button */}
+                                      {editingEpisodeDownload === ep.id ? (
+                                        <div className="flex gap-1 flex-1 max-w-sm">
+                                          <Input
+                                            value={editDownloadUrl}
+                                            onChange={e => setEditDownloadUrl(e.target.value)}
+                                            placeholder="https://fileditchfiles.me/..."
+                                            className="h-7 text-xs"
+                                            autoFocus
+                                          />
+                                          <Button
+                                            size="icon"
+                                            className="h-7 w-7 shrink-0 bg-blue-600 hover:bg-blue-500"
+                                            onClick={() => resolveAndSaveEpisodeDownload(ep.id)}
+                                            disabled={resolvingEpisode === ep.id}
+                                          >
+                                            {resolvingEpisode === ep.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                          </Button>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7 shrink-0"
+                                            onClick={() => { setEditingEpisodeDownload(null); setEditDownloadUrl('') }}
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className={`text-xs px-2 py-1 rounded cursor-pointer border flex items-center gap-1 shrink-0 ${
+                                            ep.download_url
+                                              ? 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                                              : 'border-border bg-secondary/50 text-muted-foreground hover:text-foreground'
+                                          }`}
+                                          onClick={() => {
+                                            setEditingEpisodeDownload(ep.id)
+                                            setEditDownloadUrl(ep.download_url || '')
+                                          }}
+                                        >
+                                          <Download className="w-3 h-3" />
+                                          {ep.download_url ? 'DL ✓' : 'DL'}
                                         </div>
                                       )}
                                     </div>

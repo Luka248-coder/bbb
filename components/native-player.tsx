@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
   ArrowLeft, Play, Pause, Volume2, VolumeX,
   Maximize, Minimize, SkipBack, SkipForward, Cast,
-  Film, Loader2, List, X, ChevronDown, ChevronUp, Settings
+  Film, Loader2, List, X, ChevronDown, ChevronUp, Settings, Download
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Hls from 'hls.js'
@@ -35,6 +35,7 @@ interface NativePlayerProps {
   userId?: string | null
   poster?: string | null
   seriesName?: string | null
+  downloadUrl?: string | null
 }
 
 // ─── Episodes Panel ────────────────────────────────────────────────────────────
@@ -271,6 +272,7 @@ export function NativePlayer({
   userId = null,
   poster = null,
   seriesName = null,
+  downloadUrl = null,
 }: NativePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
@@ -284,6 +286,7 @@ export function NativePlayer({
   const [title, setTitle] = useState(initialTitle)
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
+  const [currentDownloadUrl, setCurrentDownloadUrl] = useState<string | null>(downloadUrl)
 
   const getDisplayTitle = (season: number, episode: number) =>
     type === 'series' && seriesName
@@ -1258,6 +1261,20 @@ export function NativePlayer({
                 >
                   <Cast className="w-5 h-5" />
                 </button>
+
+                {currentDownloadUrl && (
+                  <a
+                    href={currentDownloadUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
+                    title="Télécharger"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                )}
 
                 <div ref={settingsRef} className="relative">
                   <button

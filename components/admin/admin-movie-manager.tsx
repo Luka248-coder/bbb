@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Film, Search, Plus, Trash2, Edit, Star, Loader2, X, Check,
-  Link as LinkIcon, AlertCircle, ChevronDown
+  Link as LinkIcon, AlertCircle, ChevronDown, Download
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -30,6 +30,7 @@ interface MovieItem {
   vote_average: number
   release_date?: string
   video_url: string | null
+  download_url: string | null
 }
 
 interface AdminMovieManagerProps {
@@ -47,6 +48,9 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
   const [addedIds, setAddedIds] = useState<number[]>([])
   const [editId, setEditId] = useState<number | null>(null)
   const [editUrl, setEditUrl] = useState('')
+  const [editDownloadId, setEditDownloadId] = useState<number | null>(null)
+  const [editDownloadUrl, setEditDownloadUrl] = useState('')
+  const [resolvingId, setResolvingId] = useState<number | null>(null)
   const [savingId, setSavingId] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<number, string>>({})
@@ -94,6 +98,38 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
       }
     } catch {}
     setSavingId(null)
+  }
+
+  const resolveAndSaveDownloadUrl = async (item: MovieItem) => {
+    if (!editDownloadUrl.trim()) return
+    setResolvingId(item.id)
+    try {
+      // Tenter de résoudre le vrai lien MP4
+      let finalUrl = editDownloadUrl
+      if (editDownloadUrl.includes('fileditchfiles.me') || !editDownloadUrl.includes('.mp4')) {
+        const res = await fetch('/api/admin/resolve-download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: editDownloadUrl }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.url) finalUrl = data.url
+        }
+      }
+      // Sauvegarder
+      const res = await fetch('/api/auth/admin/content', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'movie', tmdbId: item.tmdb_id, downloadUrl: finalUrl }),
+      })
+      if (res.ok) {
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, download_url: finalUrl } : i))
+        setEditDownloadId(null)
+        setEditDownloadUrl('')
+      }
+    } catch {}
+    setResolvingId(null)
   }
 
   const deleteMovie = async (item: MovieItem) => {
@@ -232,6 +268,7 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
             const year = item.release_date ? new Date(item.release_date).getFullYear() : ''
             const hasUrl = !!item.video_url
             const isEditing = editId === item.id
+            const isEditingDownload = editDownloadId === item.id
             const isDeleting = deletingId === item.id
             const isSaving = savingId === item.id
 
@@ -296,6 +333,39 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
                           >
                             {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </button>
+                        </div>
+                      )}
+
+                      {/* Download URL editor */}
+                      {editDownloadId === item.id ? (
+                        <div className="flex gap-1 mt-1">
+                          <input
+                            autoFocus
+                            value={editDownloadUrl}
+                            onChange={e => setEditDownloadUrl(e.target.value)}
+                            placeholder="https://fileditchfiles.me/..."
+                            className="flex-1 bg-secondary border border-border rounded-lg px-2 py-1 text-xs text-foreground outline-none focus:border-blue-500/50 transition-colors min-w-0"
+                          />
+                          <button onClick={() => resolveAndSaveDownloadUrl(item)} disabled={resolvingId === item.id}
+                            className="px-2 py-1 bg-blue-600 text-white rounded-lg text-xs flex items-center gap-1">
+                            {resolvingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                          </button>
+                          <button onClick={() => { setEditDownloadId(null); setEditDownloadUrl('') }}
+                            className="px-2 py-1 bg-secondary border border-border rounded-lg text-xs">
+                            <X className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => { setEditDownloadId(item.id); setEditDownloadUrl(item.download_url || '') }}
+                          className={`mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg cursor-pointer text-xs font-medium truncate border transition-colors ${
+                            item.download_url
+                              ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/15'
+                              : 'bg-secondary border-border text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                          }`}
+                        >
+                          <Download className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{item.download_url ? 'DL défini ✓' : 'Lien téléchargement'}</span>
                         </div>
                       )}
                     </div>
