@@ -166,22 +166,8 @@ export function AdminSeriesManager({ items: initialItems }: AdminSeriesManagerPr
     if (!editDownloadUrl.trim()) return
     setResolvingEpisode(episodeId)
     try {
-      let finalUrl = editDownloadUrl.trim()
-      // Toujours tenter de résoudre le vrai lien CDN via notre API serveur
-      const resolveRes = await fetch('/api/admin/resolve-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: finalUrl }),
-      })
-      if (resolveRes.ok) {
-        const resolveData = await resolveRes.json()
-        if (resolveData.url) finalUrl = resolveData.url
-        else if (resolveData.error) {
-          alert(`⚠️ Impossible de résoudre le lien : ${resolveData.error}\n\nHTML reçu :\n${resolveData.debug_html_snippet || '(vide)'}`)
-          setResolvingEpisode(null)
-          return
-        }
-      }
+      // On sauvegarde le lien fileditchfiles tel quel — la résolution se fait à chaque téléchargement
+      const finalUrl = editDownloadUrl.trim()
       const res = await fetch('/api/auth/admin/episodes', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

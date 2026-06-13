@@ -104,22 +104,8 @@ export function AdminMovieManager({ items: initial }: AdminMovieManagerProps) {
     if (!editDownloadUrl.trim()) return
     setResolvingId(item.id)
     try {
-      let finalUrl = editDownloadUrl.trim()
-      // Toujours tenter de résoudre le vrai lien CDN depuis notre API serveur
-      const resolveRes = await fetch('/api/admin/resolve-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: finalUrl }),
-      })
-      if (resolveRes.ok) {
-        const resolveData = await resolveRes.json()
-        if (resolveData.url) finalUrl = resolveData.url
-        else if (resolveData.error) {
-          alert(`⚠️ Impossible de résoudre le lien : ${resolveData.error}\n\nHTML reçu :\n${resolveData.debug_html_snippet || '(vide)'}`)
-          setResolvingId(null)
-          return
-        }
-      }
+      // On sauvegarde le lien fileditchfiles tel quel — la résolution se fait à chaque téléchargement
+      const finalUrl = editDownloadUrl.trim()
       const res = await fetch('/api/auth/admin/content', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

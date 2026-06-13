@@ -1271,32 +1271,18 @@ export function NativePlayer({
                       if (isDownloading) return
                       setIsDownloading(true)
                       try {
-                        const filename = (title || 'video').replace(/[^a-z0-9\s]/gi, '').trim().replace(/\s+/g, '_') + '.mp4'
-
-                        // Étape 1 : si c'est encore une URL fileditchfiles, résoudre le vrai CDN
-                        let directUrl = currentDownloadUrl
-                        if (directUrl.includes('fileditchfiles.me')) {
-                          const r = await fetch('/api/admin/resolve-download', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ url: directUrl }),
-                          })
-                          if (r.ok) {
-                            const d = await r.json()
-                            if (d.url && !d.error) directUrl = d.url
-                          }
-                        }
-
-                        // Étape 2 : proxy serveur pour forcer le téléchargement avec bon nom
-                        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(directUrl)}&filename=${encodeURIComponent(filename)}`
-                        const a = document.createElement('a')
-                        a.href = proxyUrl
-                        a.download = filename
-                        document.body.appendChild(a)
-                        a.click()
-                        document.body.removeChild(a)
+                        // Résoudre le vrai lien CDN à chaque clic (liens signés qui expirent)
+                        const r = await fetch('/api/admin/resolve-download', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ url: currentDownloadUrl }),
+                        })
+                        if (!r.ok) throw new Error('resolve failed')
+                        const d = await r.json()
+                        if (!d.url || d.error) throw new Error(d.error || 'no url')
+                        // Redirection directe vers le CDN — le navigateur télécharge le MP4
+                        window.location.href = d.url
                       } catch {
-                        // Fallback absolu
                         window.open(currentDownloadUrl, '_blank')
                       } finally {
                         setIsDownloading(false)

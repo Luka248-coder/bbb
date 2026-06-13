@@ -597,28 +597,15 @@ export function EmbedPlayer({
                       if (isDownloading) return
                       setIsDownloading(true)
                       try {
-                        const filename = (displayTitle || 'video').replace(/[^a-z0-9\s]/gi, '').trim().replace(/\s+/g, '_') + '.mp4'
-
-                        let directUrl = currentDownloadUrl
-                        if (directUrl.includes('fileditchfiles.me')) {
-                          const r = await fetch('/api/admin/resolve-download', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ url: directUrl }),
-                          })
-                          if (r.ok) {
-                            const d = await r.json()
-                            if (d.url && !d.error) directUrl = d.url
-                          }
-                        }
-
-                        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(directUrl)}&filename=${encodeURIComponent(filename)}`
-                        const a = document.createElement('a')
-                        a.href = proxyUrl
-                        a.download = filename
-                        document.body.appendChild(a)
-                        a.click()
-                        document.body.removeChild(a)
+                        const r = await fetch('/api/admin/resolve-download', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ url: currentDownloadUrl }),
+                        })
+                        if (!r.ok) throw new Error('resolve failed')
+                        const d = await r.json()
+                        if (!d.url || d.error) throw new Error(d.error || 'no url')
+                        window.location.href = d.url
                       } catch {
                         window.open(currentDownloadUrl, '_blank')
                       } finally {
