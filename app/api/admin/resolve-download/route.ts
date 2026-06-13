@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'URL manquante' }, { status: 400 })
   }
 
-  // Si c'est pas fileditchfiles, retourner tel quel
   if (!url.includes('fileditchfiles.me')) {
     return NextResponse.json({ url, resolved: false })
   }
@@ -21,17 +20,24 @@ export async function POST(request: NextRequest) {
     })
 
     const html = await res.text()
-    const rawMatches = html.match(/https?:\/\/[^\s"'<>]+\.mp4[^\s"'<>]*/g) || []
-    const cleaned = [...new Set(rawMatches.map(u => u.replace(/&amp;/g, '&')))]
-    const candidates = cleaned.filter(u =>
-      !u.includes('fileditchfiles.me') &&
-      !u.includes('abuse.') &&
-      !u.includes('report.php')
-    )
 
-    if (candidates.length > 0) {
-      const signed = candidates.find(u => u.includes('expires=')) || candidates[0]
-      return NextResponse.json({ url: signed, resolved: true })
+    // Extraire une par une les URLs MP4 avec un regex précis
+    // On cherche src="URL" dans les balises <source> ou <video>
+    const srcMatch = html.match(/src=["'](https?:\/\/[^"']+\.mp4[^"']*?)["']/)
+    if (srcMatch) {
+      const clean = srcMatch[1].replace(/&amp;/g, '&')
+      if (!clean.includes('fileditchfiles.me') && !clean.includes('abuse.')) {
+        return NextResponse.json({ url: clean, resolved: true })
+      }
+    }
+
+    // Fallback : chercher le premier lien avec expires= dans tout le HTML
+    const expiresMatch = html.match(/https?:\/\/[^\s"'<>&]+\.mp4[^\s"'<>]*expires=[^\s"'<>]+/)
+    if (expiresMatch) {
+      const clean = expiresMatch[0].replace(/&amp;/g, '&')
+      if (!clean.includes('fileditchfiles.me')) {
+        return NextResponse.json({ url: clean, resolved: true })
+      }
     }
 
     return NextResponse.json({ error: 'Aucun lien MP4 trouvé' }, { status: 404 })

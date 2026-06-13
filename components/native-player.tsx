@@ -1208,7 +1208,7 @@ export function NativePlayer({
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap-nowrap overflow-hidden">
                 <button onClick={() => skip(-10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
                   <SkipBack className="w-5 h-5" />
                 </button>
@@ -1222,7 +1222,7 @@ export function NativePlayer({
                 </button>
 
                 <div
-                  className="flex items-center gap-1 ml-1"
+                  className="hidden sm:flex items-center gap-1 ml-1"
                   onMouseEnter={() => setShowVol(true)}
                   onMouseLeave={() => setShowVol(false)}
                 >
@@ -1246,19 +1246,20 @@ export function NativePlayer({
                   </AnimatePresence>
                 </div>
 
-                <span className="text-white/50 text-sm font-mono ml-2 tabular-nums">
+                <span className="text-white/50 text-sm font-mono ml-1 sm:ml-2 tabular-nums text-xs sm:text-sm">
                   {fmt(currentTime)} / {fmt(duration)}
                 </span>
 
                 <div className="flex-1" />
 
+                {/* Cast : caché sur mobile */}
                 <button
                   onClick={() => {
                     // @ts-ignore
                     if (videoRef.current?.webkitShowPlaybackTargetPicker) videoRef.current.webkitShowPlaybackTargetPicker()
                     else alert('Casting : utilisez Chrome ou Safari')
                   }}
-                  className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
+                  className="hidden sm:flex text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
                 >
                   <Cast className="w-5 h-5" />
                 </button>
