@@ -287,6 +287,7 @@ export function NativePlayer({
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
   const [currentDownloadUrl, setCurrentDownloadUrl] = useState<string | null>(downloadUrl)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const getDisplayTitle = (season: number, episode: number) =>
     type === 'series' && seriesName
@@ -1264,45 +1265,50 @@ export function NativePlayer({
 
                 {currentDownloadUrl && (
                   <button
+                    disabled={isDownloading}
                     onClick={async e => {
                       e.stopPropagation()
-                      const filename = (title || 'video').replace(/[^a-z0-9\s]/gi, '').trim().replace(/\s+/g, '_') + '.mp4'
-                      // Tente un fetch avec blob pour forcer le nom de fichier
-                      // Si le fichier est trop gros ou que CORS bloque, fallback en nouvel onglet
+                      if (isDownloading) return
+                      setIsDownloading(true)
                       try {
-                        const controller = new AbortController()
-                        const resp = await fetch(currentDownloadUrl, { signal: controller.signal })
-                        if (!resp.ok) throw new Error('http')
-                        const contentLength = resp.headers.get('content-length')
-                        // Si >500MB, ne pas charger en mémoire → ouvrir directement
-                        if (contentLength && parseInt(contentLength) > 500 * 1024 * 1024) {
-                          controller.abort()
-                          throw new Error('too_large')
+                        const filename = (title || 'video').replace(/[^a-z0-9\s]/gi, '').trim().replace(/\s+/g, '_') + '.mp4'
+
+                        // Étape 1 : si c'est encore une URL fileditchfiles, résoudre le vrai CDN
+                        let directUrl = currentDownloadUrl
+                        if (directUrl.includes('fileditchfiles.me')) {
+                          const r = await fetch('/api/admin/resolve-download', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url: directUrl }),
+                          })
+                          if (r.ok) {
+                            const d = await r.json()
+                            if (d.url && !d.error) directUrl = d.url
+                          }
                         }
-                        const blob = await resp.blob()
-                        const objectUrl = URL.createObjectURL(blob)
+
+                        // Étape 2 : proxy serveur pour forcer le téléchargement avec bon nom
+                        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(directUrl)}&filename=${encodeURIComponent(filename)}`
                         const a = document.createElement('a')
-                        a.href = objectUrl
+                        a.href = proxyUrl
                         a.download = filename
                         document.body.appendChild(a)
                         a.click()
                         document.body.removeChild(a)
-                        setTimeout(() => URL.revokeObjectURL(objectUrl), 30000)
                       } catch {
-                        // Fallback : ouvre l'URL directement, le navigateur télécharge le MP4
-                        const a = document.createElement('a')
-                        a.href = currentDownloadUrl
-                        a.download = filename
-                        a.target = '_blank'
-                        document.body.appendChild(a)
-                        a.click()
-                        document.body.removeChild(a)
+                        // Fallback absolu
+                        window.open(currentDownloadUrl, '_blank')
+                      } finally {
+                        setIsDownloading(false)
                       }
                     }}
-                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
+                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
                     title="Télécharger"
                   >
-                    <Download className="w-5 h-5" />
+                    {isDownloading
+                      ? <Loader2 className="w-5 h-5 animate-spin" />
+                      : <Download className="w-5 h-5" />
+                    }
                   </button>
                 )}
 
