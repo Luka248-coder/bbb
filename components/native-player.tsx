@@ -1475,7 +1475,7 @@ export function NativePlayer({
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
-                                  🔊 SON AMPLIFIÉ
+                                  SON AMPLIFIÉ
                                 </span>
                                 <span style={{ fontSize: '12px', fontWeight: 700, color: audioBoost > 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
                                   {audioBoost}%
@@ -1509,7 +1509,7 @@ export function NativePlayer({
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
-                                  💡 LUMINOSITÉ
+                                  LUMINOSITÉ
                                 </span>
                                 <span style={{ fontSize: '12px', fontWeight: 700, color: brightness !== 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
                                   {brightness}%
@@ -1532,7 +1532,7 @@ export function NativePlayer({
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
-                                  🎨 CONTRASTE
+                                  CONTRASTE
                                 </span>
                                 <span style={{ fontSize: '12px', fontWeight: 700, color: contrast !== 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
                                   {contrast}%
