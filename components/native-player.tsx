@@ -319,9 +319,17 @@ export function NativePlayer({
   const [hoverX, setHoverX] = useState(0)
   const [language, setLanguage] = useState<'fr' | 'en'>('fr')
   const [showSettings, setShowSettings] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'audio' | 'subtitles'>('audio')
+  const [settingsTab, setSettingsTab] = useState<'audio' | 'subtitles' | 'effects'>('audio')
   const [subtitle, setSubtitle] = useState<'off' | 'fr' | 'en'>('off')
   const [hlsAudioTracks, setHlsAudioTracks] = useState<{ id: number; name: string; lang: string }[]>([])
+
+  // ─── Effets audio/vidéo ──────────────────────────────────────────────────────
+  const [audioBoost, setAudioBoost] = useState(100) // 100 = normal, max 300
+  const [brightness, setBrightness] = useState(100) // 100 = normal
+  const [contrast, setContrast] = useState(100)     // 100 = normal
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const gainNodeRef = useRef<GainNode | null>(null)
+  const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
   // ─── Save watch progress ─────────────────────────────────────────────────────
   const currentTimeRef = useRef(0)
@@ -808,6 +816,48 @@ export function NativePlayer({
     v.volume = val
     setVolume(val)
     setMuted(val === 0)
+  }
+
+  // ─── Son amplifié (Web Audio API) ───────────────────────────────────────────
+  const initAudioBoost = () => {
+    if (audioCtxRef.current) return // déjà initialisé
+    const video = videoRef.current
+    if (!video) return
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const source = ctx.createMediaElementSource(video)
+      const gain = ctx.createGain()
+      gain.gain.value = audioBoost / 100
+      source.connect(gain)
+      gain.connect(ctx.destination)
+      audioCtxRef.current = ctx
+      gainNodeRef.current = gain
+      audioSourceRef.current = source
+    } catch (e) {
+      console.warn('Web Audio API non supportée', e)
+    }
+  }
+
+  const changeAudioBoost = (val: number) => {
+    setAudioBoost(val)
+    if (!audioCtxRef.current) initAudioBoost()
+    if (gainNodeRef.current) gainNodeRef.current.gain.value = val / 100
+  }
+
+  // ─── Luminosité / Contraste (CSS filter) ─────────────────────────────────────
+  const applyVideoFilter = (b: number, c: number) => {
+    const video = videoRef.current
+    if (video) video.style.filter = `brightness(${b}%) contrast(${c}%)`
+  }
+
+  const changeBrightness = (val: number) => {
+    setBrightness(val)
+    applyVideoFilter(val, contrast)
+  }
+
+  const changeContrast = (val: number) => {
+    setContrast(val)
+    applyVideoFilter(brightness, val)
   }
 
   const changeLanguage = (lang: 'fr' | 'en') => {
@@ -1337,7 +1387,7 @@ export function NativePlayer({
                         </div>
 
                         <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                          {(['audio', 'subtitles'] as const).map(tab => (
+                          {(['audio', 'subtitles', 'effects'] as const).map(tab => (
                             <button
                               key={tab}
                               onClick={() => setSettingsTab(tab)}
@@ -1345,13 +1395,13 @@ export function NativePlayer({
                               style={{
                                 flex: 1,
                                 padding: '9px 0 10px',
-                                fontSize: '11px',
+                                fontSize: '10px',
                                 fontWeight: 700,
                                 letterSpacing: '0.07em',
                                 color: settingsTab === tab ? '#fff' : 'rgba(255,255,255,0.32)',
                               }}
                             >
-                              {tab === 'audio' ? 'SOURCE · AUDIO' : 'SOUS-TITRES'}
+                              {tab === 'audio' ? 'AUDIO' : tab === 'subtitles' ? 'SOUS-TITRES' : 'EFFETS'}
                               {settingsTab === tab && (
                                 <span className="absolute bottom-0 left-0 right-0" style={{ height: '2px', background: '#e53935' }} />
                               )}
@@ -1388,7 +1438,7 @@ export function NativePlayer({
                               )
                             })}
                           </div>
-                        ) : (
+                        ) : settingsTab === 'subtitles' ? (
                           <div style={{ padding: '4px 0' }}>
                             {(['off', 'fr', 'en'] as const).map(sub => {
                               const active = subtitle === sub
@@ -1416,6 +1466,106 @@ export function NativePlayer({
                                 </button>
                               )
                             })}
+                          </div>
+                        ) : (
+                          /* ── Onglet EFFETS ── */
+                          <div style={{ padding: '12px 18px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                            {/* Son amplifié */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
+                                  🔊 SON AMPLIFIÉ
+                                </span>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: audioBoost > 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
+                                  {audioBoost}%
+                                </span>
+                              </div>
+                              <input
+                                type="range" min={100} max={300} step={10}
+                                value={audioBoost}
+                                onChange={e => changeAudioBoost(Number(e.target.value))}
+                                className="w-full accent-red-600 cursor-pointer"
+                                style={{ height: '4px' }}
+                              />
+                              <div className="flex justify-between mt-1">
+                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>Normal</span>
+                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>×3</span>
+                              </div>
+                              {audioBoost > 100 && (
+                                <button
+                                  onClick={() => changeAudioBoost(100)}
+                                  style={{ fontSize: '10px', color: '#e53935', marginTop: '4px' }}
+                                  className="hover:underline"
+                                >
+                                  Réinitialiser
+                                </button>
+                              )}
+                            </div>
+
+                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+
+                            {/* Luminosité */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
+                                  💡 LUMINOSITÉ
+                                </span>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: brightness !== 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
+                                  {brightness}%
+                                </span>
+                              </div>
+                              <input
+                                type="range" min={50} max={200} step={5}
+                                value={brightness}
+                                onChange={e => changeBrightness(Number(e.target.value))}
+                                className="w-full accent-red-600 cursor-pointer"
+                                style={{ height: '4px' }}
+                              />
+                              <div className="flex justify-between mt-1">
+                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>Sombre</span>
+                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>Vif</span>
+                              </div>
+                            </div>
+
+                            {/* Contraste */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
+                                  🎨 CONTRASTE
+                                </span>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: contrast !== 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
+                                  {contrast}%
+                                </span>
+                              </div>
+                              <input
+                                type="range" min={50} max={200} step={5}
+                                value={contrast}
+                                onChange={e => changeContrast(Number(e.target.value))}
+                                className="w-full accent-red-600 cursor-pointer"
+                                style={{ height: '4px' }}
+                              />
+                              <div className="flex justify-between mt-1">
+                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>Plat</span>
+                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>Intense</span>
+                              </div>
+                            </div>
+
+                            {/* Bouton reset tout */}
+                            {(brightness !== 100 || contrast !== 100) && (
+                              <button
+                                onClick={() => { changeBrightness(100); changeContrast(100) }}
+                                style={{
+                                  fontSize: '11px', color: 'rgba(255,255,255,0.4)',
+                                  textAlign: 'center', padding: '6px',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  borderRadius: '6px',
+                                }}
+                                className="hover:text-white hover:border-white/30 transition-colors"
+                              >
+                                Réinitialiser l'image
+                              </button>
+                            )}
                           </div>
                         )}
                       </motion.div>
