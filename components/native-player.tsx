@@ -1272,7 +1272,6 @@ export function NativePlayer({
                       if (isDownloading) return
                       setIsDownloading(true)
                       try {
-                        // Résoudre le vrai lien CDN à chaque clic (liens signés qui expirent)
                         const r = await fetch('/api/admin/resolve-download', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -1281,8 +1280,8 @@ export function NativePlayer({
                         if (!r.ok) throw new Error('resolve failed')
                         const d = await r.json()
                         if (!d.url || d.error) throw new Error(d.error || 'no url')
-                        // Redirection directe vers le CDN — le navigateur télécharge le MP4
-                        window.location.href = d.url
+                        // Ouvrir dans un nouvel onglet — ne quitte pas le player
+                        window.open(d.url, '_blank')
                       } catch {
                         window.open(currentDownloadUrl, '_blank')
                       } finally {
