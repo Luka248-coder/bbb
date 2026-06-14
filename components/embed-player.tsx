@@ -605,7 +605,13 @@ export function EmbedPlayer({
                         if (!r.ok) throw new Error('resolve failed')
                         const d = await r.json()
                         if (!d.url || d.error) throw new Error(d.error || 'no url')
-                        window.open(d.url, '_blank')
+                        const a = document.createElement('a')
+                        a.href = d.url
+                        a.setAttribute('download', '')
+                        a.style.display = 'none'
+                        document.body.appendChild(a)
+                        a.click()
+                        setTimeout(() => document.body.removeChild(a), 1000)
                       } catch {
                         window.open(currentDownloadUrl, '_blank')
                       } finally {

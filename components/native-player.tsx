@@ -1208,7 +1208,7 @@ export function NativePlayer({
                 )}
               </div>
 
-              <div className="flex items-center gap-1 flex-wrap-nowrap overflow-hidden">
+              <div className="flex items-center gap-1 min-w-0">
                 <button onClick={() => skip(-10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
                   <SkipBack className="w-5 h-5" />
                 </button>
@@ -1280,8 +1280,14 @@ export function NativePlayer({
                         if (!r.ok) throw new Error('resolve failed')
                         const d = await r.json()
                         if (!d.url || d.error) throw new Error(d.error || 'no url')
-                        // Ouvrir dans un nouvel onglet — ne quitte pas le player
-                        window.open(d.url, '_blank')
+                        // Créer un lien invisible et cliquer dessus pour télécharger
+                        const a = document.createElement('a')
+                        a.href = d.url
+                        a.setAttribute('download', '')
+                        a.style.display = 'none'
+                        document.body.appendChild(a)
+                        a.click()
+                        setTimeout(() => document.body.removeChild(a), 1000)
                       } catch {
                         window.open(currentDownloadUrl, '_blank')
                       } finally {
