@@ -170,6 +170,7 @@ export function Navbar() {
   const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const mobileBellRef = useRef<HTMLButtonElement>(null)
   const unreadCount = notifications.filter(n => !n.is_read).length
