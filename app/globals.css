@@ -74,6 +74,16 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Tailwind v4 ne met plus cursor:pointer sur les <button> par défaut.
+     On le restaure ici une fois pour toutes, plutôt que d'ajouter
+     cursor-pointer bouton par bouton dans chaque composant. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  input[type='button']:not(:disabled),
+  input[type='submit']:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /* Custom scrollbar */
