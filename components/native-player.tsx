@@ -618,12 +618,10 @@ export function NativePlayer({
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
-      if (v.paused) {
-        v.muted = true
-        v.play().then(() => { v.muted = false }).catch(() => {
-          setPlaying(false)
-        })
-      }
+      // Ne pas relancer play() ici : loadVideo() démarre déjà la lecture au
+      // chargement. onCanPlay se déclenche aussi après chaque reprise de
+      // buffering, donc relancer play() ici coupait/relançait la vidéo et
+      // pouvait écraser une pause volontaire de l'utilisateur.
     }
     const onProgress = () => {
       if (v.buffered.length > 0) {
@@ -657,7 +655,7 @@ export function NativePlayer({
       window.clearInterval(syncInterval)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
-  }, [videoUrl, resetTimer, clearErrorTimer, syncVideoState])
+  }, [resetTimer, clearErrorTimer, syncVideoState])
 
   // ─── Purstream client-side fetch (Vercel bloque côté serveur) ────────────────
   useEffect(() => {
