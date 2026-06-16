@@ -311,13 +311,34 @@ export function NativePlayer({
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
-  // fetchingEpisode = cherche l'URL sur Purstream (spinner "Chargement...")
   const [fetchingEpisode, setFetchingEpisode] = useState(false)
-  // showError = timeout 30s dépassé après loadVideo
   const [showError, setShowError] = useState(false)
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // videoStarted = la vidéo a commencé à jouer (annule le timer d'erreur)
   const videoStarted = useRef(false)
+
+  // Données TMDB pour l'écran pause
+  const [tmdbDetails, setTmdbDetails] = useState<{ overview: string; vote_average: number; logo_path: string | null; release_date: string; runtime?: number } | null>(null)
+
+  useEffect(() => {
+    if (!tmdbId) return
+    const TMDB_KEY = '1a6aed55d15f2da7f2f0ff0586c52174'
+    const base = type === 'movie' ? 'movie' : 'tv'
+    fetch(`https://api.themoviedb.org/3/${base}/${tmdbId}?api_key=${TMDB_KEY}&language=fr-FR&append_to_response=images&include_image_language=fr,null,en`)
+      .then(r => r.json())
+      .then(d => {
+        const logo = d.images?.logos?.find((l: any) => l.iso_639_1 === 'fr') ||
+                     d.images?.logos?.find((l: any) => l.iso_639_1 === 'en') ||
+                     d.images?.logos?.[0]
+        setTmdbDetails({
+          overview: d.overview || '',
+          vote_average: d.vote_average || 0,
+          logo_path: logo?.file_path || null,
+          release_date: d.release_date || d.first_air_date || '',
+          runtime: d.runtime || (d.episode_run_time?.[0]),
+        })
+      })
+      .catch(() => {})
+  }, [tmdbId, type])
 
   const [showVol, setShowVol] = useState(false)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
@@ -1126,6 +1147,61 @@ export function NativePlayer({
         onClick={togglePlay}
       />
 
+      {/* Écran pause — infos film/série */}
+      <AnimatePresence>
+        {!playing && !buffering && !fetchingEpisode && tmdbDetails && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
+          >
+            <div className="absolute bottom-32 left-10 max-w-lg">
+              {/* Logo ou titre */}
+              {tmdbDetails.logo_path ? (
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${tmdbDetails.logo_path}`}
+                  alt={initialTitle}
+                  className="max-h-28 max-w-xs object-contain mb-4 drop-shadow-2xl"
+                  style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.8))' }}
+                />
+              ) : (
+                <h2 className="text-white font-black text-5xl mb-4 leading-tight drop-shadow-2xl" style={{ textShadow: '0 4px 24px rgba(0,0,0,0.9)' }}>
+                  {initialTitle}
+                </h2>
+              )}
+
+              {/* Métadonnées */}
+              <div className="flex items-center gap-3 mb-4">
+                {tmdbDetails.release_date && (
+                  <span className="text-white/60 text-sm font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                    {new Date(tmdbDetails.release_date).getFullYear()}
+                  </span>
+                )}
+                {tmdbDetails.runtime && (
+                  <span className="text-white/60 text-sm font-medium">
+                    {Math.floor(tmdbDetails.runtime / 60)}h {tmdbDetails.runtime % 60}m
+                  </span>
+                )}
+                {tmdbDetails.vote_average > 0 && (
+                  <span className="flex items-center gap-1 text-yellow-400 text-sm font-bold">
+                    ★ {tmdbDetails.vote_average.toFixed(1)}
+                  </span>
+                )}
+              </div>
+
+              {/* Synopsis */}
+              {tmdbDetails.overview && (
+                <p className="text-white/70 text-sm leading-relaxed line-clamp-3 max-w-md">
+                  {tmdbDetails.overview}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Fetching episode — spinner pendant la recherche Purstream */}
       <AnimatePresence>
         {fetchingEpisode && (
@@ -1251,9 +1327,8 @@ export function NativePlayer({
             {/* Top bar */}
             <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
               <Link href={backUrl} className="shrink-0">
-                <button className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-sm font-medium transition-all duration-200 active:scale-95">
-                  <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
-                  <span>Retour</span>
+                <button className="w-10 h-10 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 text-white transition-all duration-200 active:scale-95">
+                  <ArrowLeft className="w-5 h-5" />
                 </button>
               </Link>
               <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
