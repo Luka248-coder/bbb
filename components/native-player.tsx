@@ -1147,55 +1147,48 @@ export function NativePlayer({
         onClick={togglePlay}
       />
 
-      {/* Écran pause — infos film/série centrées */}
+      {/* Écran pause — infos film/série */}
       <AnimatePresence>
         {!playing && !buffering && !fetchingEpisode && tmdbDetails && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.35 }}
-            className="absolute inset-0 pointer-events-none flex items-center justify-center"
-            style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)' }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
           >
-            <div className="flex flex-col items-center text-center px-8 max-w-xl gap-4"
-              style={{ marginBottom: '80px' }}
-            >
-              {/* Logo ou titre */}
+            <div className="absolute left-10 max-w-lg" style={{ bottom: '140px' }}>
               {tmdbDetails.logo_path ? (
                 <img
                   src={`https://image.tmdb.org/t/p/w500${tmdbDetails.logo_path}`}
                   alt={initialTitle}
-                  className="object-contain drop-shadow-2xl"
-                  style={{ maxHeight: '90px', maxWidth: '260px', filter: 'drop-shadow(0 4px 32px rgba(0,0,0,0.9))' }}
+                  className="max-h-28 max-w-xs object-contain mb-4 drop-shadow-2xl"
+                  style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.8))' }}
                 />
               ) : (
-                <h2 className="text-white font-black text-4xl leading-tight drop-shadow-2xl"
-                  style={{ textShadow: '0 4px 24px rgba(0,0,0,0.9)' }}>
+                <h2 className="text-white font-black text-5xl mb-4 leading-tight drop-shadow-2xl" style={{ textShadow: '0 4px 24px rgba(0,0,0,0.9)' }}>
                   {initialTitle}
                 </h2>
               )}
-
-              {/* Métadonnées */}
-              <div className="flex items-center justify-center gap-3 flex-wrap">
+              <div className="flex items-center gap-3 mb-4">
+                {tmdbDetails.release_date && (
+                  <span className="text-white/60 text-sm font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                    {new Date(tmdbDetails.release_date).getFullYear()}
+                  </span>
+                )}
+                {tmdbDetails.runtime && (
+                  <span className="text-white/60 text-sm font-medium">
+                    {Math.floor(tmdbDetails.runtime / 60)}h {tmdbDetails.runtime % 60}m
+                  </span>
+                )}
                 {tmdbDetails.vote_average > 0 && (
                   <span className="flex items-center gap-1 text-yellow-400 text-sm font-bold">
                     ★ {tmdbDetails.vote_average.toFixed(1)}
                   </span>
                 )}
-                {tmdbDetails.release_date && (
-                  <span className="text-white/50 text-sm">
-                    {new Date(tmdbDetails.release_date).getFullYear()}
-                  </span>
-                )}
-                {tmdbDetails.runtime && (
-                  <span className="text-white/50 text-sm">
-                    {Math.floor(tmdbDetails.runtime / 60)}h {tmdbDetails.runtime % 60}m
-                  </span>
-                )}
               </div>
-
-              {/* Synopsis */}
               {tmdbDetails.overview && (
-                <p className="text-white/60 text-sm leading-relaxed line-clamp-3 max-w-sm">
+                <p className="text-white/70 text-sm leading-relaxed line-clamp-3 max-w-md">
                   {tmdbDetails.overview}
                 </p>
               )}
@@ -1347,23 +1340,23 @@ export function NativePlayer({
             </div>
 
             {/* Bottom controls */}
-            <div className="pointer-events-auto px-5 pb-5 bg-gradient-to-t from-black/80 via-black/30 to-transparent">
+            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+              <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
 
-              {/* Progress bar */}
               <div
                 ref={progressRef}
                 className="relative w-full cursor-pointer group/bar mb-4"
-                style={{ height: '3px' }}
+                style={{ height: '4px' }}
                 onClick={seek}
                 onMouseMove={onProgressHover}
                 onMouseLeave={() => setHoverTime(null)}
-                onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.height = '5px' }}
-                onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.height = '3px' }}
+                onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.height = '6px' }}
+                onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.height = '4px' }}
               >
-                <div className="absolute inset-0 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${buffered}%`, background: 'rgba(255,255,255,0.2)' }} />
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progress}%`, background: '#e5091480' }}>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" />
+                <div className="absolute inset-0 bg-white/20 rounded-full" />
+                <div className="absolute inset-y-0 left-0 bg-white/30 rounded-full" style={{ width: `${buffered}%` }} />
+                <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${progress}%` }}>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" />
                 </div>
                 {hoverTime !== null && (
                   <div className="absolute -top-8 bg-black/80 text-white text-xs px-2 py-1 rounded-lg pointer-events-none -translate-x-1/2 whitespace-nowrap" style={{ left: hoverX }}>
@@ -1372,51 +1365,41 @@ export function NativePlayer({
                 )}
               </div>
 
-              {/* Buttons row */}
-              <div className="flex items-center min-w-0" style={{ gap: '2px' }}>
-
-                {/* Left — playback controls */}
-                <button onClick={() => skip(-10)} className="text-white/60 hover:text-white transition-colors p-2">
-                  <SkipBack className="w-[18px] h-[18px]" strokeWidth={1.5} />
+              <div className="flex items-center gap-1 min-w-0">
+                <button onClick={() => skip(-10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                  <SkipBack className="w-5 h-5" />
                 </button>
-
-                <button onClick={togglePlay} className="text-white transition-colors p-2">
+                <button onClick={togglePlay} className="text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
                   {playing
-                    ? <Pause className="w-6 h-6" strokeWidth={1.5} />
-                    : <Play className="w-6 h-6 ml-0.5" strokeWidth={1.5} />}
+                    ? <Pause className="w-7 h-7 fill-white" />
+                    : <Play className="w-7 h-7 fill-white ml-0.5" />}
+                </button>
+                <button onClick={() => skip(10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                  <SkipForward className="w-5 h-5" />
                 </button>
 
-                <button onClick={() => skip(10)} className="text-white/60 hover:text-white transition-colors p-2">
-                  <SkipForward className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                </button>
-
-                {/* Volume */}
-                <div className="hidden sm:flex items-center gap-0" onMouseEnter={() => setShowVol(true)} onMouseLeave={() => setShowVol(false)}>
-                  <button onClick={toggleMute} className="text-white/60 hover:text-white transition-colors p-2">
-                    {muted || volume === 0
-                      ? <VolumeX className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                      : <Volume2 className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                <div className="hidden sm:flex items-center gap-1 ml-1" onMouseEnter={() => setShowVol(true)} onMouseLeave={() => setShowVol(false)}>
+                  <button onClick={toggleMute} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                    {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                   </button>
                   <AnimatePresence>
                     {showVol && (
-                      <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 72, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="overflow-hidden">
-                        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={e => changeVolume(+e.target.value)} className="w-[72px] accent-white cursor-pointer" />
+                      <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 80, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="overflow-hidden">
+                        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={e => changeVolume(+e.target.value)} className="w-20 accent-primary cursor-pointer" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                {/* Time */}
-                <span className="text-white/50 text-xs font-mono tabular-nums ml-1" style={{ letterSpacing: '0.03em' }}>
-                  {fmt(currentTime)}&nbsp;<span className="text-white/25">|</span>&nbsp;{fmt(duration)}
+                <span className="text-white/50 text-sm font-mono ml-1 sm:ml-2 tabular-nums text-xs sm:text-sm">
+                  {fmt(currentTime)} / {fmt(duration)}
                 </span>
 
                 <div className="flex-1" />
 
-                {/* Right — action buttons */}
                 {type === 'series' && (
-                  <button onClick={() => setShowEpisodes(true)} className="text-white/60 hover:text-white transition-colors p-2">
-                    <List className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  <button onClick={() => setShowEpisodes(true)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                    <List className="w-5 h-5" />
                   </button>
                 )}
 
@@ -1425,9 +1408,9 @@ export function NativePlayer({
                     // @ts-ignore
                     if (videoRef.current?.webkitShowPlaybackTargetPicker) videoRef.current.webkitShowPlaybackTargetPicker()
                   }}
-                  className="hidden sm:flex text-white/60 hover:text-white transition-colors p-2"
+                  className="hidden sm:flex text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
                 >
-                  <Cast className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  <Cast className="w-5 h-5" />
                 </button>
 
                 {currentDownloadUrl && (
@@ -1439,21 +1422,19 @@ export function NativePlayer({
                       if (!userId) { setShowLoginPrompt(true); return }
                       triggerDownload()
                     }}
-                    className="text-white/60 hover:text-white transition-colors p-2 disabled:opacity-30"
+                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
                     title="Télécharger"
                   >
-                    {isDownloading
-                      ? <Loader2 className="w-[18px] h-[18px] animate-spin" />
-                      : <Download className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                    {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                   </button>
                 )}
 
                 <div ref={settingsRef} className="relative">
                   <button
                     onClick={() => setShowSettings(s => !s)}
-                    className={`transition-colors p-2 ${showSettings ? 'text-white' : 'text-white/60 hover:text-white'}`}
+                    className={`p-2.5 rounded-xl hover:bg-white/10 transition-all ${showSettings ? 'text-white bg-white/10' : 'text-white/70 hover:text-white'}`}
                   >
-                    <Settings className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                    <Settings className="w-5 h-5" />
                   </button>
 
                   <AnimatePresence>
@@ -1667,8 +1648,8 @@ export function NativePlayer({
                   </AnimatePresence>
                 </div>
 
-                <button onClick={toggleFs} className="text-white/60 hover:text-white transition-colors p-2">
-                  {fullscreen ? <Minimize className="w-[18px] h-[18px]" strokeWidth={1.5} /> : <Maximize className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                <button onClick={toggleFs} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                  {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                 </button>
               </div>
             </div>
