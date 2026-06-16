@@ -571,7 +571,7 @@ export function Navbar() {
 
         {/* Connexion desktop */}
         {!user && (
-          <div className="pointer-events-auto ml-auto hidden md:flex">
+          <div className="pointer-events-auto ml-auto hidden md:flex" style={{ marginRight: '1rem' }}>
             <Link href="/login">
               <div
                 className="flex items-center gap-2 px-5 py-2 rounded-full text-white text-[13px] font-semibold tracking-wide transition-all duration-200 hover:bg-white/10"
