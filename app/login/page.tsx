@@ -25,6 +25,13 @@ function LoginContent() {
   const router = useRouter()
   const { refresh } = useSession()
   const error = searchParams.get('error')
+  const redirectParam = searchParams.get('redirect')
+
+  // N'accepte que les chemins relatifs internes (évite les redirections vers un autre domaine)
+  const safeRedirect = redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+    ? redirectParam
+    : '/'
+  const isDownloadIntent = safeRedirect.includes('download=1')
 
   const [tab, setTab] = useState<'login' | 'register'>('login')
   const [showPassword, setShowPassword] = useState(false)
@@ -52,7 +59,7 @@ function LoginContent() {
       if (!res.ok) {
         setLocalError(errorMessages[data.error] || data.error || 'Une erreur est survenue.')
       } else {
-        window.location.replace('/')
+        window.location.replace(safeRedirect)
       }
     } catch (e) {
       setLocalError('Une erreur est survenue.')
@@ -82,7 +89,9 @@ function LoginContent() {
             {tab === 'login' ? 'Bon retour' : 'Rejoindre l\'élite'}
           </h1>
           <p className="text-white/40 text-sm">
-            {tab === 'login' ? 'Connectez-vous pour continuer votre session.' : 'Créez votre compte en quelques secondes.'}
+            {isDownloadIntent
+              ? 'Connectez-vous pour télécharger ce contenu.'
+              : tab === 'login' ? 'Connectez-vous pour continuer votre session.' : 'Créez votre compte en quelques secondes.'}
           </p>
         </div>
 
@@ -99,7 +108,7 @@ function LoginContent() {
         </AnimatePresence>
 
         {/* Discord button */}
-        <Link href="/api/auth/discord">
+        <Link href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
             className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 font-semibold text-white text-base mb-6 transition-all"
             style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)' }}>

@@ -222,7 +222,6 @@ export function EmbedPlayer({
       setBuffering(false)
       setInitialLoading(false)
       setShowError(false)
-      sessionStorage.removeItem('player_reload_count')
       if (errorTimer.current) clearTimeout(errorTimer.current)
     })
     v.addEventListener('progress', () => { if (v.buffered.length > 0) setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100) })
@@ -246,24 +245,10 @@ export function EmbedPlayer({
     return () => window.removeEventListener('keydown', fn)
   }, [playing, showEpisodes])
 
-  const autoReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // 5s auto-reload up to 3 times if video hasn't started
-  useEffect(() => {
-    if (!initialLoading) {
-      if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current)
-      return
-    }
-    const reloadCount = parseInt(sessionStorage.getItem('player_reload_count') || '0')
-    if (reloadCount >= 3) return
-    autoReloadTimer.current = setTimeout(() => {
-      if (initialLoading) {
-        sessionStorage.setItem('player_reload_count', String(reloadCount + 1))
-        window.location.reload()
-      }
-    }, 5000)
-    return () => { if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current) }
-  }, [initialLoading])
+  // Auto-reload supprimé : provoquait des window.location.reload() en boucle
+  // (jusqu'à 3x) dès qu'un stream HLS mettait plus de 5s à démarrer, ce qui
+  // est fréquent et normal. Le timeout d'erreur de 30s ci-dessous suffit à
+  // gérer les vrais cas de blocage, sans recharger toute la page.
 
   // 30s error timeout — dépend UNIQUEMENT de initialLoading
   // Les valeurs dynamiques (title, season, episode...) passent par des refs

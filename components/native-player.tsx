@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, Play, Pause, Volume2, VolumeX,
   Maximize, Minimize, SkipBack, SkipForward, Cast,
-  Film, Loader2, List, X, ChevronDown, ChevronUp, Settings, Download
+  Film, Loader2, List, X, ChevronDown, ChevronUp, Settings, Download,
+  Lock, LogIn
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Hls from 'hls.js'
@@ -288,6 +290,15 @@ export function NativePlayer({
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
   const [currentDownloadUrl, setCurrentDownloadUrl] = useState<string | null>(downloadUrl)
   const [isDownloading, setIsDownloading] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  // Modale "il faut être connecté" affichée quand on clique sur télécharger sans session
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  // true uniquement si on revient du flow "Connexion" déclenché depuis la modale de téléchargement
+  // (?download=1 dans l'URL ET une session active) → fait apparaître le bouton "Lancer le téléchargement"
+  const [downloadReady, setDownloadReady] = useState(
+    () => searchParams.get('download') === '1' && !!userId
+  )
 
   const getDisplayTitle = (season: number, episode: number) =>
     type === 'series' && seriesName
@@ -779,6 +790,53 @@ export function NativePlayer({
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
   }, [playing, showEpisodes])
+
+  // ─── Téléchargement ─────────────────────────────────────────────────────────
+  const triggerDownload = useCallback(async () => {
+    if (!currentDownloadUrl || isDownloading) return
+    setIsDownloading(true)
+    try {
+      const r = await fetch('/api/admin/resolve-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: currentDownloadUrl }),
+      })
+      if (!r.ok) throw new Error('resolve failed')
+      const d = await r.json()
+      if (!d.url || d.error) throw new Error(d.error || 'no url')
+      // Créer un lien invisible et cliquer dessus pour télécharger
+      const a = document.createElement('a')
+      a.href = d.url
+      a.setAttribute('download', '')
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => document.body.removeChild(a), 1000)
+    } catch {
+      window.open(currentDownloadUrl, '_blank')
+    } finally {
+      setIsDownloading(false)
+    }
+  }, [currentDownloadUrl, isDownloading])
+
+  // Redirige vers /login avec un retour automatique sur cette page (?download=1)
+  // pour faire apparaître le bouton "Lancer le téléchargement" une fois connecté
+  const goToLoginForDownload = useCallback(() => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('download', '1')
+    const redirectTarget = `${url.pathname}?${url.searchParams.toString()}`
+    router.push(`/login?redirect=${encodeURIComponent(redirectTarget)}`)
+  }, [router])
+
+  // Consomme le flag ?download=1 : lance le téléchargement puis nettoie l'URL
+  const launchDownloadAfterLogin = useCallback(async () => {
+    await triggerDownload()
+    setDownloadReady(false)
+    const url = new URL(window.location.href)
+    url.searchParams.delete('download')
+    const next = url.searchParams.toString()
+    router.replace(`${url.pathname}${next ? `?${next}` : ''}`)
+  }, [triggerDownload, router])
 
   // ─── Controls ───────────────────────────────────────────────────────────────
   const togglePlay = () => {
@@ -1315,32 +1373,14 @@ export function NativePlayer({
                 {currentDownloadUrl && (
                   <button
                     disabled={isDownloading}
-                    onClick={async e => {
+                    onClick={e => {
                       e.stopPropagation()
                       if (isDownloading) return
-                      setIsDownloading(true)
-                      try {
-                        const r = await fetch('/api/admin/resolve-download', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ url: currentDownloadUrl }),
-                        })
-                        if (!r.ok) throw new Error('resolve failed')
-                        const d = await r.json()
-                        if (!d.url || d.error) throw new Error(d.error || 'no url')
-                        // Créer un lien invisible et cliquer dessus pour télécharger
-                        const a = document.createElement('a')
-                        a.href = d.url
-                        a.setAttribute('download', '')
-                        a.style.display = 'none'
-                        document.body.appendChild(a)
-                        a.click()
-                        setTimeout(() => document.body.removeChild(a), 1000)
-                      } catch {
-                        window.open(currentDownloadUrl, '_blank')
-                      } finally {
-                        setIsDownloading(false)
+                      if (!userId) {
+                        setShowLoginPrompt(true)
+                        return
                       }
+                      triggerDownload()
                     }}
                     className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
                     title="Télécharger"
@@ -1599,6 +1639,81 @@ export function NativePlayer({
               onSelectEpisodeApi={handleSelectEpisodeFromApi}
             />
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Bandeau "Lancer le téléchargement" — visible seulement au retour du flow
+          de connexion déclenché depuis la modale de téléchargement. Indépendant
+          de showControls pour rester visible même si la souris ne bouge pas. */}
+      <AnimatePresence>
+        {downloadReady && currentDownloadUrl && (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="absolute top-5 left-1/2 -translate-x-1/2 z-[70] pointer-events-auto"
+          >
+            <button
+              disabled={isDownloading}
+              onClick={launchDownloadAfterLogin}
+              className="flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-bold text-white shadow-2xl transition-all disabled:opacity-60"
+              style={{ background: 'rgba(229,9,20,0.92)', border: '1px solid rgba(229,9,20,0.6)', backdropFilter: 'blur(8px)' }}
+            >
+              {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Lancer le téléchargement
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modale "Connexion requise" — affichée quand on clique sur télécharger sans session */}
+      <AnimatePresence>
+        {showLoginPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[70] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+            onClick={() => setShowLoginPrompt(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="mx-4 rounded-2xl p-8 flex flex-col items-center text-center max-w-sm w-full"
+              style={{ background: 'rgba(18,8,8,0.95)', border: '1px solid rgba(229,9,20,0.3)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
+                style={{ background: 'rgba(229,9,20,0.1)', border: '1px solid rgba(229,9,20,0.3)' }}>
+                <Lock className="w-7 h-7 text-red-500" />
+              </div>
+              <h3 className="text-white font-bold text-lg mb-2">Connexion requise</h3>
+              <p className="text-white/50 text-sm leading-relaxed mb-6">
+                Vous devez être connecté pour télécharger ce contenu.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors text-center"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={goToLoginForDownload}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2"
+                  style={{ background: 'rgba(229,9,20,0.85)', border: '1px solid rgba(229,9,20,0.5)' }}
+                >
+                  <LogIn className="w-4 h-4" />
+                  Connexion
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

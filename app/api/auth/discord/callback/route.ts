@@ -13,8 +13,14 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+  // "state" porte l'URL de retour souhaitée (transmise par /api/auth/discord).
+  // On ne garde que les chemins relatifs internes, jamais une URL externe.
+  const state = searchParams.get('state')
+  const safeRedirect = state && state.startsWith('/') && !state.startsWith('//') ? state : '/'
+  const redirectQuery = safeRedirect !== '/' ? `&redirect=${encodeURIComponent(safeRedirect)}` : ''
+
   if (error || !code) {
-    return NextResponse.redirect(new URL('/login?error=discord_denied', appUrl))
+    return NextResponse.redirect(new URL(`/login?error=discord_denied${redirectQuery}`, appUrl))
   }
 
   try {
@@ -32,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok) {
       console.error('Token error:', await tokenRes.text())
-      return NextResponse.redirect(new URL('/login?error=token_failed', appUrl))
+      return NextResponse.redirect(new URL(`/login?error=token_failed${redirectQuery}`, appUrl))
     }
 
     const { access_token } = await tokenRes.json()
@@ -42,7 +48,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!userRes.ok) {
-      return NextResponse.redirect(new URL('/login?error=user_failed', appUrl))
+      return NextResponse.redirect(new URL(`/login?error=user_failed${redirectQuery}`, appUrl))
     }
 
     const discordUser = await userRes.json()
@@ -90,14 +96,14 @@ export async function GET(request: NextRequest) {
         .single()
       if (insertErr) {
         console.error('Insert error:', insertErr)
-        return NextResponse.redirect(new URL('/login?error=db_failed', appUrl))
+        return NextResponse.redirect(new URL(`/login?error=db_failed${redirectQuery}`, appUrl))
       }
       dbUser = data
     }
 
     // Check banned / disabled before creating session
     if (dbUser.is_banned) {
-      return NextResponse.redirect(new URL('/login?error=banned', appUrl))
+      return NextResponse.redirect(new URL(`/login?error=banned${redirectQuery}`, appUrl))
     }
     if (dbUser.is_disabled) {
       const reason = encodeURIComponent(dbUser.disabled_reason || 'Compte désactivé temporairement.')
@@ -118,7 +124,7 @@ export async function GET(request: NextRequest) {
 
     const token = await createSession(sessionUser)
 
-    const response = NextResponse.redirect(new URL('/', appUrl))
+    const response = NextResponse.redirect(new URL(safeRedirect, appUrl))
     response.cookies.set({
       name: 'session',
       value: token,
@@ -132,6 +138,6 @@ export async function GET(request: NextRequest) {
     return response
   } catch (err) {
     console.error('Auth error:', err)
-    return NextResponse.redirect(new URL('/login?error=auth_failed', appUrl))
+    return NextResponse.redirect(new URL(`/login?error=auth_failed${redirectQuery}`, appUrl))
   }
 }
