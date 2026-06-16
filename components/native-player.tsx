@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Play, Pause, Volume2, VolumeX,
   Maximize, Minimize, SkipBack, SkipForward, Cast,
@@ -291,14 +291,8 @@ export function NativePlayer({
   const [currentDownloadUrl, setCurrentDownloadUrl] = useState<string | null>(downloadUrl)
   const [isDownloading, setIsDownloading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   // Modale "il faut être connecté" affichée quand on clique sur télécharger sans session
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
-  // true uniquement si on revient du flow "Connexion" déclenché depuis la modale de téléchargement
-  // (?download=1 dans l'URL ET une session active) → fait apparaître le bouton "Lancer le téléchargement"
-  const [downloadReady, setDownloadReady] = useState(
-    () => searchParams.get('download') === '1' && !!userId
-  )
 
   const getDisplayTitle = (season: number, episode: number) =>
     type === 'series' && seriesName
@@ -819,24 +813,14 @@ export function NativePlayer({
     }
   }, [currentDownloadUrl, isDownloading])
 
-  // Redirige vers /login avec un retour automatique sur cette page (?download=1)
-  // pour faire apparaître le bouton "Lancer le téléchargement" une fois connecté
+  // Redirige vers /login avec un retour automatique sur cette page (?download=1,
+  // utilisé par la page de login pour afficher un message contextuel)
   const goToLoginForDownload = useCallback(() => {
     const url = new URL(window.location.href)
     url.searchParams.set('download', '1')
     const redirectTarget = `${url.pathname}?${url.searchParams.toString()}`
     router.push(`/login?redirect=${encodeURIComponent(redirectTarget)}`)
   }, [router])
-
-  // Consomme le flag ?download=1 : lance le téléchargement puis nettoie l'URL
-  const launchDownloadAfterLogin = useCallback(async () => {
-    await triggerDownload()
-    setDownloadReady(false)
-    const url = new URL(window.location.href)
-    url.searchParams.delete('download')
-    const next = url.searchParams.toString()
-    router.replace(`${url.pathname}${next ? `?${next}` : ''}`)
-  }, [triggerDownload, router])
 
   // ─── Controls ───────────────────────────────────────────────────────────────
   const togglePlay = () => {
@@ -1639,31 +1623,6 @@ export function NativePlayer({
               onSelectEpisodeApi={handleSelectEpisodeFromApi}
             />
           </>
-        )}
-      </AnimatePresence>
-
-      {/* Bandeau "Lancer le téléchargement" — visible seulement au retour du flow
-          de connexion déclenché depuis la modale de téléchargement. Indépendant
-          de showControls pour rester visible même si la souris ne bouge pas. */}
-      <AnimatePresence>
-        {downloadReady && currentDownloadUrl && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute top-5 left-1/2 -translate-x-1/2 z-[70] pointer-events-auto"
-          >
-            <button
-              disabled={isDownloading}
-              onClick={launchDownloadAfterLogin}
-              className="flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-bold text-white shadow-2xl transition-all disabled:opacity-60"
-              style={{ background: 'rgba(229,9,20,0.92)', border: '1px solid rgba(229,9,20,0.6)', backdropFilter: 'blur(8px)' }}
-            >
-              {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Lancer le téléchargement
-            </button>
-          </motion.div>
         )}
       </AnimatePresence>
 
