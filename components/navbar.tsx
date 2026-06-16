@@ -572,13 +572,26 @@ export function Navbar() {
         {!user && (
           <div className="pointer-events-auto ml-auto hidden md:flex">
             <Link href="/login">
-              <div className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 transition-colors px-3.5 py-1.5 rounded-full text-white font-semibold text-[13px]">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <div
+                className="relative flex items-center gap-2.5 px-5 py-2 rounded-full text-white font-bold text-[14px] overflow-hidden group transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, #e53935 0%, #b71c1c 100%)',
+                  boxShadow: '0 4px 20px rgba(229,57,53,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,100,100,0.3)',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                {/* Shine effect */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%)' }}
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                   <polyline points="10 17 15 12 10 7"/>
                   <line x1="15" y1="12" x2="3" y2="12"/>
                 </svg>
-                Connexion
+                <span className="relative z-10">Connexion</span>
               </div>
             </Link>
           </div>
