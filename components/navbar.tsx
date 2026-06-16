@@ -169,7 +169,7 @@ export function Navbar() {
   })
   const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const mobileBellRef = useRef<HTMLButtonElement>(null)
   const unreadCount = notifications.filter(n => !n.is_read).length
@@ -581,10 +581,79 @@ export function Navbar() {
                   letterSpacing: '0.02em',
                 }}
               >
+                <LogOut className="w-3.5 h-3.5 rotate-180" />
                 Connexion
               </div>
             </Link>
           </div>
+        )}
+
+        {/* Logout modal */}
+        {mounted && createPortal(
+          <AnimatePresence>
+            {showLogoutModal && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[200]"
+                  style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+                  onClick={() => setShowLogoutModal(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  className="fixed z-[201] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] rounded-3xl overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(160deg, rgba(30,10,10,0.98) 0%, rgba(18,8,8,0.99) 100%)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: '0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)',
+                  }}
+                >
+                  {/* Glow rouge haut */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-20 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse, rgba(220,38,38,0.25) 0%, transparent 70%)', filter: 'blur(12px)' }} />
+
+                  <div className="relative px-8 pt-8 pb-6 flex flex-col items-center text-center">
+                    {/* Icône */}
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+                      style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.3), rgba(180,10,10,0.2))', border: '1px solid rgba(220,38,38,0.3)', boxShadow: '0 8px 24px rgba(220,38,38,0.2)' }}>
+                      <LogOut className="w-7 h-7 text-red-400" />
+                    </div>
+
+                    <h2 className="text-white font-black text-xl mb-2">Déconnexion</h2>
+                    <p className="text-white/40 text-sm leading-relaxed mb-7">
+                      Tu vas être déconnecté de ton compte StreamSelf. Tu pourras te reconnecter à tout moment.
+                    </p>
+
+                    {/* Bouton confirmer */}
+                    <button
+                      onClick={async () => { setShowLogoutModal(false); await fetch('/api/auth/logout'); window.location.href = '/' }}
+                      className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-white font-bold text-[15px] mb-3 transition-all active:scale-95"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                        boxShadow: '0 4px 24px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Oui, me déconnecter
+                    </button>
+
+                    {/* Bouton annuler */}
+                    <button
+                      onClick={() => setShowLogoutModal(false)}
+                      className="w-full py-4 rounded-2xl text-white/50 font-semibold text-[15px] transition-all hover:text-white/80 hover:bg-white/5"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
 
         {/* Mobile — Search toujours visible + Bell si connecté */}
@@ -914,7 +983,7 @@ export function Navbar() {
                         <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
                       </Link>
                     )}
-                    <button onClick={async () => { await fetch('/api/auth/logout'); window.location.href = '/' }}
+                    <button onClick={() => setShowLogoutModal(true)}
                       className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-red-500/[0.08] transition-colors"
                       style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}>
                       <LogOut className="w-4 h-4 text-red-400/70 flex-shrink-0" />
