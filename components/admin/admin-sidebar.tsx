@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Database, Film, Tv, Users, MessageSquare,
-  Settings, Home, LogOut, Bell, Headphones as HeadphonesIcon, Zap, Sparkles, Menu, X,
+  Settings, Home, LogOut, Bell, Headphones as HeadphonesIcon, Zap, Sparkles, Menu, X, Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/auth'
@@ -18,6 +18,7 @@ interface AdminSidebarProps {
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/stats', label: 'Stats Actifs', icon: Activity },
   { href: '/admin/movies', label: 'Films', icon: Film },
   { href: '/admin/series', label: 'Séries', icon: Tv },
   { href: '/admin/recommendations', label: 'Recommandations', icon: Sparkles },

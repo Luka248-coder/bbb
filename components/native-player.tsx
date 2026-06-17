@@ -313,6 +313,7 @@ export function NativePlayer({
   const [buffering, setBuffering] = useState(true)
   const [fetchingEpisode, setFetchingEpisode] = useState(false)
   const [showError, setShowError] = useState(false)
+  const [locked, setLocked] = useState(false)
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoStarted = useRef(false)
 
@@ -339,6 +340,30 @@ export function NativePlayer({
       })
       .catch(() => {})
   }, [tmdbId, type])
+
+  // ─── Tracking session active ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!tmdbId || !title) return
+    const send = () => {
+      fetch('/api/track-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          username: null,
+          contentType: type,
+          tmdbId,
+          title: displayTitle,
+          poster: poster || null,
+          season: type === 'series' ? currentSeason : null,
+          episode: type === 'series' ? currentEpisode : null,
+        }),
+      }).catch(() => {})
+    }
+    send() // envoi immédiat
+    const interval = setInterval(send, 30000) // toutes les 30s
+    return () => clearInterval(interval)
+  }, [tmdbId, type, displayTitle, currentSeason, currentEpisode])
 
   const [showVol, setShowVol] = useState(false)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
@@ -1319,8 +1344,29 @@ export function NativePlayer({
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="absolute inset-0 flex flex-col justify-between pointer-events-none"
           >
+            {/* Lock overlay — quand verrouillé, bouton centré pour déverrouiller */}
+            {locked && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-auto"
+                onClick={e => e.stopPropagation()}
+              >
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={() => setLocked(false)}
+                  className="w-16 h-16 rounded-full flex items-center justify-center transition-all"
+                  style={{ background: 'rgba(40,40,40,0.85)', backdropFilter: 'blur(8px)' }}
+                  title="Déverrouiller"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </motion.button>
+              </div>
+            )}
+
             {/* Top bar */}
-            <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
+            <div className={`pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4 ${locked ? 'pointer-events-none opacity-0' : ''}`}>
               <Link href={backUrl} className="shrink-0">
                 <button className="w-10 h-10 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 text-white transition-all duration-200 active:scale-95">
                   <ArrowLeft className="w-5 h-5" />
@@ -1340,101 +1386,124 @@ export function NativePlayer({
             </div>
 
             {/* Bottom controls */}
-            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-              <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
+            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
 
+              {/* Progress bar */}
               <div
                 ref={progressRef}
-                className="relative w-full cursor-pointer group/bar mb-4"
-                style={{ height: '4px' }}
-                onClick={seek}
-                onMouseMove={onProgressHover}
+                className="relative w-full cursor-pointer group/bar mb-5"
+                style={{ height: '3px' }}
+                onClick={locked ? undefined : seek}
+                onMouseMove={locked ? undefined : onProgressHover}
                 onMouseLeave={() => setHoverTime(null)}
-                onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.height = '6px' }}
-                onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.height = '4px' }}
+                onMouseOver={e => { if (!locked) (e.currentTarget as HTMLDivElement).style.height = '5px' }}
+                onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.height = '3px' }}
               >
-                <div className="absolute inset-0 bg-white/20 rounded-full" />
-                <div className="absolute inset-y-0 left-0 bg-white/30 rounded-full" style={{ width: `${buffered}%` }} />
-                <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${progress}%` }}>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" />
+                <div className="absolute inset-0 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${buffered}%`, background: 'rgba(255,255,255,0.25)' }} />
+                <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${progress}%`, background: 'white' }}>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" />
                 </div>
-                {hoverTime !== null && (
+                {hoverTime !== null && !locked && (
                   <div className="absolute -top-8 bg-black/80 text-white text-xs px-2 py-1 rounded-lg pointer-events-none -translate-x-1/2 whitespace-nowrap" style={{ left: hoverX }}>
                     {fmt(hoverTime)}
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-1 min-w-0">
-                <button onClick={() => skip(-10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                  <SkipBack className="w-5 h-5" />
-                </button>
-                <button onClick={togglePlay} className="text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                  {playing
-                    ? <Pause className="w-7 h-7 fill-white" />
-                    : <Play className="w-7 h-7 fill-white ml-0.5" />}
-                </button>
-                <button onClick={() => skip(10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                  <SkipForward className="w-5 h-5" />
+              {/* Buttons row */}
+              <div className="flex items-center gap-3">
+
+                {/* Left group */}
+                <button onClick={locked ? undefined : () => skip(-10)} className={`transition-colors ${locked ? 'opacity-30 cursor-not-allowed' : 'text-white/70 hover:text-white'}`}>
+                  <SkipBack className="w-5 h-5" strokeWidth={1.5} />
                 </button>
 
-                <div className="hidden sm:flex items-center gap-1 ml-1" onMouseEnter={() => setShowVol(true)} onMouseLeave={() => setShowVol(false)}>
-                  <button onClick={toggleMute} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                    {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                <button
+                  onClick={locked ? undefined : togglePlay}
+                  className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all flex-shrink-0 ${locked ? 'opacity-30 cursor-not-allowed border-white/20' : 'border-white/40 hover:border-white hover:bg-white/10'}`}
+                >
+                  {playing
+                    ? <Pause className="w-4 h-4 text-white" strokeWidth={2} />
+                    : <Play className="w-4 h-4 text-white ml-0.5" strokeWidth={2} />}
+                </button>
+
+                <button onClick={locked ? undefined : () => skip(10)} className={`transition-colors ${locked ? 'opacity-30 cursor-not-allowed' : 'text-white/70 hover:text-white'}`}>
+                  <SkipForward className="w-5 h-5" strokeWidth={1.5} />
+                </button>
+
+                {/* Volume */}
+                <div className={`hidden sm:flex items-center gap-1 ${locked ? 'opacity-30 pointer-events-none' : ''}`}
+                  onMouseEnter={() => setShowVol(true)} onMouseLeave={() => setShowVol(false)}>
+                  <button onClick={toggleMute} className="text-white/70 hover:text-white transition-colors">
+                    {muted || volume === 0 ? <VolumeX className="w-5 h-5" strokeWidth={1.5} /> : <Volume2 className="w-5 h-5" strokeWidth={1.5} />}
                   </button>
                   <AnimatePresence>
                     {showVol && (
-                      <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 80, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="overflow-hidden">
-                        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={e => changeVolume(+e.target.value)} className="w-20 accent-primary cursor-pointer" />
+                      <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 72, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="overflow-hidden">
+                        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={e => changeVolume(+e.target.value)} className="w-[72px] accent-white cursor-pointer" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                <span className="text-white/50 text-sm font-mono ml-1 sm:ml-2 tabular-nums text-xs sm:text-sm">
-                  {fmt(currentTime)} / {fmt(duration)}
+                {/* Time */}
+                <span className="text-white/60 text-xs font-mono tabular-nums" style={{ letterSpacing: '0.04em' }}>
+                  {fmt(currentTime)}&nbsp;<span className="text-white/25 mx-0.5">|</span>&nbsp;{fmt(duration)}
                 </span>
 
                 <div className="flex-1" />
 
+                {/* Right group */}
                 {type === 'series' && (
-                  <button onClick={() => setShowEpisodes(true)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                    <List className="w-5 h-5" />
+                  <button onClick={locked ? undefined : () => setShowEpisodes(true)} className={`transition-colors ${locked ? 'opacity-30 cursor-not-allowed' : 'text-white/70 hover:text-white'}`}>
+                    <List className="w-5 h-5" strokeWidth={1.5} />
                   </button>
                 )}
 
                 <button
-                  onClick={() => {
+                  onClick={() => setLocked(l => !l)}
+                  className={`transition-all ${locked ? 'text-white' : 'text-white/70 hover:text-white'}`}
+                  title={locked ? 'Déverrouiller' : 'Verrouiller'}
+                >
+                  {locked
+                    ? <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    : <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                  }
+                </button>
+
+                <button
+                  onClick={locked ? undefined : () => {
                     // @ts-ignore
                     if (videoRef.current?.webkitShowPlaybackTargetPicker) videoRef.current.webkitShowPlaybackTargetPicker()
                   }}
-                  className="hidden sm:flex text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
+                  className={`hidden sm:flex transition-colors ${locked ? 'opacity-30 cursor-not-allowed' : 'text-white/70 hover:text-white'}`}
                 >
-                  <Cast className="w-5 h-5" />
+                  <Cast className="w-5 h-5" strokeWidth={1.5} />
                 </button>
 
                 {currentDownloadUrl && (
                   <button
-                    disabled={isDownloading}
+                    disabled={isDownloading || locked}
                     onClick={e => {
                       e.stopPropagation()
-                      if (isDownloading) return
+                      if (isDownloading || locked) return
                       if (!userId) { setShowLoginPrompt(true); return }
                       triggerDownload()
                     }}
-                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
+                    className={`transition-colors disabled:opacity-30 ${locked ? 'cursor-not-allowed' : 'text-white/70 hover:text-white'}`}
                     title="Télécharger"
                   >
-                    {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                    {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" strokeWidth={1.5} />}
                   </button>
                 )}
 
                 <div ref={settingsRef} className="relative">
                   <button
-                    onClick={() => setShowSettings(s => !s)}
-                    className={`p-2.5 rounded-xl hover:bg-white/10 transition-all ${showSettings ? 'text-white bg-white/10' : 'text-white/70 hover:text-white'}`}
+                    onClick={locked ? undefined : () => setShowSettings(s => !s)}
+                    className={`transition-all ${locked ? 'opacity-30 cursor-not-allowed' : showSettings ? 'text-white' : 'text-white/70 hover:text-white'}`}
                   >
-                    <Settings className="w-5 h-5" />
+                    <Settings className="w-5 h-5" strokeWidth={1.5} />
                   </button>
 
                   <AnimatePresence>
