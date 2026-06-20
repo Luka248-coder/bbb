@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PURSTREAM_BASE = 'https://api.purstream.ch/api/v1'
+const PURSTREAM_BASE = 'https://api.purstream.mx/api/v1'
 
 const HEADERS = {
   'Accept': 'application/json, text/plain, */*',
   'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Referer': 'https://purstream.ch/',
-  'Origin': 'https://purstream.ch',
+  'Referer': 'https://purstream.mx/',
+  'Origin': 'https://purstream.mx',
   'sec-fetch-dest': 'empty',
   'sec-fetch-mode': 'cors',
   'sec-fetch-site': 'same-origin',

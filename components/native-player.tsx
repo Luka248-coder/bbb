@@ -687,7 +687,7 @@ export function NativePlayer({
   useEffect(() => {
     if (initialVideoUrl || !tmdbId) return
 
-    const PURSTREAM = 'https://api.purstream.ch/api/v1'
+    const PURSTREAM = 'https://api.purstream.mx/api/v1'
     const contentTitle = seriesName || initialTitle
 
     ;(async () => {
