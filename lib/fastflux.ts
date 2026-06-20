@@ -40,23 +40,42 @@ function extractSeasonEpisode(url: string): { season: number; episode: number } 
 }
 
 // ─── Parse toutes les URLs d'un sheet en épisodes (comme le site de référence) ─
+// Sélectionne la meilleure URL : premium > free, 1080p > 720p
+function bestUrl(urls: { url: string; name?: string }[]): string | null {
+  if (!urls || urls.length === 0) return null
+  // Priorité 1 : premium 1080p
+  const p1080 = urls.find(u => (u.name || '').toLowerCase().includes('premium') && (u.name || '').includes('1080p'))
+  if (p1080) return p1080.url
+  // Priorité 2 : premium (toute qualité)
+  const prem = urls.find(u => (u.name || '').toLowerCase().includes('premium'))
+  if (prem) return prem.url
+  // Priorité 3 : 1080p free
+  const f1080 = urls.find(u => (u.name || '').includes('1080p'))
+  if (f1080) return f1080.url
+  // Fallback : premier disponible
+  return urls[0].url
+}
+
 function parseEpisodes(urls: { url: string; name?: string }[]): {
   season: number; episode: number; url: string; name: string
 }[] {
-  const episodes: { season: number; episode: number; url: string; name: string }[] = []
+  // Grouper toutes les URLs par saison/épisode
+  const map = new Map<string, { url: string; name: string }[]>()
 
   urls.forEach((item) => {
     const se = extractSeasonEpisode(item.url)
     if (!se) return
-    const { season, episode } = se
-    const existing = episodes.find(e => e.season === season && e.episode === episode)
-    const is1080 = (item.name || '').includes('1080p')
-    if (!existing) {
-      episodes.push({ season, episode, url: item.url, name: item.name || '' })
-    } else if (is1080 && !existing.name.includes('1080p')) {
-      existing.url = item.url
-      existing.name = item.name || ''
-    }
+    const key = `${se.season}-${se.episode}`
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push({ url: item.url, name: item.name || '' })
+  })
+
+  const episodes: { season: number; episode: number; url: string; name: string }[] = []
+  map.forEach((candidates, key) => {
+    const [s, e] = key.split('-').map(Number)
+    const best = bestUrl(candidates)!
+    const bestEntry = candidates.find(c => c.url === best)!
+    episodes.push({ season: s, episode: e, url: best, name: bestEntry.name })
   })
 
   episodes.sort((a, b) => a.season - b.season || a.episode - b.episode)
@@ -139,7 +158,7 @@ async function extractVideoUrl(
     const items = json?.data?.items ?? json?.data ?? json
 
     if (type === 'movie') {
-      if (items.urls?.length > 0) return items.urls[0].url
+      if (items.urls?.length > 0) return bestUrl(items.urls)
       return items.video_url || items.url || null
     }
 
@@ -158,7 +177,7 @@ async function extractVideoUrl(
         const ep = s.episodes.find((e: any) =>
           Number(e.number ?? e.episode ?? e.episode_number) === episodeNum
         )
-        if (ep?.urls?.length > 0) return ep.urls[0].url
+        if (ep?.urls?.length > 0) return bestUrl(ep.urls)
         if (ep?.url) return ep.url
       }
     }
@@ -170,7 +189,7 @@ async function extractVideoUrl(
         const n = Number(e.episode ?? e.episode_number ?? e.episodeNumber ?? e.number)
         return s === seasonNum && n === episodeNum
       })
-      if (ep?.urls?.length > 0) return ep.urls[0].url
+      if (ep?.urls?.length > 0) return bestUrl(ep.urls)
       if (ep?.url) return ep.url
     }
 
@@ -181,7 +200,7 @@ async function extractVideoUrl(
         const n = Number(e.episode ?? e.episode_number ?? e.number)
         return s === seasonNum && n === episodeNum
       })
-      if (ep?.urls?.length > 0) return ep.urls[0].url
+      if (ep?.urls?.length > 0) return bestUrl(ep.urls)
       if (ep?.url) return ep.url
     }
 
