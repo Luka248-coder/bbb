@@ -78,12 +78,15 @@ export default function ProfilesPage() {
     setDiscordLoading(true)
     try {
       const res = await fetch(`/api/discord-avatar?id=${discordId.trim()}`)
-      if (res.ok) {
-        const data = await res.json()
-        if (data.url) setFormAvatar(data.url)
-        if (data.error) alert(data.error)
+      const data = await res.json()
+      if (res.ok && data.url) {
+        setFormAvatar(data.url)
+        // Mettre à jour le nom si vide ou par défaut
+        if (data.username && (formName === 'Nouveau Profil' || formName === '')) {
+          setFormName(data.username)
+        }
       } else {
-        alert('ID Discord introuvable ou invalide')
+        alert(data.error || 'ID Discord introuvable.\n\nAstuce : ajoute le bot Lanyard sur ton serveur Discord, ou utilise un token bot dans les variables d\'env Vercel (DISCORD_BOT_TOKEN).')
       }
     } catch {
       alert('Erreur de connexion')
