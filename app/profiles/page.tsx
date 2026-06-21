@@ -77,17 +77,17 @@ export default function ProfilesPage() {
     if (!discordId.trim()) return
     setDiscordLoading(true)
     try {
-      // Discord CDN avatar format
-      const res = await fetch(`https://api.lanyard.rest/v1/users/${discordId.trim()}`)
+      const res = await fetch(`/api/discord-avatar?id=${discordId.trim()}`)
       if (res.ok) {
         const data = await res.json()
-        const avatar = data.data?.discord_user?.avatar
-        const id = data.data?.discord_user?.id
-        if (avatar && id) {
-          setFormAvatar(`https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=256`)
-        }
+        if (data.url) setFormAvatar(data.url)
+        if (data.error) alert(data.error)
+      } else {
+        alert('ID Discord introuvable ou invalide')
       }
-    } catch {}
+    } catch {
+      alert('Erreur de connexion')
+    }
     setDiscordLoading(false)
   }
 
@@ -274,7 +274,7 @@ export default function ProfilesPage() {
               background: 'linear-gradient(135deg, rgba(18,18,22,0.98) 0%, rgba(10,10,14,0.99) 100%)',
               border: '1px solid rgba(255,255,255,0.07)',
               boxShadow: '0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04) inset',
-              minHeight: '560px',
+              height: '580px',  /* hauteur FIXE — le scroll est dans le contenu */
             }}
           >
             {/* Glow background */}
