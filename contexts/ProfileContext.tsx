@@ -37,9 +37,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [activeProfile, setActiveProfileState] = useState<Profile | null>(null)
   const [profiles, setProfiles] = useState<Profile[]>([])
 
-  // Charger le profil actif depuis localStorage au démarrage
+  // Charger le profil actif depuis sessionStorage au démarrage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = sessionStorage.getItem(STORAGE_KEY)
     if (stored) {
       try { setActiveProfileState(JSON.parse(stored)) } catch {}
     }
@@ -47,13 +47,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const setActiveProfile = useCallback((profile: Profile | null) => {
     setActiveProfileState(profile)
-    if (profile) localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
-    else localStorage.removeItem(STORAGE_KEY)
+    if (profile) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+    else sessionStorage.removeItem(STORAGE_KEY)
   }, [])
 
   const clearProfile = useCallback(() => {
     setActiveProfileState(null)
-    localStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(STORAGE_KEY)
   }, [])
 
   const loadProfiles = useCallback(async () => {
