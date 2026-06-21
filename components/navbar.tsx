@@ -451,7 +451,14 @@ export function Navbar() {
               </div>
             </button>
 
-            {/* Search inline desktop */}
+          </div>
+        </div>
+
+        {/* Bell + Avatar desktop */}
+        {user && (
+          <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
+
+            {/* Search desktop — déplacé ici à droite */}
             <div ref={searchRef} className="relative flex items-center">
               <AnimatePresence mode="wait">
                 {isSearchOpen ? (
@@ -481,7 +488,7 @@ export function Navbar() {
                   <motion.button
                     key="closed"
                     onClick={() => setIsSearchOpen(true)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all"
+                    className="w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/10 transition-all border border-white/10"
                   >
                     <Search className="w-4 h-4" />
                   </motion.button>
@@ -493,7 +500,7 @@ export function Navbar() {
                 {isSearchOpen && searchResults.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    className="absolute top-12 left-1/2 -translate-x-1/2 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    className="absolute top-12 right-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
                     style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
                   >
                     {searchResults.map(result => {
@@ -525,13 +532,6 @@ export function Navbar() {
                 )}
               </AnimatePresence>
             </div>
-
-          </div>
-        </div>
-
-        {/* Bell + Avatar desktop */}
-        {user && (
-          <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
