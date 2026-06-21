@@ -6,6 +6,8 @@ import { MovieDrawerProvider } from '@/components/movie-drawer'
 import { NavbarWrapper } from '@/components/navbar-wrapper'
 import { GridBackground } from '@/components/grid-background'
 import { PresenceTracker } from '@/components/presence-tracker'
+import { ProfileProvider } from '@/contexts/ProfileContext'
+import { ProfileGate } from '@/components/profile-gate'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -35,13 +37,16 @@ export default function RootLayout({
         <PresenceTracker />
 
         <SessionProvider>
-          <MovieDrawerProvider>
-            <NavbarWrapper />
-
-            <div className="relative" style={{ zIndex: 1 }}>
-              {children}
-            </div>
-          </MovieDrawerProvider>
+          <ProfileProvider>
+            <ProfileGate>
+              <MovieDrawerProvider>
+                <NavbarWrapper />
+                <div className="relative" style={{ zIndex: 1 }}>
+                  {children}
+                </div>
+              </MovieDrawerProvider>
+            </ProfileGate>
+          </ProfileProvider>
         </SessionProvider>
 
         {process.env.NODE_ENV === 'production' && <Analytics />}

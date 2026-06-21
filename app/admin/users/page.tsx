@@ -100,7 +100,9 @@ export default function AdminUsersPage() {
   const [confirm, setConfirm] = useState<{title:string,message:string,action:()=>void}|null>(null)
   const [disableModal, setDisableModal] = useState(false)
   const [ipBanned, setIpBanned] = useState<Record<string,boolean>>({})
-  const [activeTab, setActiveTab] = useState<'info'|'history'|'favorites'|'requests'>('info')
+  const [activeTab, setActiveTab] = useState<'info'|'history'|'favorites'|'requests'|'profiles'>('info')
+  const [userProfiles, setUserProfiles] = useState<any[]>([])
+  const [loadingProfiles, setLoadingProfiles] = useState(false)
 
   const fetchUsers = useCallback(async (p = 0, s = '') => {
     setLoading(true)
@@ -130,8 +132,16 @@ export default function AdminUsersPage() {
   }, [searchInput])
 
   const openUser = async (user: UserData) => {
-    setLoadingDetail(true); setSelected(null); setActiveTab('info')
-    try { const res = await fetch(`/api/auth/admin/users?id=${user.id}`); if (res.ok) setSelected(await res.json()) } catch {}
+    setLoadingDetail(true); setSelected(null); setActiveTab('info'); setUserProfiles([])
+    try {
+      const res = await fetch(`/api/auth/admin/users?id=${user.id}`)
+      if (res.ok) setSelected(await res.json())
+      // Charger les profils
+      setLoadingProfiles(true)
+      const pRes = await fetch(`/api/auth/admin/user-profiles?user_id=${user.id}`)
+      if (pRes.ok) setUserProfiles(await pRes.json())
+      setLoadingProfiles(false)
+    } catch {}
     setLoadingDetail(false)
   }
 
@@ -310,7 +320,7 @@ export default function AdminUsersPage() {
 
             {/* Tabs */}
             <div className="flex border-b border-zinc-800 px-6">
-              {([{id:'info',label:'Infos',icon:User},{id:'history',label:`Historique (${selected.history.length})`,icon:MonitorPlay},{id:'favorites',label:`Favoris (${selected.favorites.length})`,icon:Heart},{id:'requests',label:`Demandes (${selected.requests.length})`,icon:MessageSquare}] as const).map(tab=>{
+              {([{id:'info',label:'Infos',icon:User},{id:'history',label:`Historique (${selected.history.length})`,icon:MonitorPlay},{id:'favorites',label:`Favoris (${selected.favorites.length})`,icon:Heart},{id:'requests',label:`Demandes (${selected.requests.length})`,icon:MessageSquare},{id:'profiles',label:`Profils (${userProfiles.length})`,icon:Users}] as const).map(tab=>{
                 const Icon=tab.icon
                 return <button key={tab.id} onClick={()=>setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab===tab.id?'border-primary text-white':'border-transparent text-zinc-500 hover:text-zinc-300'}`}><Icon className="w-4 h-4"/>{tab.label}</button>
               })}
@@ -385,6 +395,50 @@ export default function AdminUsersPage() {
                           </span>
                         </div>
                       ))
+                    }
+                  </motion.div>
+                )}
+                {activeTab==='profiles'&&(
+                  <motion.div key="profiles" initial={{opacity:0}} animate={{opacity:1}} className="space-y-3">
+                    {loadingProfiles
+                      ? <div className="flex justify-center py-12"><RefreshCw className="w-5 h-5 animate-spin text-zinc-600"/></div>
+                      : userProfiles.length===0
+                        ? <div className="text-center py-12 text-zinc-600"><Users className="w-10 h-10 mx-auto mb-3"/><p>Aucun profil créé</p></div>
+                        : userProfiles.map((p:any)=>(
+                          <div key={p.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+                            <div className="flex items-center gap-3">
+                              {p.avatar_url
+                                ? <Image src={p.avatar_url} alt={p.name} width={44} height={44} className="rounded-full object-cover flex-shrink-0"/>
+                                : <div className="w-11 h-11 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0"><User className="w-5 h-5 text-zinc-500"/></div>
+                              }
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-bold text-white">{p.name}</p>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${p.role==='admin'?'bg-amber-950 text-amber-400 border-amber-800':p.role==='staff'?'bg-blue-950 text-blue-400 border-blue-800':'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
+                                    {p.role==='admin'?'Admin':p.role==='staff'?'Staff':'Utilisateur'}
+                                  </span>
+                                  {p.is_child&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-green-950 text-green-400 border border-green-800 font-bold">Enfant</span>}
+                                  {p.pin&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono">PIN: {p.pin}</span>}
+                                </div>
+                                <p className="text-xs text-zinc-500 mt-0.5">Créé le {new Date(p.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</p>
+                              </div>
+                              {/* Changer le rôle du profil */}
+                              <select
+                                value={p.role}
+                                onChange={async e=>{
+                                  const role=e.target.value
+                                  await fetch('/api/auth/admin/user-profiles',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:p.id,role})})
+                                  setUserProfiles(prev=>prev.map(pr=>pr.id===p.id?{...pr,role}:pr))
+                                }}
+                                className="bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+                              >
+                                <option value="user">Utilisateur</option>
+                                <option value="staff">Staff</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                            </div>
+                          </div>
+                        ))
                     }
                   </motion.div>
                 )}
