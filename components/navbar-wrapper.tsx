@@ -9,6 +9,7 @@ const HIDDEN_PATHS = [
   '/admin',
   '/watch',
   '/embed',
+  '/profiles',
 ]
 
 export function NavbarWrapper() {
