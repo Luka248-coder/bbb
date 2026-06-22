@@ -17,29 +17,33 @@ export async function GET(request: NextRequest) {
         Authorization: `Bot ${token}`,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(5000),
     })
 
+    const body = await r.json()
+
     if (!r.ok) {
-      return NextResponse.json({ error: 'Utilisateur Discord introuvable' }, { status: 404 })
+      console.error('[discord-avatar] API error:', r.status, body)
+      return NextResponse.json({
+        error: `Discord API: ${body?.message || r.status}`,
+        code: body?.code,
+      }, { status: r.status })
     }
 
-    const user = await r.json()
     let url: string
-
-    if (user.avatar) {
-      const ext = user.avatar.startsWith('a_') ? 'gif' : 'png'
-      url = `https://cdn.discordapp.com/avatars/${discordId}/${user.avatar}.${ext}?size=256`
+    if (body.avatar) {
+      const ext = body.avatar.startsWith('a_') ? 'gif' : 'png'
+      url = `https://cdn.discordapp.com/avatars/${discordId}/${body.avatar}.${ext}?size=256`
     } else {
+      // Avatar par défaut basé sur l'ID
       const index = (BigInt(discordId) >> 22n) % 6n
       url = `https://cdn.discordapp.com/embed/avatars/${index}.png`
     }
 
     return NextResponse.json({
       url,
-      username: user.global_name || user.username || null,
+      username: body.global_name || body.username || null,
     })
   } catch (err: any) {
-    return NextResponse.json({ error: 'Erreur réseau : ' + err.message }, { status: 502 })
+    return NextResponse.json({ error: err.message }, { status: 502 })
   }
 }

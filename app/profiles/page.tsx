@@ -81,12 +81,11 @@ export default function ProfilesPage() {
       const data = await res.json()
       if (res.ok && data.url) {
         setFormAvatar(data.url)
-        // Mettre à jour le nom si vide ou par défaut
         if (data.username && (formName === 'Nouveau Profil' || formName === '')) {
           setFormName(data.username)
         }
       } else {
-        alert(data.error || 'ID Discord introuvable.\n\nAstuce : ajoute le bot Lanyard sur ton serveur Discord, ou utilise un token bot dans les variables d\'env Vercel (DISCORD_BOT_TOKEN).')
+        alert(`Erreur Discord: ${data.error || 'Inconnu'}\n\nCodes d'erreur courants:\n- 10013: Utilisateur introuvable (ID incorrect)\n- 401: Token invalide`)
       }
     } catch {
       alert('Erreur de connexion')
