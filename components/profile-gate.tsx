@@ -4,38 +4,60 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useProfile } from '@/contexts/ProfileContext'
 
-// Pages qui ne nécessitent pas de profil sélectionné
-const EXEMPT_PATHS = ['/profiles', '/login', '/api', '/admin', '/embed']
+const EXEMPT_PATHS = ['/profiles', '/login', '/auth', '/api', '/admin', '/embed', '/watch']
 
 export function ProfileGate({ children }: { children: React.ReactNode }) {
-  const { activeProfile, loadProfiles, profiles } = useProfile()
+  const { activeProfile, loadProfiles, initialized } = useProfile()
   const pathname = usePathname()
   const router = useRouter()
-  const [checked, setChecked] = useState(false)
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
+  const isExempt = EXEMPT_PATHS.some(p => pathname.startsWith(p))
+
+  // Vérifier la session une seule fois
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
     fetch('/api/auth/session')
       .then(r => r.ok ? r.json() : null)
-      .then(async (session) => {
+      .then(async session => {
         if (session?.user) {
-          setLoggedIn(true)
+          setIsLoggedIn(true)
           await loadProfiles()
         }
-        setChecked(true)
+        setSessionChecked(true)
       })
-      .catch(() => setChecked(true))
+      .catch(() => setSessionChecked(true))
   }, [])
 
+  // Rediriger vers /profiles si connecté sans profil actif
   useEffect(() => {
-    if (!checked) return
-    if (!loggedIn) return
-    if (EXEMPT_PATHS.some(p => pathname.startsWith(p))) return
+    if (!initialized || !sessionChecked || isExempt) return
+    if (!isLoggedIn) return
     if (!activeProfile) {
       router.replace('/profiles')
     }
-  }, [checked, loggedIn, activeProfile, pathname])
+  }, [initialized, sessionChecked, isLoggedIn, activeProfile, isExempt])
+
+  // Bloquer le rendu tant qu'on n'a pas vérifié
+  const stillChecking = !initialized || !sessionChecked
+  const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt
+
+  if (stillChecking || needsRedirect) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, background: '#000', zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%',
+          border: '2px solid rgba(255,255,255,0.1)',
+          borderTopColor: 'rgba(255,255,255,0.4)',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      </div>
+    )
+  }
 
   return <>{children}</>
 }

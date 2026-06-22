@@ -21,6 +21,7 @@ interface ProfileContextType {
   profiles: Profile[]
   loadProfiles: () => Promise<void>
   clearProfile: () => void
+  initialized: boolean
 }
 
 const ProfileContext = createContext<ProfileContextType>({
@@ -29,6 +30,7 @@ const ProfileContext = createContext<ProfileContextType>({
   profiles: [],
   loadProfiles: async () => {},
   clearProfile: () => {},
+  initialized: false,
 })
 
 const STORAGE_KEY = 'streamself_active_profile'
@@ -36,6 +38,7 @@ const STORAGE_KEY = 'streamself_active_profile'
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [activeProfile, setActiveProfileState] = useState<Profile | null>(null)
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [initialized, setInitialized] = useState(false)
 
   // Charger le profil actif depuis sessionStorage au démarrage
   useEffect(() => {
@@ -43,6 +46,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try { setActiveProfileState(JSON.parse(stored)) } catch {}
     }
+    setInitialized(true)
   }, [])
 
   const setActiveProfile = useCallback((profile: Profile | null) => {
@@ -66,7 +70,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <ProfileContext.Provider value={{ activeProfile, setActiveProfile, profiles, loadProfiles, clearProfile }}>
+    <ProfileContext.Provider value={{ activeProfile, setActiveProfile, profiles, loadProfiles, clearProfile, initialized }}>
       {children}
     </ProfileContext.Provider>
   )
