@@ -9,10 +9,12 @@ import { useDrawer } from '@/components/movie-drawer'
 
 interface WatchItem {
   id: string
+  tmdb_id: number
   content_id: number
   content_type: 'movie' | 'series'
   title: string
   poster_url: string | null
+  poster: string | null
   progress: number
   season?: number
   episode?: number
@@ -29,39 +31,46 @@ export function ContinueWatching() {
 
   const fetchHistory = () => {
     if (!user) { setLoading(false); return }
-    // Utiliser le profile_id depuis le cookie si disponible
     const profileId = document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
     const param = profileId ? `profile_id=${profileId}` : `user_id=${user.id}`
     fetch(`/api/watch-history?${param}&limit=10`)
       .then(r => r.json())
       .then(data => {
-        const unfinished = (Array.isArray(data) ? data : []).filter((i: WatchItem) => !i.finished && i.progress > 0)
-        setItems(unfinished)
-        Promise.all(unfinished.map(async (item: WatchItem) => {
-          try {
-            const apiType = item.content_type === 'movie' ? 'movie' : 'series'
-            const r = await fetch(`/api/content/${apiType}/${item.content_id}`, { cache: 'force-cache' })
-            if (!r.ok) return { id: item.content_id, logo: null, poster: null }
-            const d = await r.json()
-            const poster = d.details?.poster_path
-              ? `https://image.tmdb.org/t/p/w500${d.details.poster_path}`
-              : null
-            return { id: item.content_id, logo: d.logo ?? null, poster }
-          } catch { return { id: item.content_id, logo: null, poster: null } }
-        })).then(results => {
-          const logoMap: Record<number, string | null> = {}
+        const raw = Array.isArray(data) ? data : []
+        // Normaliser les champs : tmdb_id → content_id, poster → poster_url
+        const normalized: WatchItem[] = raw
+          .filter((i: any) => !i.finished && (i.progress || 0) > 0)
+          .map((i: any) => ({
+            ...i,
+            content_id: i.tmdb_id ?? i.content_id,
+            poster_url: i.poster
+              ? (i.poster.startsWith('http') ? i.poster : `https://image.tmdb.org/t/p/w500${i.poster}`)
+              : null,
+          }))
+        setItems(normalized)
 
-          const posterMap: Record<number, string | null> = {}
-          results.forEach(({ id, logo, poster }: { id: number; logo: string | null; poster: string | null }) => {
-            logoMap[id] = logo
-            posterMap[id] = poster
+        // Si certains items n'ont pas de poster, essayer de les charger depuis TMDB
+        const missingPosters = normalized.filter(item => !item.poster_url)
+        if (missingPosters.length > 0) {
+          Promise.all(missingPosters.map(async item => {
+            try {
+              const apiType = item.content_type === 'movie' ? 'movie' : 'series'
+              const r = await fetch(`/api/content/${apiType}/${item.content_id}`, { cache: 'force-cache' })
+              if (!r.ok) return { id: item.content_id, poster: null }
+              const d = await r.json()
+              const poster = d.details?.poster_path
+                ? `https://image.tmdb.org/t/p/w500${d.details.poster_path}`
+                : null
+              return { id: item.content_id, poster }
+            } catch { return { id: item.content_id, poster: null } }
+          })).then(results => {
+            const posterMap: Record<number, string | null> = {}
+            results.forEach(({ id, poster }) => { posterMap[id] = poster })
+            setItems(prev => prev.map(item =>
+              item.poster_url ? item : { ...item, poster_url: posterMap[item.content_id] || null }
+            ))
           })
-          setLogos(logoMap)
-          setItems(prev => prev.map(item => ({
-            ...item,
-            poster_url: item.poster_url || posterMap[item.content_id] || null
-          })))
-        })
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
