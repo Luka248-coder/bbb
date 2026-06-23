@@ -18,13 +18,18 @@ export function FavoritesList({ userId }: FavoritesListProps) {
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Lire profile_id depuis cookie
+  const getProfileId = () => document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+
   useEffect(() => {
     fetchFavorites()
   }, [userId])
 
   const fetchFavorites = async () => {
     try {
-      const res = await fetch(`/api/favorites?user_id=${userId}`)
+      const profileId = getProfileId()
+      const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
+      const res = await fetch(`/api/favorites?${param}`)
       if (res.ok) {
         const data = await res.json()
         setFavorites(Array.isArray(data) ? data : [])
@@ -38,8 +43,10 @@ export function FavoritesList({ userId }: FavoritesListProps) {
 
   const removeFavorite = async (tmdbId: number, contentType: string) => {
     try {
+      const profileId = getProfileId()
+      const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
       const res = await fetch(
-        `/api/favorites?tmdb_id=${tmdbId}&content_type=${contentType}&user_id=${userId}`,
+        `/api/favorites?tmdb_id=${tmdbId}&content_type=${contentType}&${param}`,
         { method: 'DELETE' }
       )
       if (res.ok) {

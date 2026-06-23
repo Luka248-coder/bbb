@@ -29,7 +29,10 @@ export function ContinueWatching() {
 
   const fetchHistory = () => {
     if (!user) { setLoading(false); return }
-    fetch(`/api/watch-history?user_id=${user.id}&limit=10`)
+    // Utiliser le profile_id depuis le cookie si disponible
+    const profileId = document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+    const param = profileId ? `profile_id=${profileId}` : `user_id=${user.id}`
+    fetch(`/api/watch-history?${param}&limit=10`)
       .then(r => r.json())
       .then(data => {
         const unfinished = (Array.isArray(data) ? data : []).filter((i: WatchItem) => !i.finished && i.progress > 0)

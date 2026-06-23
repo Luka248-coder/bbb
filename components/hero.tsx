@@ -81,7 +81,9 @@ export function Hero({ content }: HeroProps) {
     const current = featured[currentIndex]
     const tmdbId = current.tmdb_id || current.id
     const type = isMovie(current) ? 'movie' : 'series'
-    fetch(`/api/favorites?user_id=${user.id}`)
+    const profileId = document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+    const param = profileId ? `profile_id=${profileId}` : `user_id=${user.id}`
+    fetch(`/api/favorites?${param}`)
       .then(r => r.json())
       .then((favs: any[]) => {
         setIsFav(favs.some(f => f.tmdb_id === tmdbId && f.content_type === type))
@@ -96,16 +98,22 @@ export function Hero({ content }: HeroProps) {
     const type = isMovie(current) ? 'movie' : 'series'
     const title = isMovie(current) ? current.title : current.name
     const poster = current.poster_path
+    const profileId = document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+    const param = profileId ? `profile_id=${profileId}` : `user_id=${user.id}`
     setFavLoading(true)
     try {
       if (isFav) {
-        await fetch(`/api/favorites?user_id=${user.id}&tmdb_id=${tmdbId}&content_type=${type}`, { method: 'DELETE' })
+        await fetch(`/api/favorites?${param}&tmdb_id=${tmdbId}&content_type=${type}`, { method: 'DELETE' })
         setIsFav(false)
       } else {
         await fetch('/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id, tmdb_id: tmdbId, content_type: type, title, poster }),
+          body: JSON.stringify({
+            user_id: profileId ? null : user.id,
+            profile_id: profileId || null,
+            tmdb_id: tmdbId, content_type: type, title, poster
+          }),
         })
         setIsFav(true)
       }

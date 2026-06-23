@@ -286,7 +286,9 @@ export function Navbar() {
     if (!user) return
     setLoadingHistory(true)
     try {
-      const res = await fetch(`/api/watch-history?user_id=${user.id}&limit=5`)
+      const profileId = document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+      const param = profileId ? `profile_id=${profileId}` : `user_id=${user.id}`
+      const res = await fetch(`/api/watch-history?${param}&limit=5`)
       if (res.ok) { const data = await res.json(); setWatchHistory(Array.isArray(data) ? data : []) }
     } catch {}
     setLoadingHistory(false)
