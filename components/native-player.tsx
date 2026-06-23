@@ -35,6 +35,7 @@ interface NativePlayerProps {
   currentSeason?: number
   currentEpisode?: number
   userId?: string | null
+  profileId?: string | null
   poster?: string | null
   seriesName?: string | null
   downloadUrl?: string | null
@@ -272,6 +273,7 @@ export function NativePlayer({
   currentSeason: initialSeason = 1,
   currentEpisode: initialEpisode = 1,
   userId = null,
+  profileId = null,
   poster = null,
   seriesName = null,
   downloadUrl = null,
@@ -387,8 +389,10 @@ export function NativePlayer({
   }, [])
 
   useEffect(() => {
-    if (!userId || !tmdbId) return
-    fetch(`/api/watch-history?user_id=${userId}`)
+    const id = profileId || userId
+    if (!id || !tmdbId) return
+    const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
+    fetch(`/api/watch-history?${param}`)
       .then(r => r.json())
       .then((data: any[]) => {
         if (!Array.isArray(data)) return
@@ -402,7 +406,7 @@ export function NativePlayer({
         }
       })
       .catch(() => {})
-  }, [userId, tmdbId, type, initialSeason, initialEpisode])
+  }, [userId, profileId, tmdbId, type, initialSeason, initialEpisode])
 
   useEffect(() => { currentSeasonRef.current = currentSeason }, [currentSeason])
   useEffect(() => { currentEpisodeRef.current = currentEpisode }, [currentEpisode])
@@ -414,12 +418,11 @@ export function NativePlayer({
   useEffect(() => { typeRef.current = type }, [type])
 
   // ─── Start / clear the 30s error timer ──────────────────────────────────────
-  // Called directly from loadVideo — no useEffect dependency issues
   const startErrorTimer = useCallback(() => {
     if (errorTimer.current) clearTimeout(errorTimer.current)
     videoStarted.current = false
     errorTimer.current = setTimeout(async () => {
-      if (videoStarted.current) return // video started before timeout — do nothing
+      if (videoStarted.current) return
       setShowError(true)
       try {
         await fetch('/api/player-errors', {
@@ -448,7 +451,9 @@ export function NativePlayer({
   }, [])
 
   const saveProgress = useCallback(async () => {
-    if (!userId || !tmdbId) return
+    if (!tmdbId) return
+    const id = profileId || userId
+    if (!id) return
     const ct = currentTimeRef.current
     const dur = durationRef.current
     if (dur < 10) return
@@ -458,7 +463,8 @@ export function NativePlayer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: userId,
+          user_id: profileId ? null : userId,
+          profile_id: profileId || null,
           tmdb_id: tmdbId,
           content_type: type,
           title: titleRef.current,
@@ -469,13 +475,13 @@ export function NativePlayer({
         }),
       })
     } catch {}
-  }, [userId, tmdbId, type, poster])
+  }, [userId, profileId, tmdbId, type, poster])
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId && !profileId) return
     const interval = setInterval(saveProgress, 30000)
     return () => clearInterval(interval)
-  }, [saveProgress, userId])
+  }, [saveProgress, userId, profileId])
 
   useEffect(() => {
     return () => { saveProgress() }

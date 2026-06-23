@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { PlayerPage } from '@/components/player-page'
 import { NativePlayer } from '@/components/native-player'
 import { Loading } from '@/components/loading'
@@ -47,6 +48,8 @@ async function WatchContent({
 }) {
   const tmdbId = parseInt(id)
   const user = await getSession()
+  const cookieStore = await cookies()
+  const profileId = cookieStore.get('active_profile_id')?.value || null
 
   let playerUrl: string | null = null
   let downloadUrl: string | null = null
@@ -149,6 +152,7 @@ async function WatchContent({
         currentSeason={season}
         currentEpisode={episode}
         userId={user?.id || null}
+        profileId={profileId}
         poster={poster}
         seriesName={seriesName}
         downloadUrl={downloadUrl}

@@ -51,13 +51,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const setActiveProfile = useCallback((profile: Profile | null) => {
     setActiveProfileState(profile)
-    if (profile) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
-    else sessionStorage.removeItem(STORAGE_KEY)
+    if (profile) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+      // Cookie pour les pages server-side (watch page)
+      document.cookie = `active_profile_id=${profile.id};path=/;max-age=86400;samesite=strict`
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY)
+      document.cookie = 'active_profile_id=;path=/;max-age=0'
+    }
   }, [])
 
   const clearProfile = useCallback(() => {
     setActiveProfileState(null)
     sessionStorage.removeItem(STORAGE_KEY)
+    document.cookie = 'active_profile_id=;path=/;max-age=0'
   }, [])
 
   const loadProfiles = useCallback(async () => {

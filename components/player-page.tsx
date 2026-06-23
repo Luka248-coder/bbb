@@ -30,13 +30,14 @@ interface PlayerPageProps {
   initialEpisode?: number
   playerUrl: string
   userId?: string | null
+  profileId?: string | null
   isDrawer?: boolean
   onClose?: () => void
 }
 
 type TabType = 'synopsis' | 'casting' | 'similaires'
 
-export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId, isDrawer = false, onClose }: PlayerPageProps) {
+export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId, profileId, isDrawer = false, onClose }: PlayerPageProps) {
   const router = useRouter()
   const { openDrawer } = useDrawer()
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
@@ -73,21 +74,25 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
   const directors = getDirectors(credits || null)
 
   useEffect(() => {
-    if (!userId) return
-    fetch(`/api/favorites?user_id=${userId}`)
+    const id = profileId || userId
+    if (!id) return
+    const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
+    fetch(`/api/favorites?${param}`)
       .then(r => r.json())
       .then((favs: any[]) => {
         if (Array.isArray(favs)) setIsFavorite(favs.some(f => f.tmdb_id === tmdbId && f.content_type === type))
       }).catch(() => {})
-  }, [userId, tmdbId, type])
+  }, [userId, profileId, tmdbId, type])
 
   const [watchProgress, setWatchProgress] = useState<number>(0)
   const [resumeSeason, setResumeSeason] = useState<number | null>(null)
   const [resumeEpisode, setResumeEpisode] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!userId || !tmdbId) return
-    fetch(`/api/watch-history?user_id=${userId}`)
+    const id = profileId || userId
+    if (!id || !tmdbId) return
+    const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
+    fetch(`/api/watch-history?${param}`)
       .then(r => r.json())
       .then((data: any[]) => {
         if (!Array.isArray(data)) return
@@ -100,20 +105,26 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
           }
         }
       }).catch(() => {})
-  }, [userId, tmdbId, type])
+  }, [userId, profileId, tmdbId, type])
 
   const toggleFavorite = async () => {
-    if (!userId) { alert('Connectez-vous pour ajouter aux favoris'); return }
+    const id = profileId || userId
+    if (!id) { alert('Connectez-vous pour ajouter aux favoris'); return }
     setTogglingFav(true)
     try {
       if (isFavorite) {
-        await fetch(`/api/favorites?tmdb_id=${tmdbId}&content_type=${type}&user_id=${userId}`, { method: 'DELETE' })
+        const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
+        await fetch(`/api/favorites?tmdb_id=${tmdbId}&content_type=${type}&${param}`, { method: 'DELETE' })
         setIsFavorite(false)
       } else {
         await fetch('/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, tmdb_id: tmdbId, content_type: type, title, poster: posterPath }),
+          body: JSON.stringify({
+            user_id: profileId ? null : userId,
+            profile_id: profileId || null,
+            tmdb_id: tmdbId, content_type: type, title, poster: posterPath
+          }),
         })
         setIsFavorite(true)
       }

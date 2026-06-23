@@ -38,6 +38,11 @@ export function MovieDrawerProvider({ children }: { children: React.ReactNode })
     fetch('/api/auth/session').then(r => r.json()).then(d => setUserId(d?.user?.id || null)).catch(() => {})
   }, [])
 
+  // Lire le profileId depuis le cookie
+  const profileId = typeof document !== 'undefined'
+    ? document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+    : null
+
   const openDrawer = useCallback((type: 'movie' | 'series', tmdbId: number) => {
     setState({ open: true, type, tmdbId })
     document.body.style.overflow = 'hidden'
@@ -115,6 +120,7 @@ export function MovieDrawerProvider({ children }: { children: React.ReactNode })
                   initialSeason={1}
                   initialEpisode={1}
                   userId={userId}
+                  profileId={profileId}
                   isDrawer
                   onClose={closeDrawer}
                 />
