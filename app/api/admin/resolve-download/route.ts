@@ -10,22 +10,19 @@ function normalizePart(value: string | number | undefined, fallback: number): st
   return String(parsed).padStart(2, '0')
 }
 
-function extractDownloadUrl(raw: string): string | null {
-  // Extraire toutes les URLs présentes dans la réponse
-  const urls = raw.match(/https?:\/\/[^\s"'<>\n\r]+/gi) ?? []
+function extractDownloadUrl(html: string): string | null {
+  // L'URL est rendue côté client (React), donc on cherche dans les scripts
+  // Pattern : chercher toutes les URLs qui ressemblent à un lien download
+  const urls = html.match(/https?:\\?\/\\?\/[^\s"'<>\n\r\\]+/gi) ?? []
 
-  // Priorité 1 : URL avec download=1 (pattern exact de l'API)
-  const downloadUrl = urls.find(u => u.includes('download=1'))
-  if (downloadUrl) return downloadUrl
+  const clean = (u: string) => u.replace(/\\+\//g, '/').replace(/\\"/g, '')
 
-  // Priorité 2 : URL contenant un .mp4
-  const mp4Url = urls.find(u => u.toLowerCase().includes('.mp4'))
-  if (mp4Url) return mp4Url
-
-  // Priorité 3 : URL de stream proxy
-  const streamUrl = urls.find(u => u.includes('/api/stream'))
-  if (streamUrl) return streamUrl
-
+  for (const raw of urls) {
+    const u = clean(raw)
+    if (u.includes('download=1')) return u
+    if (u.toLowerCase().includes('.mp4') && !u.includes('base44.com')) return u
+    if (u.includes('/api/stream')) return u
+  }
   return null
 }
 
@@ -46,20 +43,32 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(apiUrl, { cache: 'no-store' })
-    const raw = await res.text()
+    // Attendre 1.5s que le JS côté serveur base44 génère l'URL
+    await new Promise(r => setTimeout(r, 1500))
 
-    console.log('[resolve-download] raw:', JSON.stringify(raw.slice(0, 400)))
+    const res = await fetch(apiUrl, {
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; bot)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+    })
+    const html = await res.text()
 
-    if (raw.toLowerCase().includes('indisponible')) {
+    console.log('[resolve-download] html length:', html.length, '| sample:', html.slice(0, 200))
+
+    if (html.toLowerCase().includes('indisponible')) {
       return NextResponse.json({ available: false })
     }
 
-    const url = extractDownloadUrl(raw)
+    const url = extractDownloadUrl(html)
     console.log('[resolve-download] extracted:', url)
 
     if (!url) {
-      return NextResponse.json({ available: false, debug: raw.slice(0, 300) })
+      // L'app est un SPA React — le contenu est rendu côté client,
+      // fetch() côté serveur ne peut pas exécuter le JS.
+      // On retourne l'apiUrl pour que le client la charge lui-même.
+      return NextResponse.json({ available: 'client', apiUrl })
     }
 
     return NextResponse.json({ available: true, url })

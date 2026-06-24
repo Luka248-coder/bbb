@@ -817,25 +817,60 @@ export function NativePlayer({
   const triggerDownload = useCallback(async () => {
     if (!tmdbId || isDownloading) return
     setIsDownloading(true)
+
+    // L'API base44 est une SPA React : le lien est généré côté client après ~1.3s.
+    // On fetch directement depuis le navigateur pour que le JS s'exécute.
+    const BASE44 = 'https://amorphous-stream-flux-hub.base44.app/api'
+    let apiUrl: string
+    if (type === 'movie') {
+      apiUrl = `${BASE44}/movie/${tmdbId}/`
+    } else {
+      const s = String(currentSeason ?? 1).padStart(2, '0')
+      const e = String(currentEpisode ?? 1).padStart(2, '0')
+      apiUrl = `${BASE44}/serie/${tmdbId}/S${s}/E${e}/`
+    }
+
     try {
-      const r = await fetch('/api/admin/resolve-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tmdbId,
-          type,
-          season: currentSeason,
-          episode: currentEpisode,
-        }),
-      })
-      const d = await r.json()
-      if (!d.available || !d.url) {
+      // Ouvrir la page dans un iframe invisible pour laisser le JS s'exécuter
+      const iframe = document.createElement('iframe')
+      iframe.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;'
+      iframe.src = apiUrl
+      document.body.appendChild(iframe)
+
+      // Attendre que le JS de la SPA génère l'URL (~1.5s)
+      await new Promise(r => setTimeout(r, 1800))
+
+      let downloadUrl: string | null = null
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+        const text = iframeDoc?.body?.innerText?.trim() ?? ''
+        console.log('[download] iframe text:', text.slice(0, 200))
+        if (text.startsWith('http') && (text.includes('download=1') || text.includes('.mp4') || text.includes('/api/stream'))) {
+          downloadUrl = text
+        }
+      } catch {
+        // cross-origin bloqué → fallback fetch texte brut
+      }
+      document.body.removeChild(iframe)
+
+      // Fallback : fetch texte brut (fonctionne si même origine ou CORS ok)
+      if (!downloadUrl) {
+        const res = await fetch(apiUrl, { cache: 'no-store' })
+        const text = (await res.text()).trim()
+        const match = text.match(/https?:\/\/[^\s"'<>
+\]+(?:download=1|\.mp4|\/api\/stream)[^\s"'<>
+\]*/i)
+        downloadUrl = match?.[0] ?? null
+      }
+
+      if (!downloadUrl) {
         setUnavailablePoster(poster)
         setShowUnavailable(true)
         return
       }
+
       const a = document.createElement('a')
-      a.href = d.url
+      a.href = downloadUrl
       a.setAttribute('download', '')
       a.style.display = 'none'
       document.body.appendChild(a)
