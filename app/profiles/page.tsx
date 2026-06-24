@@ -40,7 +40,7 @@ export default function ProfilesPage() {
   }, [])
 
   const openCreate = () => {
-    setFormName('Nouveau Profil'); setFormPin(''); setFormAvatar(null)
+    setFormName(''); setFormPin(''); setFormAvatar(null)
     setFormChild(false); setTab('general'); setEditProfile(null); setShowCreate(true)
   }
   const openEdit = (p: Profile) => {
@@ -48,7 +48,20 @@ export default function ProfilesPage() {
     setFormChild(p.is_child); setTab('general'); setEditProfile(p); setShowCreate(true)
   }
 
+  const [formError, setFormError] = useState<string | null>(null)
+
   const saveProfile = async () => {
+    setFormError(null)
+    if (!formName.trim()) {
+      setFormError('Le nom du profil est obligatoire.')
+      setTab('general')
+      return
+    }
+    if (!formAvatar) {
+      setFormError('Veuillez choisir un avatar.')
+      setTab('avatar')
+      return
+    }
     setSaving(true)
     const body = { name: formName, pin: formPin || null, avatar_url: formAvatar, is_child: formChild }
     try {
@@ -279,8 +292,8 @@ export default function ProfilesPage() {
               <div className="flex gap-2 px-5 py-3 overflow-x-auto scrollbar-hide border-b border-white/[0.05]"
                 style={{ scrollbarWidth: 'none' }}>
                 {(['general', 'avatar'] as Tab[]).map(t => (
-                  <button key={t} onClick={() => setTab(t)}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 transition-all"
+                  <button key={t} onClick={() => { setTab(t); setFormError(null) }}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 transition-all relative"
                     style={{
                       background: tab === t ? '#fff' : 'rgba(255,255,255,0.06)',
                       color: tab === t ? '#000' : 'rgba(255,255,255,0.45)',
@@ -288,6 +301,10 @@ export default function ProfilesPage() {
                     }}
                   >
                     {t === 'general' ? <><User className="w-3.5 h-3.5" />Général</> : <><Search className="w-3.5 h-3.5" />Avatar</>}
+                    {/* Point rouge si avatar manquant */}
+                    {t === 'avatar' && !formAvatar && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 absolute -top-0.5 -right-0.5" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -430,17 +447,22 @@ export default function ProfilesPage() {
               </div>
 
               {/* Footer */}
-              <div className="px-5 py-4 flex items-center justify-end gap-3 border-t border-white/[0.05]"
+              <div className="px-5 py-4 border-t border-white/[0.05] flex-shrink-0"
                 style={{ background: 'rgba(0,0,0,0.3)' }}>
-                <button onClick={() => setShowCreate(false)} className="px-5 py-2.5 text-white/40 hover:text-white text-sm font-medium transition-colors">
-                  Annuler
-                </button>
-                <button onClick={saveProfile} disabled={saving || !formName.trim()}
-                  className="px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 disabled:opacity-40 transition-all"
-                  style={{ background: '#fff', color: '#000' }}>
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  {editProfile ? 'Enregistrer' : 'Créer le profil'}
-                </button>
+                {formError && (
+                  <p className="text-red-400 text-xs mb-3 text-center">{formError}</p>
+                )}
+                <div className="flex items-center justify-end gap-3">
+                  <button onClick={() => setShowCreate(false)} className="px-5 py-2.5 text-white/40 hover:text-white text-sm font-medium transition-colors">
+                    Annuler
+                  </button>
+                  <button onClick={saveProfile} disabled={saving}
+                    className="px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 disabled:opacity-40 transition-all"
+                    style={{ background: '#fff', color: '#000' }}>
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {editProfile ? 'Enregistrer' : 'Créer le profil'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
