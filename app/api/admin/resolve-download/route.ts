@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+export const maxDuration = 60
 
 const DOWNLOAD_API = 'https://amorphous-stream-flux-hub.base44.app/api'
 const BASE44_WAIT_MS = 1300
+const CHROMIUM_PACK_URL =
+  process.env.CHROMIUM_PACK_URL ||
+  'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.tar'
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -35,21 +38,21 @@ async function getExecutablePath(chromium: any): Promise<string | undefined> {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH
 
   try {
-    return await chromium.executablePath()
+    return await chromium.executablePath(CHROMIUM_PACK_URL)
   } catch {
     return undefined
   }
 }
 
 async function resolveFromBase44(apiUrl: string): Promise<string | null> {
-  const chromiumModule = await import('@sparticuz/chromium')
+  const chromiumModule = await import('@sparticuz/chromium-min')
   const puppeteerModule = await import('puppeteer-core')
   const chromium = chromiumModule.default ?? chromiumModule
   const puppeteer = puppeteerModule.default ?? puppeteerModule
   const executablePath = await getExecutablePath(chromium)
 
   if (!executablePath) {
-    throw new Error('Chromium executable introuvable sur Vercel')
+    throw new Error('Chromium executable introuvable sur Vercel via chromium-min')
   }
 
   const browser = await puppeteer.launch({
