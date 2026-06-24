@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
 import { useDrawer } from '@/components/movie-drawer'
+import { useProfile } from '@/contexts/ProfileContext'
 
 interface Notification {
   id: string
@@ -95,6 +96,7 @@ import { usePresence } from '@/hooks/use-presence'
 
 export function Navbar() {
   const { user } = useSession()
+  const { activeProfile } = useProfile()
   usePresence(user?.id)
   const { openDrawer } = useDrawer()
 
@@ -563,7 +565,9 @@ export function Navbar() {
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
             >
               <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
-                {avatarUrl ? (
+                {activeProfile?.avatar_url ? (
+                  <Image src={activeProfile.avatar_url} alt={activeProfile.name} width={28} height={28} className="rounded-full object-cover" />
+                ) : avatarUrl ? (
                   <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-red-600 flex items-center justify-center">
@@ -572,8 +576,8 @@ export function Navbar() {
                 )}
               </div>
               <div className="text-left">
-                <p className="text-white text-[12px] font-bold leading-tight">{user.username}</p>
-                <p className="text-white/40 text-[10px] leading-tight">Cinéphile</p>
+                <p className="text-white text-[12px] font-bold leading-tight">{activeProfile?.name || user.username}</p>
+                <p className="text-white/40 text-[10px] leading-tight">@{user.username}</p>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
             </button>
@@ -938,18 +942,23 @@ export function Navbar() {
                   <div className="px-5 pt-10 pb-6">
                     <div className="flex items-center gap-4">
                       <div className="relative flex-shrink-0">
-                        {avatarUrl ? (
+                        {/* Avatar du profil actif, fallback sur avatar Discord */}
+                        {activeProfile?.avatar_url ? (
+                          <Image src={activeProfile.avatar_url} alt={activeProfile.name} width={68} height={68} className="rounded-full object-cover ring-1 ring-white/10" />
+                        ) : avatarUrl ? (
                           <Image src={avatarUrl} alt={user.username} width={68} height={68} className="rounded-2xl ring-1 ring-white/10" />
                         ) : (
                           <div className="w-[68px] h-[68px] rounded-2xl bg-red-600 ring-1 ring-white/10 flex items-center justify-center">
-                            <span className="text-white font-bold text-2xl">{user.username[0].toUpperCase()}</span>
+                            <span className="text-white font-bold text-2xl">{(activeProfile?.name || user.username)[0].toUpperCase()}</span>
                           </div>
                         )}
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0e0e0f]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-bold text-lg leading-tight">{user.username}</p>
-                        <p className="text-white/30 text-xs mt-0.5">{user.email || 'Compte Discord'}</p>
+                        {/* Nom du profil actif */}
+                        <p className="text-white font-bold text-lg leading-tight">{activeProfile?.name || user.username}</p>
+                        {/* Nom du compte en dessous */}
+                        <p className="text-white/30 text-xs mt-0.5">@{user.username}</p>
                       </div>
                       <button onClick={closeProfile} className="w-8 h-8 rounded-full bg-white/[0.07] hover:bg-white/10 flex items-center justify-center transition-colors self-start">
                         <X className="w-4 h-4 text-white/50" />
@@ -986,6 +995,11 @@ export function Navbar() {
                     <Link href="/favorites" onClick={closeProfile} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-white/[0.04] transition-colors group" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
                       <Heart className="w-4 h-4 text-white/40 flex-shrink-0" />
                       <span className="text-white/80 text-sm font-medium flex-1">Mes favoris</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
+                    </Link>
+                    <Link href="/profiles" onClick={closeProfile} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-white/[0.04] transition-colors group" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <User className="w-4 h-4 text-white/40 flex-shrink-0" />
+                      <span className="text-white/80 text-sm font-medium flex-1">Changer de profil</span>
                       <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
                     </Link>
                     {user.is_admin && (
@@ -1102,8 +1116,8 @@ export function Navbar() {
           className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2"
           style={{ WebkitTapHighlightColor: 'transparent' }}>
           {showProfile && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          {user && avatarUrl
-            ? <Image src={avatarUrl} alt={user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
+          {user && (activeProfile?.avatar_url || avatarUrl)
+            ? <Image src={activeProfile?.avatar_url || avatarUrl!} alt={activeProfile?.name || user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
             : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-red-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
           }
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${showProfile ? 'text-white/80' : 'text-white/28'}`}>Profil</span>
