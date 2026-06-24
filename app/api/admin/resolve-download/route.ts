@@ -1,47 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
-  const { url } = await request.json()
-  if (!url || typeof url !== 'string') {
-    return NextResponse.json({ error: 'URL manquante' }, { status: 400 })
-  }
+const DOWNLOAD_API = 'https://amorphous-stream-flux-hub.base44.app/api'
 
-  if (!url.includes('fileditchfiles.me')) {
-    return NextResponse.json({ url, resolved: false })
+export async function POST(request: NextRequest) {
+  const { tmdbId, type, season, episode } = await request.json()
+
+  if (!tmdbId || !type) {
+    return NextResponse.json({ error: 'tmdbId et type requis' }, { status: 400 })
   }
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-      redirect: 'follow',
+    let apiUrl: string
+
+    if (type === 'movie') {
+      apiUrl = `${DOWNLOAD_API}/movie/${tmdbId}/`
+    } else {
+      const s = String(season || 1).padStart(2, '0')
+      const e = String(episode || 1).padStart(2, '0')
+      apiUrl = `${DOWNLOAD_API}/serie/${tmdbId}/S${s}/E${e}/`
+    }
+
+    const res = await fetch(apiUrl, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
     })
 
-    const html = await res.text()
-
-    // Extraire une par une les URLs MP4 avec un regex précis
-    // On cherche src="URL" dans les balises <source> ou <video>
-    const srcMatch = html.match(/src=["'](https?:\/\/[^"']+\.mp4[^"']*?)["']/)
-    if (srcMatch) {
-      const clean = srcMatch[1].replace(/&amp;/g, '&')
-      if (!clean.includes('fileditchfiles.me') && !clean.includes('abuse.')) {
-        return NextResponse.json({ url: clean, resolved: true })
-      }
+    if (!res.ok) {
+      return NextResponse.json({ available: false, error: `API error: ${res.status}` })
     }
 
-    // Fallback : chercher le premier lien avec expires= dans tout le HTML
-    const expiresMatch = html.match(/https?:\/\/[^\s"'<>&]+\.mp4[^\s"'<>]*expires=[^\s"'<>]+/)
-    if (expiresMatch) {
-      const clean = expiresMatch[0].replace(/&amp;/g, '&')
-      if (!clean.includes('fileditchfiles.me')) {
-        return NextResponse.json({ url: clean, resolved: true })
-      }
+    const data = await res.json()
+
+    // L'API retourne le lien direct ou indique "indisponible"
+    const downloadUrl: string | null =
+      data?.url || data?.download_url || data?.link || data?.file || null
+
+    const isUnavailable =
+      !downloadUrl ||
+      (typeof downloadUrl === 'string' &&
+        downloadUrl.toLowerCase().includes('indisponible'))
+
+    if (isUnavailable) {
+      return NextResponse.json({ available: false })
     }
 
-    return NextResponse.json({ error: 'Aucun lien MP4 trouvé' }, { status: 404 })
+    return NextResponse.json({ available: true, url: downloadUrl })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 502 })
+    console.error('[resolve-download]', err)
+    return NextResponse.json({ available: false, error: err.message }, { status: 502 })
   }
 }

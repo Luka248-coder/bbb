@@ -290,8 +290,9 @@ export function NativePlayer({
   const [title, setTitle] = useState(initialTitle)
   const [currentSeason, setCurrentSeason] = useState(initialSeason)
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode)
-  const [currentDownloadUrl, setCurrentDownloadUrl] = useState<string | null>(downloadUrl)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [showUnavailable, setShowUnavailable] = useState(false)
+  const [unavailablePoster, setUnavailablePoster] = useState<string | null>(null)
   const router = useRouter()
   // Modale "il faut être connecté" affichée quand on clique sur télécharger sans session
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
@@ -814,18 +815,25 @@ export function NativePlayer({
 
   // ─── Téléchargement ─────────────────────────────────────────────────────────
   const triggerDownload = useCallback(async () => {
-    if (!currentDownloadUrl || isDownloading) return
+    if (!tmdbId || isDownloading) return
     setIsDownloading(true)
     try {
       const r = await fetch('/api/admin/resolve-download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: currentDownloadUrl }),
+        body: JSON.stringify({
+          tmdbId,
+          type,
+          season: currentSeason,
+          episode: currentEpisode,
+        }),
       })
-      if (!r.ok) throw new Error('resolve failed')
       const d = await r.json()
-      if (!d.url || d.error) throw new Error(d.error || 'no url')
-      // Créer un lien invisible et cliquer dessus pour télécharger
+      if (!d.available || !d.url) {
+        setUnavailablePoster(poster)
+        setShowUnavailable(true)
+        return
+      }
       const a = document.createElement('a')
       a.href = d.url
       a.setAttribute('download', '')
@@ -834,11 +842,12 @@ export function NativePlayer({
       a.click()
       setTimeout(() => document.body.removeChild(a), 1000)
     } catch {
-      window.open(currentDownloadUrl, '_blank')
+      setUnavailablePoster(poster)
+      setShowUnavailable(true)
     } finally {
       setIsDownloading(false)
     }
-  }, [currentDownloadUrl, isDownloading])
+  }, [tmdbId, type, currentSeason, currentEpisode, poster, isDownloading])
 
   // Redirige vers /login avec un retour automatique sur cette page (?download=1,
   // utilisé par la page de login pour afficher un message contextuel)
@@ -1419,7 +1428,7 @@ export function NativePlayer({
                   <Cast className="w-5 h-5" />
                 </button>
 
-                {currentDownloadUrl && (
+                {tmdbId && (
                   <button
                     disabled={isDownloading}
                     onClick={e => {
@@ -1685,7 +1694,70 @@ export function NativePlayer({
         )}
       </AnimatePresence>
 
-      {/* Modale "Connexion requise" — affichée quand on clique sur télécharger sans session */}
+      {/* Modale "Téléchargement indisponible" */}
+      <AnimatePresence>
+        {showUnavailable && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            onClick={() => setShowUnavailable(false)}
+          >
+            {/* Fond flouté */}
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 16 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+            >
+              {/* Fond dégradé avec poster en arrière-plan */}
+              <div className="relative">
+                {unavailablePoster && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center scale-110 blur-sm opacity-30"
+                    style={{ backgroundImage: `url(${unavailablePoster})` }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/60 via-zinc-900/90 to-zinc-900" />
+
+                <div className="relative z-10 flex flex-col items-center gap-5 p-8 text-center">
+                  {/* Icône animée */}
+                  <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-white/10 ring-1 ring-white/20">
+                    <span className="text-3xl">📦</span>
+                    <div className="absolute inset-0 rounded-full animate-ping bg-white/5" />
+                  </div>
+
+                  {/* Titre */}
+                  <div>
+                    <h3 className="text-white font-semibold text-lg tracking-tight">
+                      Téléchargement indisponible
+                    </h3>
+                    <p className="mt-1.5 text-white/55 text-sm leading-relaxed">
+                      Ce contenu n&apos;est pas encore disponible au téléchargement.
+                      Revenez plus tard ou regardez-le en streaming.
+                    </p>
+                  </div>
+
+                  {/* Bouton fermer */}
+                  <button
+                    onClick={() => setShowUnavailable(false)}
+                    className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 text-sm font-medium transition-colors"
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+            {/* Modale "Connexion requise" — affichée quand on clique sur télécharger sans session */}
       <AnimatePresence>
         {showLoginPrompt && (
           <motion.div

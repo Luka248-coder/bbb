@@ -52,7 +52,6 @@ async function WatchContent({
   const profileId = cookieStore.get('active_profile_id')?.value || null
 
   let playerUrl: string | null = null
-  let downloadUrl: string | null = null
   let title = ''
   let seriesDbId: number | undefined
   let poster: string | null = null
@@ -82,8 +81,6 @@ async function WatchContent({
       }
     }
 
-    downloadUrl = (movie as any)?.download_url || null
-
     poster = movie?.poster_path ? getPosterUrl(movie.poster_path) : null
 
   } else {
@@ -99,7 +96,7 @@ async function WatchContent({
       const supabase = await createClient()
       const { data: ep } = await supabase
         .from('episodes')
-        .select('video_url, download_url')
+        .select('video_url')
         .eq('series_id', series.id)
         .eq('season_number', season)
         .eq('episode_number', episode)
@@ -107,9 +104,6 @@ async function WatchContent({
       if (ep?.video_url) {
         episodeUrl = ep.video_url
         console.log('[Watch] ✅ Episode URL from DB:', episodeUrl?.substring(0, 60))
-      }
-      if (ep?.download_url) {
-        downloadUrl = ep.download_url
       }
     }
 
@@ -155,7 +149,6 @@ async function WatchContent({
         profileId={profileId}
         poster={poster}
         seriesName={seriesName}
-        downloadUrl={downloadUrl}
       />
     )
   }
