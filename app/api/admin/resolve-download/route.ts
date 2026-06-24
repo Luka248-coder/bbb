@@ -42,14 +42,21 @@ async function getExecutablePath(chromium: any): Promise<string | undefined> {
 }
 
 async function resolveFromBase44(apiUrl: string): Promise<string | null> {
-  const chromium = await import('@sparticuz/chromium')
-  const puppeteer = await import('puppeteer-core')
+  const chromiumModule = await import('@sparticuz/chromium')
+  const puppeteerModule = await import('puppeteer-core')
+  const chromium = chromiumModule.default ?? chromiumModule
+  const puppeteer = puppeteerModule.default ?? puppeteerModule
+  const executablePath = await getExecutablePath(chromium)
 
-  const browser = await puppeteer.default.launch({
-    args: chromium.default.args,
-    defaultViewport: chromium.default.defaultViewport,
-    executablePath: await getExecutablePath(chromium.default),
-    headless: chromium.default.headless,
+  if (!executablePath) {
+    throw new Error('Chromium executable introuvable sur Vercel')
+  }
+
+  const browser = await puppeteer.launch({
+    args: chromium.args ?? ['--no-sandbox', '--disable-setuid-sandbox'],
+    defaultViewport: chromium.defaultViewport ?? { width: 1280, height: 720 },
+    executablePath,
+    headless: chromium.headless ?? true,
   })
 
   try {
