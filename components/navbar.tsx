@@ -942,16 +942,17 @@ export function Navbar() {
                   <div className="px-5 pt-10 pb-6">
                     <div className="flex items-center gap-4">
                       <div className="relative flex-shrink-0">
-                        {/* Avatar du profil actif, fallback sur avatar Discord */}
-                        {activeProfile?.avatar_url ? (
-                          <Image src={activeProfile.avatar_url} alt={activeProfile.name} width={68} height={68} className="rounded-full object-cover ring-1 ring-white/10" />
-                        ) : avatarUrl ? (
-                          <Image src={avatarUrl} alt={user.username} width={68} height={68} className="rounded-2xl ring-1 ring-white/10" />
-                        ) : (
-                          <div className="w-[68px] h-[68px] rounded-2xl bg-red-600 ring-1 ring-white/10 flex items-center justify-center">
-                            <span className="text-white font-bold text-2xl">{(activeProfile?.name || user.username)[0].toUpperCase()}</span>
-                          </div>
-                        )}
+                        <div className="w-[68px] h-[68px] rounded-full overflow-hidden ring-1 ring-white/10 flex-shrink-0">
+                          {activeProfile?.avatar_url ? (
+                            <Image src={activeProfile.avatar_url} alt={activeProfile.name} width={68} height={68} className="w-full h-full object-cover" />
+                          ) : avatarUrl ? (
+                            <Image src={avatarUrl} alt={user.username} width={68} height={68} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                              <span className="text-white font-bold text-2xl">{(activeProfile?.name || user.username)[0].toUpperCase()}</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0e0e0f]" />
                       </div>
                       <div className="flex-1 min-w-0">
