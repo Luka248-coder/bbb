@@ -857,10 +857,9 @@ export function NativePlayer({
       if (!downloadUrl) {
         const res = await fetch(apiUrl, { cache: 'no-store' })
         const text = (await res.text()).trim()
-        const match = text.match(/https?:\/\/[^\s"'<>
-\]+(?:download=1|\.mp4|\/api\/stream)[^\s"'<>
-\]*/i)
-        downloadUrl = match?.[0] ?? null
+        const allUrls = text.match(/https?:\/\/\S+/gi) ?? []
+        const match = allUrls.find(u => u.includes('download=1') || u.toLowerCase().includes('.mp4') || u.includes('/api/stream'))
+        downloadUrl = match ?? null
       }
 
       if (!downloadUrl) {
