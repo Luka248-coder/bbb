@@ -10,16 +10,23 @@ function normalizePart(value: string | number | undefined, fallback: number): st
   return String(parsed).padStart(2, '0')
 }
 
-function extractUrl(raw: string): string | null {
-  // Nettoyer : retirer guillemets, espaces, retours à la ligne
-  const cleaned = raw.replace(/['"]/g, '').trim()
+function extractDownloadUrl(raw: string): string | null {
+  // Extraire toutes les URLs présentes dans la réponse
+  const urls = raw.match(/https?:\/\/[^\s"'<>\n\r]+/gi) ?? []
 
-  // Cas 1 : le texte entier est une URL
-  if (/^https?:\/\//i.test(cleaned)) return cleaned
+  // Priorité 1 : URL avec download=1 (pattern exact de l'API)
+  const downloadUrl = urls.find(u => u.includes('download=1'))
+  if (downloadUrl) return downloadUrl
 
-  // Cas 2 : l'URL est quelque part dans le texte
-  const match = cleaned.match(/https?:\/\/[^\s"'<>\n\r]+/i)
-  return match ? match[0] : null
+  // Priorité 2 : URL contenant un .mp4
+  const mp4Url = urls.find(u => u.toLowerCase().includes('.mp4'))
+  if (mp4Url) return mp4Url
+
+  // Priorité 3 : URL de stream proxy
+  const streamUrl = urls.find(u => u.includes('/api/stream'))
+  if (streamUrl) return streamUrl
+
+  return null
 }
 
 export async function POST(request: NextRequest) {
@@ -42,17 +49,17 @@ export async function POST(request: NextRequest) {
     const res = await fetch(apiUrl, { cache: 'no-store' })
     const raw = await res.text()
 
-    console.log('[resolve-download] status:', res.status, '| raw:', JSON.stringify(raw.slice(0, 300)))
+    console.log('[resolve-download] raw:', JSON.stringify(raw.slice(0, 400)))
 
     if (raw.toLowerCase().includes('indisponible')) {
       return NextResponse.json({ available: false })
     }
 
-    const url = extractUrl(raw)
-    console.log('[resolve-download] extracted url:', url)
+    const url = extractDownloadUrl(raw)
+    console.log('[resolve-download] extracted:', url)
 
     if (!url) {
-      return NextResponse.json({ available: false, debug: raw.slice(0, 200) })
+      return NextResponse.json({ available: false, debug: raw.slice(0, 300) })
     }
 
     return NextResponse.json({ available: true, url })
