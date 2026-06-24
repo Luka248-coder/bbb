@@ -10,6 +10,18 @@ function normalizePart(value: string | number | undefined, fallback: number): st
   return String(parsed).padStart(2, '0')
 }
 
+function extractUrl(raw: string): string | null {
+  // Nettoyer : retirer guillemets, espaces, retours à la ligne
+  const cleaned = raw.replace(/['"]/g, '').trim()
+
+  // Cas 1 : le texte entier est une URL
+  if (/^https?:\/\//i.test(cleaned)) return cleaned
+
+  // Cas 2 : l'URL est quelque part dans le texte
+  const match = cleaned.match(/https?:\/\/[^\s"'<>\n\r]+/i)
+  return match ? match[0] : null
+}
+
 export async function POST(request: NextRequest) {
   const { tmdbId, type, season, episode } = await request.json()
 
@@ -28,17 +40,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const res = await fetch(apiUrl, { cache: 'no-store' })
+    const raw = await res.text()
 
-    // L'API retourne du texte brut : une URL directe ou "indisponible"
-    const text = (await res.text()).trim()
+    console.log('[resolve-download] status:', res.status, '| raw:', JSON.stringify(raw.slice(0, 300)))
 
-    console.log('[resolve-download] raw:', text.slice(0, 200))
-
-    if (!text || text.toLowerCase().includes('indisponible') || !text.startsWith('http')) {
+    if (raw.toLowerCase().includes('indisponible')) {
       return NextResponse.json({ available: false })
     }
 
-    return NextResponse.json({ available: true, url: text })
+    const url = extractUrl(raw)
+    console.log('[resolve-download] extracted url:', url)
+
+    if (!url) {
+      return NextResponse.json({ available: false, debug: raw.slice(0, 200) })
+    }
+
+    return NextResponse.json({ available: true, url })
   } catch (err: any) {
     console.error('[resolve-download]', err)
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })
