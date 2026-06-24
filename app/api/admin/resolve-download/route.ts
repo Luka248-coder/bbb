@@ -10,22 +10,6 @@ function normalizePart(value: string | number | undefined, fallback: number): st
   return String(parsed).padStart(2, '0')
 }
 
-function extractDownloadUrl(html: string): string | null {
-  // L'URL est rendue côté client (React), donc on cherche dans les scripts
-  // Pattern : chercher toutes les URLs qui ressemblent à un lien download
-  const urls = html.match(/https?:\\?\/\\?\/[^\s"'<>\n\r\\]+/gi) ?? []
-
-  const clean = (u: string) => u.replace(/\\+\//g, '/').replace(/\\"/g, '')
-
-  for (const raw of urls) {
-    const u = clean(raw)
-    if (u.includes('download=1')) return u
-    if (u.toLowerCase().includes('.mp4') && !u.includes('base44.com')) return u
-    if (u.includes('/api/stream')) return u
-  }
-  return null
-}
-
 export async function POST(request: NextRequest) {
   const { tmdbId, type, season, episode } = await request.json()
 
@@ -43,35 +27,42 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Attendre 1.5s que le JS côté serveur base44 génère l'URL
-    await new Promise(r => setTimeout(r, 1500))
-
     const res = await fetch(apiUrl, {
       cache: 'no-store',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; bot)',
-        'Accept': 'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
     })
+
     const html = await res.text()
 
-    console.log('[resolve-download] html length:', html.length, '| sample:', html.slice(0, 200))
+    // L'URL est dans une balise <pre>...</pre> dans le HTML rendu
+    const preMatch = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i)
+    if (preMatch) {
+      const preContent = preMatch[1]
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .trim()
+        // Retirer les guillemets éventuels autour
+        .replace(/^["']|["']$/g, '')
+        .trim()
 
-    if (html.toLowerCase().includes('indisponible')) {
-      return NextResponse.json({ available: false })
+      console.log('[resolve-download] pre content:', preContent.slice(0, 200))
+
+      if (preContent.toLowerCase().includes('indisponible')) {
+        return NextResponse.json({ available: false })
+      }
+
+      if (preContent.startsWith('http')) {
+        return NextResponse.json({ available: true, url: preContent })
+      }
     }
 
-    const url = extractDownloadUrl(html)
-    console.log('[resolve-download] extracted:', url)
-
-    if (!url) {
-      // L'app est un SPA React — le contenu est rendu côté client,
-      // fetch() côté serveur ne peut pas exécuter le JS.
-      // On retourne l'apiUrl pour que le client la charge lui-même.
-      return NextResponse.json({ available: 'client', apiUrl })
-    }
-
-    return NextResponse.json({ available: true, url })
+    console.log('[resolve-download] no <pre> found, html length:', html.length)
+    return NextResponse.json({ available: false, debug: html.slice(0, 300) })
   } catch (err: any) {
     console.error('[resolve-download]', err)
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })
