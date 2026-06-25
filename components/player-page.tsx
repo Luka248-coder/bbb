@@ -378,7 +378,7 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
             onSeasonChange={v => {
               setCurrentSeason(v)
               setCurrentEpisode(1)
-              router.push(`/watch/series/${tmdbId}?season=${v}&episode=1`)
+              if (!isDrawer) router.push(`/watch/series/${tmdbId}?season=${v}&episode=1`)
             }}
             onClose={onClose}
             isDrawer={isDrawer}
