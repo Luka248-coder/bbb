@@ -8,13 +8,6 @@ const BASE_URL = 'https://fastflux.xyz/api/v1/index.php'
 const TOKEN_SUFFIX = '?ff=1782321640.cxUHiwCk-p2Zd6vzl2OTsS6O'
 const PROXY_BASE = 'https://v0-proxy-ruddy.vercel.app/api/stream?url='
 
-const HEADERS = {
-  'Referer': 'https://fastflux.xyz/',
-  'Origin': 'https://fastflux.xyz',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
-  'Accept': 'application/json, text/plain, */*',
-}
-
 function buildDirectUrl(rawUrl: string): string {
   let url = rawUrl
   if (url && url.includes('.mp4') && !url.includes('?ff=')) {
@@ -26,19 +19,18 @@ function buildDirectUrl(rawUrl: string): string {
   return `${PROXY_BASE}${encodeURIComponent(url)}&download=1`
 }
 
-function normalizePart(value: string | number | undefined, fallback: number): string {
-  const parsed = parseInt(String(value ?? fallback).replace(/\D/g, '') || String(fallback), 10)
-  return String(parsed).padStart(2, '0')
+function normalizePart(value: string | number | undefined, fallback: number): number {
+  return parseInt(String(value ?? fallback).replace(/\D/g, '') || String(fallback), 10)
 }
 
-async function fetchJson(url: string): Promise<{ data: any; debug?: string }> {
-  const res = await fetch(url, { cache: 'no-store', headers: HEADERS })
+async function fetchJson(url: string): Promise<any> {
+  const res = await fetch(url, { cache: 'no-store' })
   const text = await res.text()
   const trimmed = text.trim()
   if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    return { data: null, debug: `status:${res.status} raw:${trimmed.slice(0, 200)}` }
+    throw new Error(`Non-JSON response (${res.status}): ${trimmed.slice(0, 150)}`)
   }
-  return { data: JSON.parse(trimmed) }
+  return JSON.parse(trimmed)
 }
 
 export async function POST(request: NextRequest) {
@@ -50,46 +42,75 @@ export async function POST(request: NextRequest) {
 
   try {
     if (type === 'movie') {
+      // Recherche directe par TMDB_ID
+      const data = await fetchJson(
+        `${BASE_URL}?route=movies/search&q=${tmdbId}&api_key=${API_KEY}`
+      )
+      const found = (data.data || data.results || [data].filter(Boolean))
+        .find((m: any) => String(m.tmdb_id) === String(tmdbId))
+
+      if (found) {
+        const rawUrl = found.source?.url || found.url || found.download_url
+        if (rawUrl) return NextResponse.json({ available: true, url: buildDirectUrl(rawUrl) })
+      }
+
+      // Fallback : chercher dans la liste paginée
       let page = 1
       while (true) {
-        const { data, debug } = await fetchJson(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`)
-        if (!data) return NextResponse.json({ available: false, debug })
-
-        const found = (data.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
-        if (found) {
-          const url = buildDirectUrl(found.source?.url || found.url)
-          return NextResponse.json({ available: true, url })
+        const listData = await fetchJson(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`)
+        const movie = (listData.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
+        if (movie) {
+          const rawUrl = movie.source?.url || movie.url
+          if (rawUrl) return NextResponse.json({ available: true, url: buildDirectUrl(rawUrl) })
+          return NextResponse.json({ available: false })
         }
-
-        const totalPages = data.pagination?.total_pages || 1
+        const totalPages = listData.pagination?.total_pages || 1
         if (page >= totalPages) break
         page++
       }
+
       return NextResponse.json({ available: false })
 
     } else {
       const sNum = normalizePart(season, 1)
-      const eNum = parseInt(normalizePart(episode, 1), 10)
+      const eNum = normalizePart(episode, 1)
 
+      // Recherche directe par TMDB_ID
+      const data = await fetchJson(
+        `${BASE_URL}?route=series/search&q=${tmdbId}&api_key=${API_KEY}`
+      )
+      const found = (data.data || data.results || [])
+        .find((s: any) => String(s.tmdb_id) === String(tmdbId))
+
+      const searchAndExtract = (serie: any) => {
+        const ep = (serie.episodes || []).find((ep: any) => {
+          const epSeason = parseInt(String(ep.season || '0').replace(/\D/g, ''), 10)
+          return epSeason === sNum && ep.episode_number === eNum
+        })
+        return ep ? buildDirectUrl(ep.url) : null
+      }
+
+      if (found) {
+        const url = searchAndExtract(found)
+        if (url) return NextResponse.json({ available: true, url })
+        return NextResponse.json({ available: false })
+      }
+
+      // Fallback : liste paginée
       let page = 1
       while (true) {
-        const { data, debug } = await fetchJson(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`)
-        if (!data) return NextResponse.json({ available: false, debug })
-
-        const found = (data.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
-        if (found) {
-          const ep = (found.episodes || []).find((ep: any) => {
-            const epSeason = String(ep.season || '').replace('S', '').padStart(2, '0')
-            return epSeason === sNum && ep.episode_number === eNum
-          })
-          if (ep) return NextResponse.json({ available: true, url: buildDirectUrl(ep.url) })
+        const listData = await fetchJson(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`)
+        const serie = (listData.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
+        if (serie) {
+          const url = searchAndExtract(serie)
+          if (url) return NextResponse.json({ available: true, url })
           return NextResponse.json({ available: false })
         }
-
-        const totalPages = data.pagination?.total_pages || 1
+        const totalPages = listData.pagination?.total_pages || 1
         if (page >= totalPages) break
         page++
       }
+
       return NextResponse.json({ available: false })
     }
 
