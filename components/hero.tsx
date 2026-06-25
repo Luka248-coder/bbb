@@ -135,19 +135,7 @@ export function Hero({ content }: HeroProps) {
   return (
     <>
       {/* Fond dynamique global — derrière tout le reste de la page */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 0,
-          background: 'radial-gradient(ellipse 120% 60% at 50% 0%, rgba(29,111,232,0.45) 0%, transparent 70%)',
-          backgroundAttachment: 'fixed',
-        }}
-      />
+
 
     <section className="relative w-full overflow-hidden hero-section" style={{ minHeight: 600 }}>
 
