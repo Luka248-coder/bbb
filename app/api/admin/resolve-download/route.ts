@@ -27,42 +27,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-    })
+    const res = await fetch(apiUrl, { cache: 'no-store' })
+    const text = (await res.text()).trim()
 
-    const html = await res.text()
+    console.log('[resolve-download] raw:', JSON.stringify(text.slice(0, 300)))
 
-    // L'URL est dans une balise <pre>...</pre> dans le HTML rendu
-    const preMatch = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i)
-    if (preMatch) {
-      const preContent = preMatch[1]
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .trim()
-        // Retirer les guillemets éventuels autour
-        .replace(/^["']|["']$/g, '')
-        .trim()
-
-      console.log('[resolve-download] pre content:', preContent.slice(0, 200))
-
-      if (preContent.toLowerCase().includes('indisponible')) {
-        return NextResponse.json({ available: false })
-      }
-
-      if (preContent.startsWith('http')) {
-        return NextResponse.json({ available: true, url: preContent })
-      }
+    if (!text || text.toLowerCase().includes('indisponible') || !text.startsWith('http')) {
+      return NextResponse.json({ available: false })
     }
 
-    console.log('[resolve-download] no <pre> found, html length:', html.length)
-    return NextResponse.json({ available: false, debug: html.slice(0, 300) })
+    return NextResponse.json({ available: true, url: text })
   } catch (err: any) {
     console.error('[resolve-download]', err)
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })

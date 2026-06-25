@@ -817,51 +817,20 @@ export function NativePlayer({
   const triggerDownload = useCallback(async () => {
     if (!tmdbId || isDownloading) return
     setIsDownloading(true)
-
-    const BASE44 = 'https://amorphous-stream-flux-hub.base44.app/api'
-    let apiUrl: string
-    if (type === 'movie') {
-      apiUrl = `${BASE44}/movie/${tmdbId}/`
-    } else {
-      const s = String(currentSeason ?? 1).padStart(2, '0')
-      const e = String(currentEpisode ?? 1).padStart(2, '0')
-      apiUrl = `${BASE44}/serie/${tmdbId}/S${s}/E${e}/`
-    }
-
     try {
-      // Fetch direct depuis le navigateur — base44 retourne du HTML avec l'URL dans <pre>
-      const res = await fetch(apiUrl, { cache: 'no-store' })
-      const html = await res.text()
-
-      // Extraire le contenu de la balise <pre>
-      const preMatch = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i)
-      let downloadUrl: string | null = null
-
-      if (preMatch) {
-        const preContent = preMatch[1]
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/^["'\s]+|["'\s]+$/g, '')
-          .trim()
-
-        console.log('[download] pre content:', preContent.slice(0, 200))
-
-        if (preContent.startsWith('http') && !preContent.toLowerCase().includes('indisponible')) {
-          downloadUrl = preContent
-        }
-      }
-
-      if (!downloadUrl) {
+      const r = await fetch('/api/admin/resolve-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tmdbId, type, season: currentSeason, episode: currentEpisode }),
+      })
+      const d = await r.json()
+      if (!d.available || !d.url) {
         setUnavailablePoster(poster)
         setShowUnavailable(true)
         return
       }
-
       const a = document.createElement('a')
-      a.href = downloadUrl
+      a.href = d.url
       a.setAttribute('download', '')
       a.style.display = 'none'
       document.body.appendChild(a)
