@@ -101,11 +101,18 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 })
 
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-    const activeEl = container.querySelector('[data-active="true"]') as HTMLElement
-    if (!activeEl) { setPillStyle(s => ({ ...s, opacity: 0 })); return }
-    setPillStyle({ left: activeEl.offsetLeft, width: activeEl.offsetWidth, opacity: 1 })
+    // Double rAF: wait for browser to finish scroll + paint before measuring
+    let raf1: number, raf2: number
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const container = containerRef.current
+        if (!container) return
+        const activeEl = container.querySelector('[data-active="true"]') as HTMLElement
+        if (!activeEl) { setPillStyle(s => ({ ...s, opacity: 0 })); return }
+        setPillStyle({ left: activeEl.offsetLeft, width: activeEl.offsetWidth, opacity: 1 })
+      })
+    })
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
   }, [pathname])
 
   return (
