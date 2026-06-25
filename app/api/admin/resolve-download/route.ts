@@ -8,6 +8,13 @@ const BASE_URL = 'https://fastflux.xyz/api/v1/index.php'
 const TOKEN_SUFFIX = '?ff=1782321640.cxUHiwCk-p2Zd6vzl2OTsS6O'
 const PROXY_BASE = 'https://v0-proxy-ruddy.vercel.app/api/stream?url='
 
+const HEADERS = {
+  'Referer': 'https://fastflux.xyz/',
+  'Origin': 'https://fastflux.xyz',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+}
+
 function buildDirectUrl(rawUrl: string): string {
   let url = rawUrl
   if (url && url.includes('.mp4') && !url.includes('?ff=')) {
@@ -16,13 +23,22 @@ function buildDirectUrl(rawUrl: string): string {
     const after = url.slice(mp4Index)
     url = before + TOKEN_SUFFIX + (after ? '&' + after.replace(/^\?/, '') : '')
   }
-  const encoded = encodeURIComponent(url)
-  return `${PROXY_BASE}${encoded}&download=1`
+  return `${PROXY_BASE}${encodeURIComponent(url)}&download=1`
 }
 
 function normalizePart(value: string | number | undefined, fallback: number): string {
   const parsed = parseInt(String(value ?? fallback).replace(/\D/g, '') || String(fallback), 10)
   return String(parsed).padStart(2, '0')
+}
+
+async function fetchJson(url: string): Promise<{ data: any; debug?: string }> {
+  const res = await fetch(url, { cache: 'no-store', headers: HEADERS })
+  const text = await res.text()
+  const trimmed = text.trim()
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+    return { data: null, debug: `status:${res.status} raw:${trimmed.slice(0, 200)}` }
+  }
+  return { data: JSON.parse(trimmed) }
 }
 
 export async function POST(request: NextRequest) {
@@ -34,13 +50,12 @@ export async function POST(request: NextRequest) {
 
   try {
     if (type === 'movie') {
-      // Parcourir les pages jusqu'à trouver le film par tmdb_id
       let page = 1
       while (true) {
-        const res = await fetch(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`, { cache: 'no-store', headers: { 'Referer': 'https://fastflux.xyz/', 'Origin': 'https://fastflux.xyz', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36' } })
-        const data = await res.json()
-        const found = (data.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
+        const { data, debug } = await fetchJson(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`)
+        if (!data) return NextResponse.json({ available: false, debug })
 
+        const found = (data.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
         if (found) {
           const url = buildDirectUrl(found.source?.url || found.url)
           return NextResponse.json({ available: true, url })
@@ -50,32 +65,24 @@ export async function POST(request: NextRequest) {
         if (page >= totalPages) break
         page++
       }
-
       return NextResponse.json({ available: false })
 
     } else {
-      // Série
       const sNum = normalizePart(season, 1)
       const eNum = parseInt(normalizePart(episode, 1), 10)
 
       let page = 1
       while (true) {
-        const res = await fetch(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`, { cache: 'no-store', headers: { 'Referer': 'https://fastflux.xyz/', 'Origin': 'https://fastflux.xyz', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36' } })
-        const data = await res.json()
-        const found = (data.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
+        const { data, debug } = await fetchJson(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`)
+        if (!data) return NextResponse.json({ available: false, debug })
 
+        const found = (data.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
         if (found) {
           const ep = (found.episodes || []).find((ep: any) => {
             const epSeason = String(ep.season || '').replace('S', '').padStart(2, '0')
-            const epNum = ep.episode_number
-            return epSeason === sNum && epNum === eNum
+            return epSeason === sNum && ep.episode_number === eNum
           })
-
-          if (ep) {
-            const url = buildDirectUrl(ep.url)
-            return NextResponse.json({ available: true, url })
-          }
-
+          if (ep) return NextResponse.json({ available: true, url: buildDirectUrl(ep.url) })
           return NextResponse.json({ available: false })
         }
 
@@ -83,12 +90,10 @@ export async function POST(request: NextRequest) {
         if (page >= totalPages) break
         page++
       }
-
       return NextResponse.json({ available: false })
     }
 
   } catch (err: any) {
-    console.error('[resolve-download]', err)
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })
   }
 }
