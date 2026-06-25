@@ -45,16 +45,37 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   if (stillChecking || needsRedirect) {
     return (
       <div style={{
-        position: 'fixed', inset: 0, background: '#000', zIndex: 9999,
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          border: '2px solid rgba(255,255,255,0.1)',
-          borderTopColor: 'rgba(255,255,255,0.4)',
-          animation: 'spin 0.8s linear infinite'
-        }} />
-        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+        {/* Logo */}
+        <img
+          src="/images/logo.png"
+          alt="Logo"
+          style={{ width: 90, height: 90, objectFit: 'contain', marginBottom: 64,
+            animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
+        />
+        {/* Trait dégradé bleu */}
+        <div style={{ width: 260, overflow: 'hidden' }}>
+          <div style={{
+            height: '1.5px',
+            background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
+            boxShadow: '0 0 12px rgba(29,111,232,0.7), 0 0 28px rgba(29,111,232,0.3)',
+            animation: 'slideIn 0.9s 0.35s cubic-bezier(0.22,1,0.36,1) both',
+            transformOrigin: 'left',
+          }} />
+        </div>
+        <style>{`
+          @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.85); }
+            to   { opacity: 1; transform: scale(1); }
+          }
+          @keyframes slideIn {
+            from { transform: scaleX(0); opacity: 0; }
+            to   { transform: scaleX(1); opacity: 1; }
+          }
+        `}</style>
       </div>
     )
   }
