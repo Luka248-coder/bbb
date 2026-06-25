@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Menu, X, User, LogOut, Settings, Heart,
-  Film, Tv, Home, Plus, Bell, Check, Trash2, ChevronRight, Shield, Shuffle,
+  Film, Tv, Home, Plus, Bell, Check, Trash2, ChevronRight, Shield, Shuffle, Dices,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
