@@ -635,7 +635,7 @@ export function Navbar() {
                     {/* Icône */}
                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
                       style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.3), rgba(180,10,10,0.2))', border: '1px solid rgba(220,38,38,0.3)', boxShadow: '0 8px 24px rgba(220,38,38,0.2)' }}>
-                      <LogOut className="w-7 h-7 text-blue-400" />
+                      <LogOut className="w-7 h-7 text-red-400" />
                     </div>
 
                     <h2 className="text-white font-black text-xl mb-2">Déconnexion</h2>
@@ -648,7 +648,7 @@ export function Navbar() {
                       onClick={async () => { setShowLogoutModal(false); clearProfile(); await fetch('/api/auth/logout'); window.location.href = '/' }}
                       className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-white font-bold text-[15px] mb-3 transition-all active:scale-95"
                       style={{
-                        background: 'linear-gradient(135deg, #1d6fe8, #1558c0)',
+                        background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
                         boxShadow: '0 4px 24px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
                       }}
                     >
@@ -1011,10 +1011,10 @@ export function Navbar() {
                       </Link>
                     )}
                     <button onClick={() => setShowLogoutModal(true)}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-blue-500/[0.08] transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-red-500/[0.08] transition-colors"
                       style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}>
-                      <LogOut className="w-4 h-4 text-blue-400/70 flex-shrink-0" />
-                      <span className="text-blue-400/80 text-sm font-medium">Déconnexion</span>
+                      <LogOut className="w-4 h-4 text-red-400/70 flex-shrink-0" />
+                      <span className="text-red-400/80 text-sm font-medium">Déconnexion</span>
                     </button>
                   </div>
                   <div className="px-4 pb-10">

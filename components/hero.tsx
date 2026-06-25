@@ -143,7 +143,7 @@ export function Hero({ content }: HeroProps) {
         className="fixed inset-0 pointer-events-none"
         style={{
           zIndex: 0,
-          background: `radial-gradient(ellipse 120% 60% at 50% 0%, rgba(${bgColor},0.55) 0%, transparent 70%)`,
+          background: 'radial-gradient(ellipse 120% 60% at 50% 0%, rgba(29,111,232,0.45) 0%, transparent 70%)',
         }}
       />
 
@@ -176,7 +176,7 @@ export function Hero({ content }: HeroProps) {
           />
           <div className="absolute inset-x-0 bottom-0" style={{
             height: '75%',
-            background: 'linear-gradient(to top, #0a0506 0%, #0a0506 8%, rgba(10,5,6,0.96) 20%, rgba(10,5,6,0.75) 38%, rgba(10,5,6,0.35) 58%, rgba(10,5,6,0.08) 78%, transparent 100%)'
+            background: 'linear-gradient(to top, #050a14 0%, #050a14 8%, rgba(5,10,20,0.96) 20%, rgba(5,10,20,0.75) 38%, rgba(5,10,20,0.35) 58%, rgba(5,10,20,0.08) 78%, transparent 100%)'
           }} />
         </motion.div>
       </AnimatePresence>

@@ -5,7 +5,7 @@
 
 :root {
   /* Streamself Dark Theme - Red & Black */
-  --background: rgba(18, 8, 10, 0.82);
+  --background: rgba(5, 10, 20, 0.82);
   --foreground: oklch(0.98 0 0);
   --card: rgba(20, 10, 12, 0.85);
   --card-foreground: oklch(0.98 0 0);
@@ -164,7 +164,7 @@
 
 /* Fond global : dégradé rouge → orange ultra discret */
 html {
-  background: #0a0506 !important;
+  background: #050a14 !important;
   background-attachment: fixed !important;
 }
 body { background: transparent !important; }
