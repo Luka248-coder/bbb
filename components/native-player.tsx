@@ -858,8 +858,8 @@ export function NativePlayer({
           }
         }
       } else {
-        const sNum = parseInt(String(season ?? currentSeason ?? 1).replace(/\D/g, '') || '1', 10)
-        const eNum = parseInt(String(episode ?? currentEpisode ?? 1).replace(/\D/g, '') || '1', 10)
+        const sNum = String(parseInt(String(currentSeason ?? 1).replace(/\D/g, '') || '1', 10)).padStart(2, '0')
+        const eNum = parseInt(String(currentEpisode ?? 1).replace(/\D/g, '') || '1', 10)
 
         const res = await fetch(`${BASE_URL}?route=series/search&q=${tmdbId}&api_key=${API_KEY}`)
         const data = await res.json()
@@ -867,8 +867,10 @@ export function NativePlayer({
 
         const extractEp = (serie: any) => {
           const ep = (serie.episodes || []).find((ep: any) => {
+            // FastFlux format: season="S1", episode_number=1
             const epS = parseInt(String(ep.season || '0').replace(/\D/g, ''), 10)
-            return epS === sNum && ep.episode_number === eNum
+            const epNum = parseInt(String(ep.episode_number), 10)
+            return epS === parseInt(sNum, 10) && epNum === eNum
           })
           return ep ? buildUrl(ep.url) : null
         }
