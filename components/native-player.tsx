@@ -817,57 +817,25 @@ export function NativePlayer({
   const triggerDownload = useCallback(async () => {
     if (!tmdbId || isDownloading) return
     setIsDownloading(true)
-
-    const BASE44 = 'https://amorphous-stream-flux-hub.base44.app/api'
-    const apiUrl = type === 'movie'
-      ? `${BASE44}/movie/${tmdbId}/`
-      : `${BASE44}/serie/${tmdbId}/S${String(currentSeason ?? 1).padStart(2, '0')}/E${String(currentEpisode ?? 1).padStart(2, '0')}/`
-
     try {
-      // Charger la page base44 dans un iframe invisible
-      // Le navigateur exécute le JS et document.write() affiche l'URL
-      const downloadUrl = await new Promise<string | null>((resolve) => {
-        const iframe = document.createElement('iframe')
-        iframe.style.cssText = 'position:fixed;width:0;height:0;opacity:0;pointer-events:none;border:none;'
-        iframe.src = apiUrl
-
-        const timeout = setTimeout(() => {
-          document.body.removeChild(iframe)
-          resolve(null)
-        }, 8000)
-
-        iframe.onload = () => {
-          try {
-            const text = iframe.contentDocument?.body?.innerText?.trim() ?? ''
-            console.log('[download] iframe text:', text.slice(0, 200))
-            clearTimeout(timeout)
-            document.body.removeChild(iframe)
-            resolve(text.startsWith('http') ? text : null)
-          } catch {
-            // Cross-origin bloqué
-            clearTimeout(timeout)
-            document.body.removeChild(iframe)
-            resolve(null)
-          }
-        }
-
-        document.body.appendChild(iframe)
+      const r = await fetch('/api/admin/resolve-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tmdbId, type, season: currentSeason, episode: currentEpisode }),
       })
-
-      if (!downloadUrl) {
+      const d = await r.json()
+      if (!d.available || !d.url) {
         setUnavailablePoster(poster)
         setShowUnavailable(true)
         return
       }
-
       const a = document.createElement('a')
-      a.href = downloadUrl
+      a.href = d.url
       a.setAttribute('download', '')
       a.style.display = 'none'
       document.body.appendChild(a)
       a.click()
       setTimeout(() => document.body.removeChild(a), 1000)
-
     } catch {
       setUnavailablePoster(poster)
       setShowUnavailable(true)
