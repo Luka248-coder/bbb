@@ -29,27 +29,20 @@ export async function POST(request: NextRequest) {
   try {
     const res = await fetch(apiUrl, { cache: 'no-store' })
     const raw = await res.text()
-    const trimmed = raw.trim()
 
-    console.log('[resolve-download] raw:', JSON.stringify(trimmed.slice(0, 300)))
+    // Extraire le contenu du <body> et retirer les guillemets
+    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+    const bodyContent = bodyMatch
+      ? bodyMatch[1].replace(/<[^>]+>/g, '').replace(/['"]/g, '').trim()
+      : raw.replace(/<[^>]+>/g, '').replace(/['"]/g, '').trim()
 
-    // Cas texte brut : URL directe
-    if (trimmed.startsWith('http')) {
-      return NextResponse.json({ available: true, url: trimmed })
+    console.log('[resolve-download] body:', JSON.stringify(bodyContent.slice(0, 200)))
+
+    if (bodyContent.startsWith('http') && !bodyContent.toLowerCase().includes('indisponible')) {
+      return NextResponse.json({ available: true, url: bodyContent })
     }
 
-    // Cas JSON : { url: "...", download_url: "...", link: "..." }
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-      const data = JSON.parse(trimmed)
-      const url = data?.url || data?.download_url || data?.link || data?.file || null
-      if (url && String(url).startsWith('http')) {
-        return NextResponse.json({ available: true, url: String(url) })
-      }
-      const isUnavailable = !url || String(url).toLowerCase().includes('indisponible')
-      return NextResponse.json({ available: false, debug: data })
-    }
-
-    return NextResponse.json({ available: false, debug_raw: trimmed.slice(0, 200) })
+    return NextResponse.json({ available: false, debug: bodyContent.slice(0, 200) })
 
   } catch (err: any) {
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })
