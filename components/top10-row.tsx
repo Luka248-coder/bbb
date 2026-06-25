@@ -16,7 +16,7 @@ interface Top10RowProps {
   accentColor?: string
 }
 
-export function Top10Row({ title, content, type, accentColor = '#e53935' }: Top10RowProps) {
+export function Top10Row({ title, content, type, accentColor = '#1d6fe8' }: Top10RowProps) {
   const { openDrawer } = useDrawer()
   const scrollRef = useRef<HTMLDivElement>(null)
   const items = content.slice(0, 10)

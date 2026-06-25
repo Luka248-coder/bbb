@@ -1558,7 +1558,7 @@ export function NativePlayer({
                             >
                               {tab === 'audio' ? 'AUDIO' : tab === 'subtitles' ? 'SOUS-TITRES' : 'EFFETS'}
                               {settingsTab === tab && (
-                                <span className="absolute bottom-0 left-0 right-0" style={{ height: '2px', background: '#e53935' }} />
+                                <span className="absolute bottom-0 left-0 right-0" style={{ height: '2px', background: '#1d6fe8' }} />
                               )}
                             </button>
                           ))}
@@ -1580,12 +1580,12 @@ export function NativePlayer({
                                 >
                                   <span style={{
                                     width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
-                                    background: active ? '#e53935' : 'rgba(255,255,255,0.28)',
+                                    background: active ? '#1d6fe8' : 'rgba(255,255,255,0.28)',
                                   }} />
                                   <span style={{
                                     fontSize: '13px',
                                     fontWeight: active ? 600 : 400,
-                                    color: active ? '#e53935' : 'rgba(255,255,255,0.82)',
+                                    color: active ? '#1d6fe8' : 'rgba(255,255,255,0.82)',
                                   }}>
                                     {lang === 'fr' ? 'Français' : 'Anglais'}
                                   </span>
@@ -1609,12 +1609,12 @@ export function NativePlayer({
                                 >
                                   <span style={{
                                     width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
-                                    background: active ? '#e53935' : 'rgba(255,255,255,0.28)',
+                                    background: active ? '#1d6fe8' : 'rgba(255,255,255,0.28)',
                                   }} />
                                   <span style={{
                                     fontSize: '13px',
                                     fontWeight: active ? 600 : 400,
-                                    color: active ? '#e53935' : 'rgba(255,255,255,0.82)',
+                                    color: active ? '#1d6fe8' : 'rgba(255,255,255,0.82)',
                                   }}>
                                     {sub === 'off' ? 'Désactivés' : sub === 'fr' ? 'FR Full · SRT' : 'ENG Full · SRT'}
                                   </span>
@@ -1632,7 +1632,7 @@ export function NativePlayer({
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
                                   SON AMPLIFIÉ
                                 </span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: audioBoost > 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: audioBoost > 100 ? '#1d6fe8' : 'rgba(255,255,255,0.7)' }}>
                                   {audioBoost}%
                                 </span>
                               </div>
@@ -1650,7 +1650,7 @@ export function NativePlayer({
                               {audioBoost > 100 && (
                                 <button
                                   onClick={() => changeAudioBoost(100)}
-                                  style={{ fontSize: '10px', color: '#e53935', marginTop: '4px' }}
+                                  style={{ fontSize: '10px', color: '#1d6fe8', marginTop: '4px' }}
                                   className="hover:underline"
                                 >
                                   Réinitialiser
@@ -1666,7 +1666,7 @@ export function NativePlayer({
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
                                   LUMINOSITÉ
                                 </span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: brightness !== 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: brightness !== 100 ? '#1d6fe8' : 'rgba(255,255,255,0.7)' }}>
                                   {brightness}%
                                 </span>
                               </div>
@@ -1689,7 +1689,7 @@ export function NativePlayer({
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
                                   CONTRASTE
                                 </span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: contrast !== 100 ? '#e53935' : 'rgba(255,255,255,0.7)' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: contrast !== 100 ? '#1d6fe8' : 'rgba(255,255,255,0.7)' }}>
                                   {contrast}%
                                 </span>
                               </div>

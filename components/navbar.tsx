@@ -373,7 +373,7 @@ export function Navbar() {
         <div className="pointer-events-auto flex-shrink-0 ml-4">
           <Link href="/">
             <Image
-              src="/logo.svg"
+              src="/logo.png"
               alt="StreamSelf" width={64} height={64} className="h-14 md:h-14 w-auto"
             />
           </Link>

@@ -101,7 +101,7 @@ export function ContinueWatching() {
           <div
             className="w-[3px] rounded-sm"
             style={{
-              background: '#e53935',
+              background: '#1d6fe8',
               height: '1rem',
             }}
           />

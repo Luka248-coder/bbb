@@ -30,11 +30,11 @@ const categories = [
     label: 'Bug / Problème',
     sub: 'Un truc qui marche pas ?',
     icon: Bug,
-    gradient: 'from-red-950/80 to-red-900/40',
-    iconBg: 'bg-red-500/15',
-    iconColor: 'text-red-400',
-    accent: '#ef4444',
-    glow: 'shadow-red-900/30',
+    gradient: 'from-blue-950/80 to-blue-900/40',
+    iconBg: 'bg-blue-500/15',
+    iconColor: 'text-blue-400',
+    accent: '#1d6fe8',
+    glow: 'shadow-blue-900/30',
   },
   {
     id: 'aide' as Category,
@@ -201,12 +201,12 @@ export function SupportWidget() {
             {/* Header */}
             <div className="relative px-5 py-4 flex items-center gap-3"
               style={{
-                background: 'linear-gradient(135deg, rgba(180,20,20,0.18) 0%, rgba(120,10,10,0.08) 100%)',
+                background: 'linear-gradient(135deg, rgba(29,111,232,0.18) 0%, rgba(21,88,192,0.08) 100%)',
                 borderBottom: '1px solid rgba(255,255,255,0.06)',
               }}>
-              {/* Subtle red glow line at top */}
+              {/* Subtle blue glow line at top */}
               <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(220,50,50,0.6), transparent)' }} />
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(29,111,232,0.6), transparent)' }} />
 
               {screen !== 'home' && (
                 <motion.button
@@ -221,7 +221,7 @@ export function SupportWidget() {
               <div className="relative flex-shrink-0">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center"
                   style={{
-                    background: 'linear-gradient(135deg, #cc2222 0%, #8b0000 100%)',
+                    background: 'linear-gradient(135deg, #1d6fe8 0%, #1558c0 100%)',
                     boxShadow: '0 0 12px rgba(200,40,40,0.4)',
                   }}>
                   <Sparkles className="w-4 h-4 text-white" />
@@ -270,7 +270,7 @@ export function SupportWidget() {
                     {/* Greeting bubble */}
                     <div className="flex items-start gap-2.5 mb-4">
                       <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
-                        style={{ background: 'linear-gradient(135deg, #cc2222 0%, #8b0000 100%)' }}>
+                        style={{ background: 'linear-gradient(135deg, #1d6fe8 0%, #1558c0 100%)' }}>
                         <Sparkles className="w-3.5 h-3.5 text-white" />
                       </div>
                       <div className="px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%]"
@@ -403,7 +403,7 @@ export function SupportWidget() {
                       disabled={sending || !message.trim()}
                       className="w-full flex items-center justify-center gap-2 text-white font-semibold text-[13px] py-3 rounded-xl transition-all disabled:opacity-40"
                       style={{
-                        background: 'linear-gradient(135deg, #cc2222 0%, #8b0000 100%)',
+                        background: 'linear-gradient(135deg, #1d6fe8 0%, #1558c0 100%)',
                         boxShadow: '0 4px 16px rgba(200,40,40,0.3)',
                       }}>
                       {sending
@@ -524,7 +524,7 @@ export function SupportWidget() {
                             className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
                             {!isMe && (
                               <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center mb-0.5"
-                                style={{ background: 'linear-gradient(135deg, #cc2222, #8b0000)' }}>
+                                style={{ background: 'linear-gradient(135deg, #1d6fe8, #1558c0)' }}>
                                 <Zap className="w-3 h-3 text-white" />
                               </div>
                             )}
@@ -532,7 +532,7 @@ export function SupportWidget() {
                               isMe ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl rounded-bl-sm'
                             }`}
                               style={isMe
-                                ? { background: 'linear-gradient(135deg, #cc2222, #991111)', color: 'rgba(255,255,255,0.92)' }
+                                ? { background: 'linear-gradient(135deg, #1d6fe8, #1456b8)', color: 'rgba(255,255,255,0.92)' }
                                 : { background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }
                               }>
                               {msg.is_admin && (
@@ -571,8 +571,8 @@ export function SupportWidget() {
                           disabled={sendingReply || !reply.trim()}
                           className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0 disabled:opacity-30 transition-opacity"
                           style={{
-                            background: 'linear-gradient(135deg, #cc2222, #8b0000)',
-                            boxShadow: '0 2px 8px rgba(180,30,30,0.35)',
+                            background: 'linear-gradient(135deg, #1d6fe8, #1558c0)',
+                            boxShadow: '0 2px 8px rgba(29,111,232,0.35)',
                           }}>
                           {sendingReply
                             ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
@@ -629,8 +629,8 @@ export function SupportWidget() {
         }}
         className="relative w-[52px] h-[52px] rounded-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, #cc2222 0%, #8b0000 100%)',
-          boxShadow: '0 4px 20px rgba(180,30,30,0.5), 0 0 0 1px rgba(255,255,255,0.08)',
+          background: 'linear-gradient(135deg, #1d6fe8 0%, #1558c0 100%)',
+          boxShadow: '0 4px 20px rgba(29,111,232,0.5), 0 0 0 1px rgba(255,255,255,0.08)',
         }}
       >
         {/* Pulse ring */}
@@ -639,7 +639,7 @@ export function SupportWidget() {
             className="absolute inset-0 rounded-full"
             animate={{ scale: [1, 1.3], opacity: [0.3, 0] }}
             transition={{ repeat: Infinity, duration: 2, ease: 'easeOut' }}
-            style={{ background: 'radial-gradient(circle, rgba(200,40,40,0.5), transparent)' }}
+            style={{ background: 'radial-gradient(circle, rgba(29,111,232,0.5), transparent)' }}
           />
         )}
 
