@@ -40,7 +40,7 @@ export default function ProfilesPage() {
 
   const openCreate = () => {
     setFormName(''); setFormPin(''); setFormAvatar(null)
-    setFormChild(false); setTab('general'); setEditProfile(null); setShowCreate(true)
+    setTab('general'); setEditProfile(null); setShowCreate(true)
   }
   const openEdit = (p: Profile) => {
     setFormName(p.name); setFormPin(p.pin || ''); setFormAvatar(p.avatar_url)
