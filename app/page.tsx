@@ -64,7 +64,7 @@ async function HomeContent() {
   return (
     <>
       <Hero content={heroContent} />
-      <div className="relative z-10 h-28 -mt-28 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #12080a)' }} />
+      <div className="relative z-10 h-28 -mt-28 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #050a14)' }} />
       <main className="relative z-10 pt-4">
         <ContinueWatching />
         <ContentRow title="Top 10 Films de la semaine" content={topRatedMovies} type="movie" showRank accentColor="#1d6fe8" />
