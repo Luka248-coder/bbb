@@ -27,18 +27,30 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(apiUrl, { cache: 'no-store' })
+    const res = await fetch(apiUrl, {
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+        'Accept': 'text/plain, */*',
+      },
+    })
+
     const text = (await res.text()).trim()
 
-    console.log('[resolve-download] raw:', JSON.stringify(text.slice(0, 300)))
+    // Retourner le debug TOUJOURS pour diagnostiquer
+    return NextResponse.json({
+      available: text.startsWith('http'),
+      url: text.startsWith('http') ? text : undefined,
+      debug_status: res.status,
+      debug_raw: text.slice(0, 500),
+      debug_url: apiUrl,
+    })
 
-    if (!text || text.toLowerCase().includes('indisponible') || !text.startsWith('http')) {
-      return NextResponse.json({ available: false })
-    }
-
-    return NextResponse.json({ available: true, url: text })
   } catch (err: any) {
-    console.error('[resolve-download]', err)
-    return NextResponse.json({ available: false, error: err.message }, { status: 502 })
+    return NextResponse.json({
+      available: false,
+      error: err.message,
+      debug_url: apiUrl,
+    }, { status: 502 })
   }
 }
