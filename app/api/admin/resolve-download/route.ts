@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       // Parcourir les pages jusqu'à trouver le film par tmdb_id
       let page = 1
       while (true) {
-        const res = await fetch(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`, { cache: 'no-store' })
+        const res = await fetch(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`, { cache: 'no-store', headers: { 'Referer': 'https://amorphous-stream-flux-hub.base44.app/', 'Origin': 'https://amorphous-stream-flux-hub.base44.app', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36' } })
         const data = await res.json()
         const found = (data.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
       let page = 1
       while (true) {
-        const res = await fetch(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`, { cache: 'no-store' })
+        const res = await fetch(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`, { cache: 'no-store', headers: { 'Referer': 'https://amorphous-stream-flux-hub.base44.app/', 'Origin': 'https://amorphous-stream-flux-hub.base44.app', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36' } })
         const data = await res.json()
         const found = (data.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
 
