@@ -26,23 +26,42 @@ export async function POST(request: NextRequest) {
     apiUrl = `${DOWNLOAD_API}/serie/${tmdbId}/S${s}/E${e}/`
   }
 
+  // Forwarder les cookies du navigateur de l'utilisateur vers base44
+  const forwardCookies = request.headers.get('cookie') ?? ''
+
   try {
-    const res = await fetch(apiUrl, { cache: 'no-store' })
+    const res = await fetch(apiUrl, {
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+        'Referer': 'https://amorphous-stream-flux-hub.base44.app/',
+        'Cookie': forwardCookies,
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'same-origin',
+      },
+    })
+
     const raw = await res.text()
+    const trimmed = raw.trim()
 
-    // Extraire le contenu du <body> et retirer les guillemets
-    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-    const bodyContent = bodyMatch
-      ? bodyMatch[1].replace(/<[^>]+>/g, '').replace(/['"]/g, '').trim()
-      : raw.replace(/<[^>]+>/g, '').replace(/['"]/g, '').trim()
-
-    console.log('[resolve-download] body:', JSON.stringify(bodyContent.slice(0, 200)))
-
-    if (bodyContent.startsWith('http') && !bodyContent.toLowerCase().includes('indisponible')) {
-      return NextResponse.json({ available: true, url: bodyContent })
+    // Cas texte brut direct
+    if (trimmed.startsWith('http')) {
+      return NextResponse.json({ available: true, url: trimmed.replace(/['"]/g, '') })
     }
 
-    return NextResponse.json({ available: false, debug: bodyContent.slice(0, 200) })
+    // Cas HTML minimal : <body>"URL"</body>
+    const bodyMatch = trimmed.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+    if (bodyMatch) {
+      const content = bodyMatch[1].replace(/<[^>]+>/g, '').replace(/['"]/g, '').trim()
+      if (content.startsWith('http')) {
+        return NextResponse.json({ available: true, url: content })
+      }
+    }
+
+    return NextResponse.json({ available: false, debug: trimmed.slice(0, 150) })
 
   } catch (err: any) {
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })
