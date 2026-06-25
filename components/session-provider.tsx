@@ -38,50 +38,41 @@ function SplashScreen() {
         key="splash"
         initial={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black"
+        transition={{ duration: 0.6, ease: 'easeInOut' }}
+        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+        style={{ background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)' }}
       >
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="mb-8"
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-16"
         >
           <Image
             src="/images/logo.png"
             alt="StreamSelf"
-            width={280}
-            height={80}
+            width={90}
+            height={90}
             className="object-contain"
             priority
           />
         </motion.div>
 
-        {/* Spinner arc rouge */}
+        {/* Trait dégradé bleu */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          style={{ originX: 0, width: '260px' }}
         >
-          <svg
-            className="animate-spin"
-            width="36"
-            height="36"
-            viewBox="0 0 36 36"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="18"
-              cy="18"
-              r="15"
-              stroke="#e50914"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray="50 94"
-            />
-          </svg>
+          <div
+            style={{
+              height: '1.5px',
+              background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
+              boxShadow: '0 0 12px rgba(29, 111, 232, 0.7), 0 0 28px rgba(29, 111, 232, 0.3)',
+            }}
+          />
         </motion.div>
       </motion.div>
     </AnimatePresence>
