@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Check, Search, User, Lock, Loader2, Edit2, Upload, Link as LinkIcon, Baby, FloppyDisk } from 'lucide-react'
+import { Plus, X, Check, Search, User, Lock, Loader2, Edit2, Upload, Link as LinkIcon, FloppyDisk } from 'lucide-react'
 import Image from 'next/image'
 import { useProfile, Profile } from '@/contexts/ProfileContext'
 
@@ -25,7 +25,6 @@ export default function ProfilesPage() {
   const [formName, setFormName] = useState('Nouveau Profil')
   const [formPin, setFormPin] = useState('')
   const [formAvatar, setFormAvatar] = useState<string | null>(null)
-  const [formChild, setFormChild] = useState(false)
   const [avatars, setAvatars] = useState<any[]>([])
   const [avatarSearch, setAvatarSearch] = useState('')
   const [saving, setSaving] = useState(false)
@@ -45,7 +44,7 @@ export default function ProfilesPage() {
   }
   const openEdit = (p: Profile) => {
     setFormName(p.name); setFormPin(p.pin || ''); setFormAvatar(p.avatar_url)
-    setFormChild(p.is_child); setTab('general'); setEditProfile(p); setShowCreate(true)
+setTab('general'); setEditProfile(p); setShowCreate(true)
   }
 
   const [formError, setFormError] = useState<string | null>(null)
@@ -63,7 +62,7 @@ export default function ProfilesPage() {
       return
     }
     setSaving(true)
-    const body = { name: formName, pin: formPin || null, avatar_url: formAvatar, is_child: formChild }
+    const body = { name: formName, pin: formPin || null, avatar_url: formAvatar }
     try {
       const method = editProfile ? 'PATCH' : 'POST'
       const bodyFull = editProfile ? { id: editProfile.id, ...body } : body
@@ -341,30 +340,6 @@ export default function ProfilesPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="text-white/50 text-xs font-semibold mb-2 block">Type de profil</label>
-                        <div className="flex items-center justify-between px-4 py-3.5 rounded-2xl"
-                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                              style={{ background: 'rgba(96,165,250,0.15)' }}>
-                              <Baby className="w-4 h-4 text-blue-400" />
-                            </div>
-                            <div>
-                              <p className="text-white text-sm font-semibold">Profil enfant</p>
-                              <p className="text-white/40 text-xs">Interface et contenu adaptés aux plus jeunes</p>
-                            </div>
-                          </div>
-                          <button onClick={() => setFormChild(c => !c)}
-                            className="w-12 h-6 rounded-full transition-all relative flex-shrink-0 ml-3"
-                            style={{ background: formChild ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)' }}>
-                            <motion.div animate={{ left: formChild ? '26px' : '2px' }}
-                              className="w-5 h-5 rounded-full absolute top-0.5 shadow"
-                              style={{ background: formChild ? '#000' : 'rgba(255,255,255,0.6)' }} />
-                          </button>
-                        </div>
-                        <p className="text-white/25 text-xs mt-2 px-1">La catégorie d'âge se règle ensuite dans Paramètres → Gestion des profils.</p>
-                      </div>
                     </motion.div>
                   )}
 
