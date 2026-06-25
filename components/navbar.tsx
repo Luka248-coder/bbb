@@ -384,11 +384,11 @@ export function Navbar() {
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
             style={{
-              background: 'rgba(8,18,40,0.75)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(29,111,232,0.18)',
-              boxShadow: '0 0 0 1px rgba(29,111,232,0.08), 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+              background: 'rgba(29,111,232,0.06)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 0 0 1px rgba(29,111,232,0.06), 0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
           >
             {navLinks.map(link => {
