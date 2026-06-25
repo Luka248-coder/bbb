@@ -817,25 +817,93 @@ export function NativePlayer({
   const triggerDownload = useCallback(async () => {
     if (!tmdbId || isDownloading) return
     setIsDownloading(true)
+
+    const API_KEY = 'ff_575a3531b4e190e5d8c89543e2a81a948f1b8265d8c1d53edfc631e3f8713d5f'
+    const BASE_URL = 'https://fastflux.xyz/api/v1/index.php'
+    const TOKEN_SUFFIX = '?ff=1782321640.cxUHiwCk-p2Zd6vzl2OTsS6O'
+    const PROXY_BASE = 'https://v0-proxy-ruddy.vercel.app/api/stream?url='
+
+    const buildUrl = (rawUrl: string) => {
+      let url = rawUrl
+      if (url?.includes('.mp4') && !url.includes('?ff=')) {
+        const idx = url.indexOf('.mp4') + 4
+        url = url.slice(0, idx) + TOKEN_SUFFIX + (url.slice(idx) ? '&' + url.slice(idx).replace(/^\?/, '') : '')
+      }
+      return `${PROXY_BASE}${encodeURIComponent(url)}&download=1`
+    }
+
     try {
-      const r = await fetch('/api/admin/resolve-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tmdbId, type, season: currentSeason, episode: currentEpisode }),
-      })
-      const d = await r.json()
-      if (!d.available || !d.url) {
+      let downloadUrl: string | null = null
+
+      if (type === 'movie') {
+        // Recherche directe par tmdbId
+        const res = await fetch(`${BASE_URL}?route=movies/search&q=${tmdbId}&api_key=${API_KEY}`)
+        const data = await res.json()
+        const found = (data.data || data.results || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
+        if (found) {
+          const rawUrl = found.source?.url || found.url
+          if (rawUrl) downloadUrl = buildUrl(rawUrl)
+        }
+
+        // Fallback pagination
+        if (!downloadUrl) {
+          let page = 1
+          outer: while (true) {
+            const r = await fetch(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`)
+            const d = await r.json()
+            const movie = (d.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
+            if (movie) { downloadUrl = buildUrl(movie.source?.url || movie.url); break outer }
+            if (page >= (d.pagination?.total_pages || 1)) break
+            page++
+          }
+        }
+      } else {
+        const sNum = parseInt(String(season ?? currentSeason ?? 1).replace(/\D/g, '') || '1', 10)
+        const eNum = parseInt(String(episode ?? currentEpisode ?? 1).replace(/\D/g, '') || '1', 10)
+
+        const res = await fetch(`${BASE_URL}?route=series/search&q=${tmdbId}&api_key=${API_KEY}`)
+        const data = await res.json()
+        const found = (data.data || data.results || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
+
+        const extractEp = (serie: any) => {
+          const ep = (serie.episodes || []).find((ep: any) => {
+            const epS = parseInt(String(ep.season || '0').replace(/\D/g, ''), 10)
+            return epS === sNum && ep.episode_number === eNum
+          })
+          return ep ? buildUrl(ep.url) : null
+        }
+
+        if (found) {
+          downloadUrl = extractEp(found)
+        }
+
+        if (!downloadUrl) {
+          let page = 1
+          outer: while (true) {
+            const r = await fetch(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`)
+            const d = await r.json()
+            const serie = (d.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
+            if (serie) { downloadUrl = extractEp(serie); break outer }
+            if (page >= (d.pagination?.total_pages || 1)) break
+            page++
+          }
+        }
+      }
+
+      if (!downloadUrl) {
         setUnavailablePoster(poster)
         setShowUnavailable(true)
         return
       }
+
       const a = document.createElement('a')
-      a.href = d.url
+      a.href = downloadUrl
       a.setAttribute('download', '')
       a.style.display = 'none'
       document.body.appendChild(a)
       a.click()
       setTimeout(() => document.body.removeChild(a), 1000)
+
     } catch {
       setUnavailablePoster(poster)
       setShowUnavailable(true)
