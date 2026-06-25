@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Menu, X, User, LogOut, Settings, Heart,
   Film, Tv, Home, Plus, Bell, Check, Trash2, ChevronRight, Shield, Shuffle,
@@ -93,6 +93,54 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
 }
 
 import { usePresence } from '@/hooks/use-presence'
+
+
+// ─── Sliding Pill Navigation ──────────────────────────────────────────────────
+function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: string; label: string; icon: any }[] }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 })
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const activeEl = container.querySelector('[data-active="true"]') as HTMLElement
+    if (!activeEl) { setPillStyle(s => ({ ...s, opacity: 0 })); return }
+    setPillStyle({ left: activeEl.offsetLeft, width: activeEl.offsetWidth, opacity: 1 })
+  }, [pathname])
+
+  return (
+    <div ref={containerRef} className="relative flex items-center">
+      <div
+        className="absolute top-0 bottom-0 rounded-full pointer-events-none"
+        style={{
+          left: pillStyle.left,
+          width: pillStyle.width,
+          opacity: pillStyle.opacity,
+          background: 'linear-gradient(135deg, rgba(29,111,232,0.35) 0%, rgba(21,88,192,0.25) 100%)',
+          boxShadow: '0 0 12px rgba(29,111,232,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+          border: '1px solid rgba(29,111,232,0.3)',
+          transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
+        }}
+      />
+      {navLinks.map(link => {
+        const isActive = pathname === link.href
+        return (
+          <Link key={link.href} href={link.href} className="select-none">
+            <div
+              data-active={isActive ? 'true' : 'false'}
+              className={cn(
+                'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-150',
+                isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
+              )}
+            >
+              {link.label}
+            </div>
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
 
 export function Navbar() {
   const { user } = useSession()
@@ -391,33 +439,7 @@ export function Navbar() {
               boxShadow: '0 0 0 1px rgba(29,111,232,0.06), 0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
           >
-            <LayoutGroup id="navbar-links">
-              {navLinks.map(link => {
-                const isActive = pathname === link.href
-                return (
-                  <Link key={link.href} href={link.href} className="select-none relative">
-                    {isActive && (
-                      <motion.div
-                        layoutId="navbar-active-pill"
-                        className="absolute inset-0 rounded-full"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(29,111,232,0.35) 0%, rgba(21,88,192,0.25) 100%)',
-                          boxShadow: '0 0 12px rgba(29,111,232,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
-                          border: '1px solid rgba(29,111,232,0.3)',
-                        }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                    <div className={cn(
-                      'relative z-10 px-4 py-1.5 rounded-full transition-colors duration-150 text-[13px] font-semibold whitespace-nowrap',
-                      isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
-                    )}>
-                      {link.label}
-                    </div>
-                  </Link>
-                )
-              })}
-            </LayoutGroup>
+            <NavPill pathname={pathname} navLinks={navLinks} />
 
             <div className="w-px h-4 bg-white/10 mx-1" />
 
