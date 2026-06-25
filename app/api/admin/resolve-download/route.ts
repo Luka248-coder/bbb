@@ -24,7 +24,7 @@ function normalizePart(value: string | number | undefined, fallback: number): nu
 }
 
 async function fetchJson(url: string): Promise<any> {
-  const res = await fetch(url, { cache: 'no-store' })
+  const res = await fetch(url, { cache: 'no-store', headers: { 'Referer': 'https://fastflux.xyz/', 'Origin': 'https://fastflux.xyz', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36' } })
   const text = await res.text()
   const trimmed = text.trim()
   if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
