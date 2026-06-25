@@ -3,7 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-const DOWNLOAD_API = 'https://amorphous-stream-flux-hub.base44.app/api'
+const API_KEY = 'ff_575a3531b4e190e5d8c89543e2a81a948f1b8265d8c1d53edfc631e3f8713d5f'
+const BASE_URL = 'https://fastflux.xyz/api/v1/index.php'
+const TOKEN_SUFFIX = '?ff=1782321640.cxUHiwCk-p2Zd6vzl2OTsS6O'
+const PROXY_BASE = 'https://v0-proxy-ruddy.vercel.app/api/stream?url='
+
+function buildDirectUrl(rawUrl: string): string {
+  let url = rawUrl
+  if (url && url.includes('.mp4') && !url.includes('?ff=')) {
+    const mp4Index = url.indexOf('.mp4') + 4
+    const before = url.slice(0, mp4Index)
+    const after = url.slice(mp4Index)
+    url = before + TOKEN_SUFFIX + (after ? '&' + after.replace(/^\?/, '') : '')
+  }
+  const encoded = encodeURIComponent(url)
+  return `${PROXY_BASE}${encoded}&download=1`
+}
 
 function normalizePart(value: string | number | undefined, fallback: number): string {
   const parsed = parseInt(String(value ?? fallback).replace(/\D/g, '') || String(fallback), 10)
@@ -17,53 +32,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'tmdbId et type requis' }, { status: 400 })
   }
 
-  let apiUrl: string
-  if (type === 'movie') {
-    apiUrl = `${DOWNLOAD_API}/movie/${tmdbId}/`
-  } else {
-    const s = normalizePart(season, 1)
-    const e = normalizePart(episode, 1)
-    apiUrl = `${DOWNLOAD_API}/serie/${tmdbId}/S${s}/E${e}/`
-  }
-
-  // Forwarder les cookies du navigateur de l'utilisateur vers base44
-  const forwardCookies = request.headers.get('cookie') ?? ''
-
   try {
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-        'Referer': 'https://amorphous-stream-flux-hub.base44.app/',
-        'Cookie': forwardCookies,
-        'sec-fetch-dest': 'document',
-        'sec-fetch-mode': 'navigate',
-        'sec-fetch-site': 'same-origin',
-      },
-    })
+    if (type === 'movie') {
+      // Parcourir les pages jusqu'à trouver le film par tmdb_id
+      let page = 1
+      while (true) {
+        const res = await fetch(`${BASE_URL}?route=movies&page=${page}&api_key=${API_KEY}`, { cache: 'no-store' })
+        const data = await res.json()
+        const found = (data.data || []).find((m: any) => String(m.tmdb_id) === String(tmdbId))
 
-    const raw = await res.text()
-    const trimmed = raw.trim()
+        if (found) {
+          const url = buildDirectUrl(found.source?.url || found.url)
+          return NextResponse.json({ available: true, url })
+        }
 
-    // Cas texte brut direct
-    if (trimmed.startsWith('http')) {
-      return NextResponse.json({ available: true, url: trimmed.replace(/['"]/g, '') })
-    }
-
-    // Cas HTML minimal : <body>"URL"</body>
-    const bodyMatch = trimmed.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-    if (bodyMatch) {
-      const content = bodyMatch[1].replace(/<[^>]+>/g, '').replace(/['"]/g, '').trim()
-      if (content.startsWith('http')) {
-        return NextResponse.json({ available: true, url: content })
+        const totalPages = data.pagination?.total_pages || 1
+        if (page >= totalPages) break
+        page++
       }
-    }
 
-    return NextResponse.json({ available: false, debug: trimmed.slice(0, 150) })
+      return NextResponse.json({ available: false })
+
+    } else {
+      // Série
+      const sNum = normalizePart(season, 1)
+      const eNum = parseInt(normalizePart(episode, 1), 10)
+
+      let page = 1
+      while (true) {
+        const res = await fetch(`${BASE_URL}?route=series&page=${page}&api_key=${API_KEY}`, { cache: 'no-store' })
+        const data = await res.json()
+        const found = (data.data || []).find((s: any) => String(s.tmdb_id) === String(tmdbId))
+
+        if (found) {
+          const ep = (found.episodes || []).find((ep: any) => {
+            const epSeason = String(ep.season || '').replace('S', '').padStart(2, '0')
+            const epNum = ep.episode_number
+            return epSeason === sNum && epNum === eNum
+          })
+
+          if (ep) {
+            const url = buildDirectUrl(ep.url)
+            return NextResponse.json({ available: true, url })
+          }
+
+          return NextResponse.json({ available: false })
+        }
+
+        const totalPages = data.pagination?.total_pages || 1
+        if (page >= totalPages) break
+        page++
+      }
+
+      return NextResponse.json({ available: false })
+    }
 
   } catch (err: any) {
+    console.error('[resolve-download]', err)
     return NextResponse.json({ available: false, error: err.message }, { status: 502 })
   }
 }
