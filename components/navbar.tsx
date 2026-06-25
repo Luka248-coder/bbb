@@ -384,21 +384,28 @@ export function Navbar() {
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
             style={{
-              background: isScrolled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.04)',
-              boxShadow: 'none',
+              background: 'rgba(8,18,40,0.75)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(29,111,232,0.18)',
+              boxShadow: '0 0 0 1px rgba(29,111,232,0.08), 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
           >
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
                 <Link key={link.href} href={link.href} className="select-none">
-                  <div className={cn(
-                    'px-3.5 py-1.5 rounded-full transition-all duration-150 text-[13px] font-semibold whitespace-nowrap',
-                    isActive ? 'bg-white text-black' : 'text-white/55 hover:text-white'
-                  )}>
+                  <div
+                    className={cn(
+                      'px-4 py-1.5 rounded-full transition-all duration-200 text-[13px] font-semibold whitespace-nowrap',
+                      isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
+                    )}
+                    style={isActive ? {
+                      background: 'linear-gradient(135deg, rgba(29,111,232,0.35) 0%, rgba(21,88,192,0.25) 100%)',
+                      boxShadow: '0 0 12px rgba(29,111,232,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(29,111,232,0.3)',
+                    } : {}}
+                  >
                     {link.label}
                   </div>
                 </Link>
