@@ -34,28 +34,43 @@ export function SplashScreen() {
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
+      transition={{ duration: 0.6, ease: 'easeInOut' }}
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+      style={{ background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)' }}
     >
-      <div className="relative flex items-center justify-center">
-        <motion.div
-          className="absolute w-32 h-32 rounded-full"
-          style={{
-            border: '2px solid transparent',
-            borderTopColor: '#e50914',
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        />
+      {/* Logo */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="mb-16"
+      >
         <Image
           src="/images/logo.png"
           alt="Logo"
-          width={100}
-          height={30}
-          className="object-contain relative z-10"
+          width={90}
+          height={90}
+          className="object-contain"
           priority
         />
-      </div>
+      </motion.div>
+
+      {/* Blue gradient line */}
+      <motion.div
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: 1, opacity: 1 }}
+        transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        style={{ originX: 0 }}
+        className="relative w-64"
+      >
+        <div
+          style={{
+            height: '1.5px',
+            background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 60%, transparent 100%)',
+            boxShadow: '0 0 12px rgba(29, 111, 232, 0.7), 0 0 24px rgba(29, 111, 232, 0.3)',
+          }}
+        />
+      </motion.div>
     </motion.div>
   )
 }
