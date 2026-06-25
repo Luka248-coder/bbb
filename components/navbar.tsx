@@ -394,18 +394,23 @@ export function Navbar() {
             {navLinks.map(link => {
               const isActive = pathname === link.href
               return (
-                <Link key={link.href} href={link.href} className="select-none">
-                  <div
-                    className={cn(
-                      'px-4 py-1.5 rounded-full transition-all duration-200 text-[13px] font-semibold whitespace-nowrap',
-                      isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
-                    )}
-                    style={isActive ? {
-                      background: 'linear-gradient(135deg, rgba(29,111,232,0.35) 0%, rgba(21,88,192,0.25) 100%)',
-                      boxShadow: '0 0 12px rgba(29,111,232,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(29,111,232,0.3)',
-                    } : {}}
-                  >
+                <Link key={link.href} href={link.href} className="select-none relative">
+                  {isActive && (
+                    <motion.div
+                      layoutId="navbar-active-pill"
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(29,111,232,0.35) 0%, rgba(21,88,192,0.25) 100%)',
+                        boxShadow: '0 0 12px rgba(29,111,232,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(29,111,232,0.3)',
+                      }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <div className={cn(
+                    'relative z-10 px-4 py-1.5 rounded-full transition-colors duration-150 text-[13px] font-semibold whitespace-nowrap',
+                    isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
+                  )}>
                     {link.label}
                   </div>
                 </Link>
