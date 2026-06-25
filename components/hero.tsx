@@ -266,7 +266,7 @@ export function Hero({ content }: HeroProps) {
                 title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               >
                 {isFav
-                  ? <BookmarkCheck className="w-4 h-4 text-red-400" />
+                  ? <BookmarkCheck className="w-4 h-4 text-blue-400" />
                   : <Bookmark className="w-4 h-4 text-white/60" />
                 }
               </button>

@@ -69,11 +69,11 @@ function timeAgo(date: string) {
 }
 
 const prefConfig = [
-  { key: 'new_movies', label: 'Nouveaux films', icon: Film, color: 'bg-red-500/20 text-red-400' },
-  { key: 'new_series', label: 'Nouvelles séries', icon: Tv, color: 'bg-red-500/20 text-red-400' },
-  { key: 'new_episodes', label: 'Nouveaux épisodes', icon: Bell, color: 'bg-red-500/20 text-red-400' },
+  { key: 'new_movies', label: 'Nouveaux films', icon: Film, color: 'bg-blue-500/20 text-blue-400' },
+  { key: 'new_series', label: 'Nouvelles séries', icon: Tv, color: 'bg-blue-500/20 text-blue-400' },
+  { key: 'new_episodes', label: 'Nouveaux épisodes', icon: Bell, color: 'bg-blue-500/20 text-blue-400' },
   { key: 'request_approved', label: 'Demande acceptée', icon: Check, color: 'bg-green-500/20 text-green-400' },
-  { key: 'request_rejected', label: 'Demande refusée', icon: X, color: 'bg-red-500/20 text-red-400' },
+  { key: 'request_rejected', label: 'Demande refusée', icon: X, color: 'bg-blue-500/20 text-blue-400' },
   { key: 'announcements', label: 'Annonces', icon: Bell, color: 'bg-blue-500/20 text-blue-400' },
 ]
 
@@ -373,7 +373,7 @@ export function Navbar() {
         <div className="pointer-events-auto flex-shrink-0 ml-4">
           <Link href="/">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="StreamSelf" width={64} height={64} className="h-14 md:h-14 w-auto"
             />
           </Link>
@@ -550,7 +550,7 @@ export function Navbar() {
                 >
                   <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                    <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}
@@ -570,7 +570,7 @@ export function Navbar() {
                 ) : avatarUrl ? (
                   <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                  <div className="w-full h-full bg-blue-600 flex items-center justify-center">
                     <User className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -635,7 +635,7 @@ export function Navbar() {
                     {/* Icône */}
                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
                       style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.3), rgba(180,10,10,0.2))', border: '1px solid rgba(220,38,38,0.3)', boxShadow: '0 8px 24px rgba(220,38,38,0.2)' }}>
-                      <LogOut className="w-7 h-7 text-red-400" />
+                      <LogOut className="w-7 h-7 text-blue-400" />
                     </div>
 
                     <h2 className="text-white font-black text-xl mb-2">Déconnexion</h2>
@@ -648,7 +648,7 @@ export function Navbar() {
                       onClick={async () => { setShowLogoutModal(false); clearProfile(); await fetch('/api/auth/logout'); window.location.href = '/' }}
                       className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-white font-bold text-[15px] mb-3 transition-all active:scale-95"
                       style={{
-                        background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                        background: 'linear-gradient(135deg, #1d6fe8, #1558c0)',
                         boxShadow: '0 4px 24px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
                       }}
                     >
@@ -692,7 +692,7 @@ export function Navbar() {
             >
               <Bell className="w-[17px] h-[17px]" />
               {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -731,7 +731,7 @@ export function Navbar() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)' }}>
-                          <Bell className="w-4 h-4 text-red-400" />
+                          <Bell className="w-4 h-4 text-blue-400" />
                         </div>
                         <div>
                           <p className="font-bold text-white text-[15px] leading-tight">Notifications</p>
@@ -742,7 +742,7 @@ export function Navbar() {
                       </div>
                       <div className="flex items-center gap-1">
                         {unreadCount > 0 && <button onClick={markAllRead} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-green-500/10 hover:text-green-400 transition-all"><Check className="w-3.5 h-3.5" /></button>}
-                        {notifications.length > 0 && <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-red-500/10 hover:text-red-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>}
+                        {notifications.length > 0 && <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-blue-500/10 hover:text-blue-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>}
                         <button onClick={() => setShowNotifications(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><X className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
@@ -771,7 +771,7 @@ export function Navbar() {
                             {notif.image_url ? (
                               <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}><Image src={notif.image_url} alt="" fill className="object-cover" sizes="44px" /></div>
                             ) : (
-                              <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', border: '1px solid rgba(239,68,68,0.15)' }}><Bell className="w-4 h-4 text-red-400" /></div>
+                              <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(29,111,232,0.15), rgba(21,88,192,0.08))', border: '1px solid rgba(29,111,232,0.15)' }}><Bell className="w-4 h-4 text-blue-400" /></div>
                             )}
                             <div className="flex-1 min-w-0 py-0.5">
                               <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>{notif.title}</p>
@@ -948,7 +948,7 @@ export function Navbar() {
                           ) : avatarUrl ? (
                             <Image src={avatarUrl} alt={user.username} width={68} height={68} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                            <div className="w-full h-full bg-blue-600 flex items-center justify-center">
                               <span className="text-white font-bold text-2xl">{(activeProfile?.name || user.username)[0].toUpperCase()}</span>
                             </div>
                           )}
@@ -1011,10 +1011,10 @@ export function Navbar() {
                       </Link>
                     )}
                     <button onClick={() => setShowLogoutModal(true)}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-red-500/[0.08] transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-blue-500/[0.08] transition-colors"
                       style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}>
-                      <LogOut className="w-4 h-4 text-red-400/70 flex-shrink-0" />
-                      <span className="text-red-400/80 text-sm font-medium">Déconnexion</span>
+                      <LogOut className="w-4 h-4 text-blue-400/70 flex-shrink-0" />
+                      <span className="text-blue-400/80 text-sm font-medium">Déconnexion</span>
                     </button>
                   </div>
                   <div className="px-4 pb-10">
@@ -1033,13 +1033,13 @@ export function Navbar() {
                             }}
                             className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative text-left"
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />}
+                            {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />}
                             <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
                               {item.poster_url ? <Image src={item.poster_url} alt={item.title} fill className="object-cover" sizes="40px" /> : <div className="w-full h-full flex items-center justify-center">{item.content_type === 'movie' ? <Film className="w-4 h-4 text-zinc-600" /> : <Tv className="w-4 h-4 text-zinc-600" />}</div>}
                             </div>
                             <div className="flex-1 min-w-0 pr-4">
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded', item.content_type === 'movie' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400')}>
+                                <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded', item.content_type === 'movie' ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-500/15 text-blue-400')}>
                                   {item.content_type === 'movie' ? <Film className="w-2 h-2" /> : <Tv className="w-2 h-2" />}
                                   {item.content_type === 'movie' ? 'FILM' : 'SÉRIE'}
                                 </span>
@@ -1087,28 +1087,28 @@ export function Navbar() {
         {/* Accueil */}
         <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Home className={`w-[22px] h-[22px] relative z-10 ${pathname === '/' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.3 : 1.7} />
+          <Home className={`w-[22px] h-[22px] relative z-10 ${pathname === '/' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/' ? 'text-white/80' : 'text-white/28'}`}>Accueil</span>
         </Link>
 
         {/* Films */}
         <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/movies' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Film className={`w-[22px] h-[22px] relative z-10 ${pathname === '/movies' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.3 : 1.7} />
+          <Film className={`w-[22px] h-[22px] relative z-10 ${pathname === '/movies' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/movies' ? 'text-white/80' : 'text-white/28'}`}>Films</span>
         </Link>
 
         {/* Séries */}
         <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/series' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Tv className={`w-[22px] h-[22px] relative z-10 ${pathname === '/series' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.3 : 1.7} />
+          <Tv className={`w-[22px] h-[22px] relative z-10 ${pathname === '/series' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/series' ? 'text-white/80' : 'text-white/28'}`}>Séries</span>
         </Link>
 
         {/* Souhaits */}
         <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/request' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Plus className={`w-[22px] h-[22px] relative z-10 ${pathname === '/request' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/request' ? 2.3 : 1.7} />
+          <Plus className={`w-[22px] h-[22px] relative z-10 ${pathname === '/request' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/request' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/request' ? 'text-white/80' : 'text-white/28'}`}>Souhaits</span>
         </Link>
 
@@ -1118,8 +1118,8 @@ export function Navbar() {
           style={{ WebkitTapHighlightColor: 'transparent' }}>
           {showProfile && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
           {user && (activeProfile?.avatar_url || avatarUrl)
-            ? <Image src={activeProfile?.avatar_url || avatarUrl!} alt={activeProfile?.name || user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
-            : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-red-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
+            ? <Image src={activeProfile?.avatar_url || avatarUrl!} alt={activeProfile?.name || user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-blue-400' : 'ring-1 ring-white/20'}`} />
+            : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
           }
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${showProfile ? 'text-white/80' : 'text-white/28'}`}>Profil</span>
         </button>

@@ -143,7 +143,7 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
       {/* En-tête */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '1rem', paddingLeft: '0.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '3px', height: '18px', background: '#e53935', borderRadius: '2px' }} />
+          <div style={{ width: '3px', height: '18px', background: '#1d6fe8', borderRadius: '2px' }} />
           <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>À la une</span>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', marginLeft: '2px' }}>· Notre sélection du moment</span>
         </div>
@@ -202,7 +202,7 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
               }}>
                 <span style={{
                   width: '6px', height: '6px', borderRadius: '50%',
-                  background: '#ef4444', display: 'inline-block',
+                  background: '#3b82f6', display: 'inline-block',
                   animation: 'badgePulse 2s ease-in-out infinite',
                   boxShadow: '0 0 6px rgba(239,68,68,0.8)',
                 }} />

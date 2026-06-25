@@ -67,8 +67,8 @@ async function HomeContent() {
       <div className="relative z-10 h-28 -mt-28 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #12080a)' }} />
       <main className="relative z-10 pt-4">
         <ContinueWatching />
-        <ContentRow title="Top 10 Films de la semaine" content={topRatedMovies} type="movie" showRank accentColor="#e53935" />
-        <ContentRow title="Top 10 Séries de la semaine" content={topRatedSeries} type="series" showRank accentColor="#e53935" />
+        <ContentRow title="Top 10 Films de la semaine" content={topRatedMovies} type="movie" showRank accentColor="#1d6fe8" />
+        <ContentRow title="Top 10 Séries de la semaine" content={topRatedSeries} type="series" showRank accentColor="#1d6fe8" />
         <FeaturedBanner movies={movies} series={series} />
         <ContentRow title="Nouveautés Films" content={newMovies} type="movie" />
         <ContentRow title="Nouveautés Séries" content={newSeries} type="series" />
