@@ -10,6 +10,7 @@ import { GenreExplorer } from '@/components/genre-explorer'
 import { DiscordBanner } from '@/components/discord-banner'
 import { ContinueWatching } from '@/components/continue-watching'
 import { FeaturedBanner } from '@/components/featured-banner'
+import { KidModeHome } from '@/components/kid-mode-home'
 import { createClient } from '@/lib/supabase/server'
 
 async function getHeroContent(movies: any[], series: any[]) {
@@ -62,22 +63,17 @@ async function HomeContent() {
   const popularSeries = [...series].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 20)
 
   return (
-    <>
-      <Hero content={heroContent} />
-      <div className="relative z-10 h-28 -mt-28 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #12080a)' }} />
-      <main className="relative z-10 pt-4">
-        <ContinueWatching />
-        <ContentRow title="Top 10 Films de la semaine" content={topRatedMovies} type="movie" showRank accentColor="#e53935" />
-        <ContentRow title="Top 10 Séries de la semaine" content={topRatedSeries} type="series" showRank accentColor="#e53935" />
-        <FeaturedBanner movies={movies} series={series} />
-        <ContentRow title="Nouveautés Films" content={newMovies} type="movie" />
-        <ContentRow title="Nouveautés Séries" content={newSeries} type="series" />
-        <ContentRow title="Films populaires" content={popularMovies} type="movie" />
-        <ContentRow title="Séries populaires" content={popularSeries} type="series" />
-        <GenreExplorer movies={movies} series={series} />
-        <DiscordBanner />
-      </main>
-    </>
+    <KidModeHome
+      heroContent={heroContent}
+      topRatedMovies={topRatedMovies}
+      topRatedSeries={topRatedSeries}
+      newMovies={newMovies}
+      newSeries={newSeries}
+      popularMovies={popularMovies}
+      popularSeries={popularSeries}
+      movies={movies}
+      series={series}
+    />
   )
 }
 

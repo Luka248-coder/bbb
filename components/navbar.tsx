@@ -96,7 +96,7 @@ import { usePresence } from '@/hooks/use-presence'
 
 export function Navbar() {
   const { user } = useSession()
-  const { activeProfile } = useProfile()
+  const { activeProfile, clearProfile } = useProfile()
   usePresence(user?.id)
   const { openDrawer } = useDrawer()
 
@@ -645,7 +645,7 @@ export function Navbar() {
 
                     {/* Bouton confirmer */}
                     <button
-                      onClick={async () => { setShowLogoutModal(false); await fetch('/api/auth/logout'); window.location.href = '/' }}
+                      onClick={async () => { setShowLogoutModal(false); clearProfile(); await fetch('/api/auth/logout'); window.location.href = '/' }}
                       className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-white font-bold text-[15px] mb-3 transition-all active:scale-95"
                       style={{
                         background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
