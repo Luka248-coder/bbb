@@ -434,8 +434,8 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Pill central desktop */}
-        <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
+        {/* Pill desktop (déplacée à gauche, juste après le logo) */}
+        <div className="pointer-events-auto hidden md:flex ml-4">
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
             style={{
