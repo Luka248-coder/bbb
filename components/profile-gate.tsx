@@ -120,21 +120,18 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 0,
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-          {/* Logo */}
+        {/* Bloc logo — légèrement vers le haut */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40, marginTop: -60 }}>
           <img
             src="/images/logo.png"
             alt="Logo"
-            style={{
-              width: 72, height: 72, objectFit: 'contain', marginBottom: 14,
-              animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards',
-            }}
+            style={{ width: 72, height: 72, objectFit: 'contain', marginBottom: 14,
+              animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
           />
-
-          {/* Trait bleu */}
           <div style={{ width: 260, overflow: 'hidden', marginBottom: 8 }}>
             <div style={{
               height: '1.5px',
@@ -144,60 +141,67 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
               transformOrigin: 'left',
             }} />
           </div>
-
-          {/* Tagline */}
           <div style={{
-            width: 260, letterSpacing: '0.15em', fontSize: 11, fontFamily: 'sans-serif',
-            display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20,
+            letterSpacing: '0.14em', fontSize: 11, fontFamily: 'sans-serif',
+            display: 'flex', justifyContent: 'center', gap: 10,
             animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) both',
           }}>
             <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
             <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
           </div>
+        </div>
 
-          {/* Captcha card */}
-          <div style={{
-            animation: 'fadeInUp 0.6s 1.4s cubic-bezier(0.22,1,0.36,1) both',
+        {/* Flèche + texte "Appuyer ici" */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 14,
+          animation: 'fadeInUp 0.6s 1.5s cubic-bezier(0.22,1,0.36,1) both',
+        }}>
+          <p style={{
+            fontFamily: `'Georgia', 'Times New Roman', serif`,
+            fontSize: 13, fontStyle: 'italic', fontWeight: 400,
+            color: 'rgba(255,255,255,0.35)', letterSpacing: '0.04em',
           }}>
-            <div style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 16,
-              padding: '16px 20px',
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
-              display: 'flex',
-              flexDirection: 'column' as const,
-              alignItems: 'center',
-              gap: 12,
-              minWidth: 280,
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4 }}>
-                <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, fontFamily: 'sans-serif', letterSpacing: '0.01em' }}>
-                  Vérification rapide
-                </p>
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, fontFamily: 'sans-serif' }}>
-                  Confirme que tu n'es pas un robot
-                </p>
-              </div>
+            Appuie ici pour continuer
+          </p>
+          <svg width="18" height="22" viewBox="0 0 18 22" fill="none" style={{ animation: 'arrowBounce 1.2s 2s ease-in-out infinite' }}>
+            <path d="M9 1 C9 1 9 14 9 14 M9 14 L4 9 M9 14 L14 9" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
 
-              {/* Turnstile widget */}
-              <div ref={containerRef} />
-
-              {captchaError && (
-                <p style={{ color: '#f87171', fontSize: 11, fontFamily: 'sans-serif', textAlign: 'center' as const }}>
-                  Erreur de vérification — recharge la page
-                </p>
-              )}
+        {/* Captcha card — légèrement vers le bas */}
+        <div style={{ animation: 'fadeInUp 0.6s 1.6s cubic-bezier(0.22,1,0.36,1) both' }}>
+          <div style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 18,
+            padding: '18px 22px',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.07)',
+            display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10,
+            minWidth: 290,
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3 }}>
+              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, fontFamily: 'sans-serif', letterSpacing: '0.01em' }}>
+                Vérification rapide
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, fontFamily: 'sans-serif' }}>
+                Confirme que tu n'es pas un robot
+              </p>
             </div>
+            <div ref={containerRef} />
+            {captchaError && (
+              <p style={{ color: '#f87171', fontSize: 11, fontFamily: 'sans-serif', textAlign: 'center' as const }}>
+                Erreur de vérification — recharge la page
+              </p>
+            )}
           </div>
-
         </div>
 
         <style>{`
           @keyframes fadeInScale { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
           @keyframes slideIn { from{transform:scaleX(0);opacity:0} to{transform:scaleX(1);opacity:1} }
-          @keyframes fadeInUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes arrowBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
         `}</style>
       </div>
     )
