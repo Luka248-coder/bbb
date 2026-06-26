@@ -29,27 +29,23 @@ function extractSeasonEpisode(url: string): { season: number; episode: number } 
   return null
 }
 
-// Sélectionne la meilleure URL pour un épisode donné parmi une liste :
-// - préfère "premium" sur "free"
-// - préfère 1080p
-// - retourne null si aucune URL ne correspond EXACTEMENT au bon S/E
+// Sélectionne l'URL premium 1080p pour un épisode donné.
+// Ne prend JAMAIS les URLs free. Retourne null si pas trouvé.
 function pickBestUrl(
   urls: { url: string; name?: string }[],
   season: number,
   episode: number
 ): string | null {
+  // Filtrer par S/E exact ET premium uniquement
   const matches = urls.filter(u => {
+    if (!u.url.includes('premium')) return false
     const se = extractSeasonEpisode(u.url)
     return se && se.season === season && se.episode === episode
   })
-
   if (matches.length === 0) return null
-
-  // Préférer premium > free, puis 1080p
-  const premium = matches.filter(u => u.url.includes('premium') || !u.url.includes('free'))
-  const pool = premium.length > 0 ? premium : matches
-  const hd = pool.find(u => (u.name || '').includes('1080p'))
-  return (hd || pool[0]).url
+  // Préférer 1080p, sinon prendre le premier premium trouvé
+  const hd = matches.find(u => (u.name || '').includes('1080p'))
+  return (hd || matches[0]).url
 }
 
 export async function GET(request: NextRequest) {
@@ -118,9 +114,11 @@ export async function GET(request: NextRequest) {
     let videoUrl: string | null = null
 
     if (type === 'movie') {
-      // Film : prendre premium si dispo, sinon premier
-      const premium = allUrls.find(u => u.url.includes('premium') || !u.url.includes('free'))
-      videoUrl = (premium || allUrls[0])?.url || null
+      // Film : premium uniquement, préférer 1080p
+      const premUrls = allUrls.filter(u => u.url.includes('premium'))
+      const pool = premUrls.length > 0 ? premUrls : allUrls
+      const hd = pool.find(u => (u.name || '').includes('1080p'))
+      videoUrl = (hd || pool[0])?.url || null
 
     } else {
       // ── Format 1 : seasons[].episodes[] ──
@@ -133,9 +131,10 @@ export async function GET(request: NextRequest) {
         )
         if (ep) {
           const epUrls: { url: string; name?: string }[] = ep.urls || (ep.url ? [{ url: ep.url }] : [])
-          // Préférer premium
-          const prem = epUrls.find(u => u.url.includes('premium') || !u.url.includes('free'))
-          videoUrl = (prem || epUrls[0])?.url || null
+          const premUrls = epUrls.filter(u => u.url.includes('premium'))
+          const pool = premUrls.length > 0 ? premUrls : epUrls
+          const hd = pool.find(u => (u.name || '').includes('1080p'))
+          videoUrl = (hd || pool[0])?.url || null
         }
       }
 
@@ -147,8 +146,10 @@ export async function GET(request: NextRequest) {
         )
         if (ep) {
           const epUrls: { url: string; name?: string }[] = ep.urls || (ep.url ? [{ url: ep.url }] : [])
-          const prem = epUrls.find(u => u.url.includes('premium') || !u.url.includes('free'))
-          videoUrl = (prem || epUrls[0])?.url || null
+          const premUrls2 = epUrls.filter(u => u.url.includes('premium'))
+          const pool2 = premUrls2.length > 0 ? premUrls2 : epUrls
+          const hd2 = pool2.find(u => (u.name || '').includes('1080p'))
+          videoUrl = (hd2 || pool2[0])?.url || null
         }
       }
 
