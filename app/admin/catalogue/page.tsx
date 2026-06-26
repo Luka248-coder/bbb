@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import {
   Film, Tv, Zap, Search, Plus, Trash2, Star, Loader2, X,
-  Check, Play, Pause, RefreshCw, Library, Link as LinkIcon,
-  ChevronDown, ChevronUp,
+  Check, Library, Link as LinkIcon, ChevronDown, ChevronUp,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
