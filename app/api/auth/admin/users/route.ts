@@ -10,15 +10,30 @@ export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('id')
 
   if (userId) {
-    const [userRes, historyRes, favRes, requestsRes] = await Promise.all([
+    const [userRes, favRes, requestsRes, profilesRes] = await Promise.all([
       supabase.from('users').select('*').eq('id', userId).single(),
-      supabase.from('watch_history').select('*, profiles(name, avatar_url)').eq('user_id', userId).order('watched_at', { ascending: false }).limit(50),
       supabase.from('favorites').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('content_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id').eq('user_id', userId),
     ])
+
+    // Historique par user_id + par profile_id (visionnages avec profil actif)
+    const profileIds = (profilesRes.data || []).map((p: { id: string }) => p.id)
+    const [histByUser, histByProfile] = await Promise.all([
+      supabase.from('watch_history').select('*, profiles(name, avatar_url)').eq('user_id', userId).order('watched_at', { ascending: false }).limit(50),
+      profileIds.length > 0
+        ? supabase.from('watch_history').select('*, profiles(name, avatar_url)').in('profile_id', profileIds).order('watched_at', { ascending: false }).limit(50)
+        : Promise.resolve({ data: [] }),
+    ])
+    const seen = new Set<string>()
+    const history = [...(histByUser.data || []), ...((histByProfile as any).data || [])]
+      .filter(item => { if (seen.has(item.id)) return false; seen.add(item.id); return true })
+      .sort((a, b) => new Date(b.watched_at).getTime() - new Date(a.watched_at).getTime())
+      .slice(0, 50)
+
     return NextResponse.json({
       user: userRes.data,
-      history: historyRes.data || [],
+      history,
       favorites: favRes.data || [],
       requests: requestsRes.data || [],
     })
