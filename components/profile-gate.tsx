@@ -23,7 +23,6 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
     if (!already) {
       sessionStorage.setItem('app_loaded', '1')
       setShowSplash(true)
-      // Garder le splash 2.5s minimum
       setTimeout(() => { minDelayRef.current = true }, 2500)
     }
   }, [])
