@@ -148,7 +148,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
           {/* Tagline */}
           <div style={{
             width: 260, letterSpacing: '0.15em', fontSize: 11, fontFamily: 'sans-serif',
-            display: 'flex', justifyContent: 'space-between', marginBottom: 20,
+            display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20,
             animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) both',
           }}>
             <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
