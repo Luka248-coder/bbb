@@ -17,7 +17,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
 
   const isExempt = EXEMPT_PATHS.some(p => pathname.startsWith(p))
 
-  // Déterminer côté client si c'est le premier chargement
+  // Splash uniquement au premier chargement de l'onglet
   useEffect(() => {
     const already = sessionStorage.getItem('app_loaded')
     if (!already) {
@@ -27,7 +27,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Vérifier la session une seule fois
+  // Vérifier la session
   useEffect(() => {
     fetch('/api/auth/session')
       .then(r => r.ok ? r.json() : null)
@@ -41,17 +41,13 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
       .catch(() => setSessionChecked(true))
   }, [])
 
-  // Masquer le splash quand tout est prêt + délai minimum écoulé
+  // Masquer le splash quand tout est prêt + délai minimum
   useEffect(() => {
     if (!showSplash) return
     if (!initialized || !sessionChecked) return
-
     const tryHide = () => {
-      if (minDelayRef.current) {
-        setShowSplash(false)
-      } else {
-        setTimeout(tryHide, 100)
-      }
+      if (minDelayRef.current) { setShowSplash(false) }
+      else { setTimeout(tryHide, 100) }
     }
     tryHide()
   }, [showSplash, initialized, sessionChecked])
@@ -60,29 +56,33 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!initialized || !sessionChecked || isExempt) return
     if (!isLoggedIn) return
-    if (pathname === '/') return
+    // Exception : après déconnexion on reste sur /
+    if (pathname === '/' && sessionStorage.getItem('just_logged_out') === '1') {
+      sessionStorage.removeItem('just_logged_out')
+      return
+    }
     if (!activeProfile) {
       router.replace('/profiles')
     }
   }, [initialized, sessionChecked, isLoggedIn, activeProfile, isExempt, pathname])
 
-  const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt && pathname !== '/'
+  const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt
 
   if (showSplash) {
     return (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <img
             src="/images/logo.png"
             alt="Logo"
-            style={{ width: 80, height: 80, objectFit: 'contain', marginBottom: 20,
+            style={{ width: 80, height: 80, objectFit: 'contain',
               animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
           />
-          <div style={{ width: 260, overflow: 'hidden', marginBottom: 10 }}>
+          <div style={{ width: 260, overflow: 'hidden' }}>
             <div style={{
               height: '1.5px',
               background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
@@ -91,19 +91,19 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
               transformOrigin: 'left',
             }} />
           </div>
-          <p style={{
+          <div style={{
             width: 260, letterSpacing: '0.22em', fontSize: 12, fontFamily: 'sans-serif',
-            display: 'flex', justifyContent: 'space-between',
-            animation: 'fadeInUp 0.7s 0.9s cubic-bezier(0.22,1,0.36,1) both',
+            display: 'flex', justifyContent: 'space-between', opacity: 0,
+            animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) forwards',
           }}>
             <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
             <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
-          </p>
+          </div>
         </div>
         <style>{`
           @keyframes fadeInScale { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
           @keyframes slideIn { from{transform:scaleX(0);opacity:0} to{transform:scaleX(1);opacity:1} }
-          @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes fadeInUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         `}</style>
       </div>
     )
