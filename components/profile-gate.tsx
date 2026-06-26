@@ -20,6 +20,13 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
     if (!already) { sessionStorage.setItem('app_loaded', '1'); return true }
     return false
   })
+  // Durée minimum d'affichage du splash (2.5s pour voir le message)
+  const [minDelayDone, setMinDelayDone] = useState(!isFirstLoad)
+  useEffect(() => {
+    if (!isFirstLoad) return
+    const t = setTimeout(() => setMinDelayDone(true), 2500)
+    return () => clearTimeout(t)
+  }, [])
 
   const isExempt = EXEMPT_PATHS.some(p => pathname.startsWith(p))
 
@@ -51,7 +58,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt
 
   // N'afficher le splash que lors du tout premier chargement
-  if ((stillChecking || needsRedirect) && isFirstLoad) {
+  if ((!minDelayDone || stillChecking || needsRedirect) && isFirstLoad) {
     return (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
