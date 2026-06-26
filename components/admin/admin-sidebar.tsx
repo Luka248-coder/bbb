@@ -54,10 +54,7 @@ function NavContent({ user, pathname, onClose }: { user: User; pathname: string;
       {/* Logo */}
       <div className="px-5 py-5 flex items-center justify-between border-b border-white/[0.06]">
         <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
-          <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-            alt="AtStream" width={110} height={28} className="h-7 w-auto"
-          />
+          <Image src="/images/logo.png" alt="Logo" width={28} height={28} className="h-7 w-auto" />
           <span className="text-[10px] font-semibold tracking-widest text-white/20 uppercase">Admin</span>
         </Link>
         {onClose && (

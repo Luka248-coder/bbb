@@ -545,8 +545,8 @@ function SeriesTab() {
                                   </div>
                                   <button onClick={() => { setSpeedMode(!speedMode); setSpeedText('') }}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${speedMode
-                                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-105'
-                                      : 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 border border-orange-500/25 hover:from-orange-500/30 hover:to-amber-500/30 hover:border-orange-500/40'
+                                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105'
+                                      : 'bg-gradient-to-r from-blue-600/20 to-blue-400/20 text-blue-300 border border-blue-500/25 hover:from-blue-600/30 hover:to-blue-400/30 hover:border-blue-500/40'
                                     }`}>
                                     <Zap className="w-3 h-3" />
                                     Speed Série
