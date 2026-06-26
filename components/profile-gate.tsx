@@ -48,10 +48,11 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!initialized || !sessionChecked || isExempt) return
     if (!isLoggedIn) return
+    if (pathname === '/') return  // Pas de redirect sur la home (ex: après déconnexion)
     if (!activeProfile) {
       router.replace('/profiles')
     }
-  }, [initialized, sessionChecked, isLoggedIn, activeProfile, isExempt])
+  }, [initialized, sessionChecked, isLoggedIn, activeProfile, isExempt, pathname])
 
   // Bloquer le rendu tant qu'on n'a pas vérifié
   const stillChecking = !initialized || !sessionChecked
