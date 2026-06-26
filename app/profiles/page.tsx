@@ -127,11 +127,7 @@ setTab('general'); setEditProfile(p); setShowCreate(true)
     (a.character_name || '').toLowerCase().includes(avatarSearch.toLowerCase())
   )
 
-  if (loading) return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-white/20" />
-    </div>
-  )
+  if (loading) return null
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center">
