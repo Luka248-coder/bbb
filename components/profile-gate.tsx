@@ -76,14 +76,14 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <img
             src="/images/logo.png"
             alt="Logo"
-            style={{ width: 80, height: 80, objectFit: 'contain',
+            style={{ width: 80, height: 80, objectFit: 'contain', marginBottom: 20,
               animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
           />
-          <div style={{ width: 260, overflow: 'hidden' }}>
+          <div style={{ width: 260, overflow: 'hidden', marginBottom: 10 }}>
             <div style={{
               height: '1.5px',
               background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
