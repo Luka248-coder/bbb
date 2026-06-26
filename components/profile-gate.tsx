@@ -129,13 +129,13 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
             src="/images/logo.png"
             alt="Logo"
             style={{
-              width: 80, height: 80, objectFit: 'contain', marginBottom: 20,
+              width: 72, height: 72, objectFit: 'contain', marginBottom: 14,
               animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards',
             }}
           />
 
           {/* Trait bleu */}
-          <div style={{ width: 260, overflow: 'hidden', marginBottom: 10 }}>
+          <div style={{ width: 260, overflow: 'hidden', marginBottom: 8 }}>
             <div style={{
               height: '1.5px',
               background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
@@ -147,9 +147,9 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
 
           {/* Tagline */}
           <div style={{
-            width: 260, letterSpacing: '0.22em', fontSize: 12, fontFamily: 'sans-serif',
-            display: 'flex', justifyContent: 'space-between', opacity: 0, marginBottom: 32,
-            animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) forwards',
+            width: 260, letterSpacing: '0.22em', fontSize: 11, fontFamily: 'sans-serif',
+            display: 'flex', justifyContent: 'space-between', marginBottom: 20,
+            animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) both',
           }}>
             <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
             <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
@@ -157,21 +157,20 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
 
           {/* Captcha card */}
           <div style={{
-            opacity: 0,
-            animation: 'fadeInUp 0.6s 1.6s cubic-bezier(0.22,1,0.36,1) forwards',
+            animation: 'fadeInUp 0.6s 1.4s cubic-bezier(0.22,1,0.36,1) both',
           }}>
             <div style={{
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 16,
-              padding: '20px 24px',
+              padding: '16px 20px',
               backdropFilter: 'blur(20px)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
               display: 'flex',
               flexDirection: 'column' as const,
               alignItems: 'center',
               gap: 12,
-              minWidth: 300,
+              minWidth: 280,
             }}>
               <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4 }}>
                 <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, fontFamily: 'sans-serif', letterSpacing: '0.01em' }}>
