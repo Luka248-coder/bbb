@@ -22,7 +22,7 @@ interface WatchItem {
   id: string; title: string; content_type: 'movie' | 'series'
   poster: string | null; season: number | null; episode: number | null
   progress: number; watched_at: string
-  profiles?: { name: string; avatar: string | null } | null
+  profiles?: { name: string; avatar_url: string | null } | null
 }
 
 interface UserDetail { user: UserData; history: WatchItem[]; favorites: any[]; requests: any[] }
@@ -368,8 +368,8 @@ export default function AdminUsersPage() {
                           {/* Profil */}
                           {item.profiles&&(
                             <div className="flex-shrink-0 flex flex-col items-center gap-1">
-                              {item.profiles.avatar
-                                ? <Image src={item.profiles.avatar} alt={item.profiles.name} width={28} height={28} className="rounded-full object-cover border border-zinc-700"/>
+                              {item.profiles.avatar_url
+                                ? <Image src={item.profiles.avatar_url} alt={item.profiles.name} width={28} height={28} className="rounded-full object-cover border border-zinc-700"/>
                                 : <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">{item.profiles.name[0].toUpperCase()}</div>
                               }
                               <span className="text-[10px] text-zinc-500 max-w-[60px] truncate text-center">{item.profiles.name}</span>

@@ -163,6 +163,8 @@ async function WatchContent({
         initialSeason={season}
         initialEpisode={episode}
         userId={user?.id || null}
+        profileId={profileId}
+        poster={poster}
       />
     </>
   )
