@@ -31,13 +31,14 @@ interface PlayerPageProps {
   playerUrl: string
   userId?: string | null
   profileId?: string | null
+  poster?: string | null
   isDrawer?: boolean
   onClose?: () => void
 }
 
 type TabType = 'synopsis' | 'casting' | 'similaires'
 
-export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId, profileId, isDrawer = false, onClose }: PlayerPageProps) {
+export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1, playerUrl, userId, profileId, poster: _poster, isDrawer = false, onClose }: PlayerPageProps) {
   const router = useRouter()
   const { openDrawer } = useDrawer()
   const [currentSeason, setCurrentSeason] = useState(initialSeason)

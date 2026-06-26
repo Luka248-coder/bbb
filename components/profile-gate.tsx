@@ -66,35 +66,36 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <img
-          src="/images/logo.png"
-          alt="Logo"
-          style={{ width: 90, height: 90, objectFit: 'contain', marginBottom: 16,
-            animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
-        />
-        <div style={{ width: 260, overflow: 'hidden' }}>
-          <div style={{
-            height: '1.5px',
-            background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
-            boxShadow: '0 0 12px rgba(29,111,232,0.7), 0 0 28px rgba(29,111,232,0.3)',
-            animation: 'slideIn 0.9s 0.35s cubic-bezier(0.22,1,0.36,1) both',
-            transformOrigin: 'left',
-          }} />
+        {/* Bloc centré : logo + trait + tagline groupés */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <img
+            src="/images/logo.png"
+            alt="Logo"
+            style={{ width: 80, height: 80, objectFit: 'contain',
+              animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
+          />
+          <div style={{ width: 260, overflow: 'hidden' }}>
+            <div style={{
+              height: '1.5px',
+              background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
+              boxShadow: '0 0 12px rgba(29,111,232,0.7), 0 0 28px rgba(29,111,232,0.3)',
+              animation: 'slideIn 0.9s 0.35s cubic-bezier(0.22,1,0.36,1) both',
+              transformOrigin: 'left',
+            }} />
+          </div>
+          <p style={{
+            width: 260,
+            letterSpacing: '0.22em',
+            fontSize: 12,
+            fontFamily: 'sans-serif',
+            display: 'flex',
+            justifyContent: 'space-between',
+            animation: 'fadeInUp 0.7s 0.9s cubic-bezier(0.22,1,0.36,1) both',
+          }}>
+            <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
+            <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
+          </p>
         </div>
-        {/* Tagline */}
-        <p style={{
-          marginTop: 18,
-          width: 260,
-          letterSpacing: '0.22em',
-          fontSize: 12,
-          fontFamily: 'sans-serif',
-          display: 'flex',
-          justifyContent: 'space-between',
-          animation: 'fadeInUp 0.7s 0.9s cubic-bezier(0.22,1,0.36,1) both',
-        }}>
-          <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
-          <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
-        </p>
         <style>{`
           @keyframes fadeInScale {
             from { opacity: 0; transform: scale(0.85); }
