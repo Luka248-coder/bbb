@@ -434,8 +434,8 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Pill central desktop */}
-        <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex">
+        {/* Pill desktop (déplacée à gauche, juste après le logo) */}
+        <div className="pointer-events-auto hidden md:flex ml-4">
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
             style={{
@@ -473,28 +473,27 @@ export function Navbar() {
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
                 pathname === '/roulette' ? 'bg-white/15' : 'hover:bg-white/10'
               )}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                  id="navbar-dice"
-                  onMouseDown={(e) => {
-                    const el = e.currentTarget
-                    el.style.animation = 'none'
-                    void el.offsetWidth
-                    el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
-                  }}
-                >
-                  {/* Dé arrière */}
-                  <rect x="8" y="1" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6"/>
-                  <circle cx="12" cy="5" r="1" fill="white" opacity="0.6"/>
-                  <circle cx="17" cy="5" r="1" fill="white" opacity="0.6"/>
-                  <circle cx="17" cy="10" r="1" fill="white" opacity="0.6"/>
-                  {/* Dé avant */}
-                  <rect x="3" y="10" width="13" height="13" rx="2" stroke="white" strokeWidth="1.5" fill="none"/>
-                  <circle cx="7" cy="14" r="1" fill="white"/>
-                  <circle cx="12" cy="14" r="1" fill="white"/>
-                  <circle cx="7" cy="19" r="1" fill="white"/>
-                  <circle cx="12" cy="19" r="1" fill="white"/>
-                  <circle cx="9.5" cy="16.5" r="1" fill="white"/>
-                </svg>
+                <svg
+  width="22"
+  height="22"
+  viewBox="0 0 24 24"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  id="navbar-dice"
+  onMouseDown={(e) => {
+    const el = e.currentTarget
+    el.style.animation = 'none'
+    void el.offsetWidth
+    el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
+  }}
+>
+  <rect width="12" height="12" x="2" y="10" rx="2" ry="2" stroke="white" strokeWidth="2" />
+  <path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6" stroke="white" strokeWidth="2" />
+  <path d="M6 18h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
+  <path d="M10 14h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
+  <path d="M15 6h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
+  <path d="M18 9h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
+</svg>
               </div>
             </button>
 
