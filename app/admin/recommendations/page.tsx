@@ -1,9 +1,4 @@
-import { AdminRecommendations } from '@/components/admin/admin-recommendations'
-
-export const metadata = {
-  title: 'Recommandations - Administration - StreamSelf',
-}
-
+import { redirect } from 'next/navigation'
 export default function AdminRecommendationsPage() {
-  return <AdminRecommendations />
+  redirect('/admin')
 }
