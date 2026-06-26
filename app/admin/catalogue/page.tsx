@@ -6,6 +6,7 @@ import Image from 'next/image'
 import {
   Film, Tv, Zap, Search, Plus, Trash2, Star, Loader2, X,
   Check, Play, Pause, RefreshCw, Library, Link as LinkIcon,
+  ChevronDown, ChevronUp, Download,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -26,6 +27,12 @@ interface SeriesItem {
   id: number; tmdb_id: number; name: string
   poster_path: string | null; vote_average: number
   first_air_date?: string; video_url?: string | null
+  number_of_seasons?: number
+}
+interface Episode {
+  id: number; series_id: number
+  season_number: number; episode_number: number
+  title: string | null; video_url: string | null; download_url: string | null
 }
 
 const TMDB_KEY = '1a6aed55d15f2da7f2f0ff0586c52174'
@@ -297,9 +304,20 @@ function SeriesTab() {
   const [addingId, setAddingId] = useState<number | null>(null)
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [editId, setEditId] = useState<number | null>(null)
-  const [editUrl, setEditUrl] = useState('')
-  const [savingId, setSavingId] = useState<number | null>(null)
+
+  // Episodes
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [episodes, setEpisodes] = useState<Episode[]>([])
+  const [loadingEps, setLoadingEps] = useState(false)
+  const [seasonFilter, setSeasonFilter] = useState(1)
+  const [editingEp, setEditingEp] = useState<number | null>(null)
+  const [editVideoUrl, setEditVideoUrl] = useState('')
+  const [editingDl, setEditingDl] = useState<number | null>(null)
+  const [editDlUrl, setEditDlUrl] = useState('')
+  const [savingEp, setSavingEp] = useState(false)
+  const [speedMode, setSpeedMode] = useState(false)
+  const [speedText, setSpeedText] = useState('')
+  const [speedSaving, setSpeedSaving] = useState(false)
 
   useEffect(() => {
     fetch('/api/content/series')
@@ -322,30 +340,82 @@ function SeriesTab() {
   const addSeries = async (result: TMDBResult) => {
     setAddingId(result.id)
     try {
-      const r = await fetch('/api/auth/admin/content', {
+      const r = await fetch('/api/auth/admin/episodes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'series', tmdbData: result }),
+        body: JSON.stringify({ tmdbId: result.id }),
       })
-      if (r.ok) {
-        const data = await r.json()
-        setItems(prev => prev.find(i => i.tmdb_id === result.id) ? prev : [data, ...prev])
+      const data = await r.json()
+      if (data.success) {
+        setItems(prev => prev.find(i => i.tmdb_id === result.id) ? prev : [data.series, ...prev])
         setAddedIds(prev => new Set([...prev, result.id]))
+        setShowAdd(false); setResults([]); setQuery('')
       }
     } catch {} finally { setAddingId(null) }
   }
 
-  const saveUrl = async (item: SeriesItem) => {
-    setSavingId(item.id)
+  const loadEpisodes = async (seriesDbId: number) => {
+    if (expandedId === seriesDbId) { setExpandedId(null); return }
+    setExpandedId(seriesDbId)
+    setLoadingEps(true)
+    setSeasonFilter(1)
+    setSpeedMode(false)
     try {
-      const r = await fetch('/api/auth/admin/content', {
+      const r = await fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
+      const data = await r.json()
+      setEpisodes(data || [])
+    } catch {} finally { setLoadingEps(false) }
+  }
+
+  const saveVideoUrl = async (epId: number) => {
+    setSavingEp(true)
+    try {
+      const r = await fetch('/api/auth/admin/episodes', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'series', tmdbId: item.tmdb_id, videoUrl: editUrl }),
+        body: JSON.stringify({ episodeId: epId, videoUrl: editVideoUrl }),
       })
       if (r.ok) {
-        setItems(prev => prev.map(i => i.id === item.id ? { ...i, video_url: editUrl } : i))
-        setEditId(null); setEditUrl('')
+        setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, video_url: editVideoUrl } : e))
+        setEditingEp(null); setEditVideoUrl('')
       }
-    } catch {} finally { setSavingId(null) }
+    } catch {} finally { setSavingEp(false) }
+  }
+
+  const saveDlUrl = async (epId: number) => {
+    setSavingEp(true)
+    try {
+      const r = await fetch('/api/auth/admin/episodes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId: epId, downloadUrl: editDlUrl }),
+      })
+      if (r.ok) {
+        setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, download_url: editDlUrl } : e))
+        setEditingDl(null); setEditDlUrl('')
+      }
+    } catch {} finally { setSavingEp(false) }
+  }
+
+  const speedImport = async () => {
+    if (!speedText.trim() || expandedId === null) return
+    setSpeedSaving(true)
+    const lines = speedText.trim().split('\n')
+    const parsed: { episodeNumber: number; url: string }[] = []
+    for (const line of lines) {
+      const match = line.trim().match(/^(\d+)\s+(https?:\/\/.+)$/)
+      if (match) parsed.push({ episodeNumber: parseInt(match[1]), url: match[2].trim() })
+    }
+    if (parsed.length === 0) { alert('Format invalide — ex: "1 https://..."'); setSpeedSaving(false); return }
+    let saved = 0
+    for (const { episodeNumber, url } of parsed) {
+      const ep = episodes.find(e => e.season_number === seasonFilter && e.episode_number === episodeNumber)
+      if (!ep) continue
+      const r = await fetch('/api/auth/admin/episodes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId: ep.id, videoUrl: url }),
+      })
+      if (r.ok) { setEpisodes(prev => prev.map(e => e.id === ep.id ? { ...e, video_url: url } : e)); saved++ }
+    }
+    setSpeedText(''); setSpeedMode(false); setSpeedSaving(false)
+    alert(`✅ ${saved} épisode(s) mis à jour !`)
   }
 
   const deleteSeries = async (item: SeriesItem) => {
@@ -354,13 +424,18 @@ function SeriesTab() {
     try {
       await fetch(`/api/auth/admin/content?type=series&tmdbId=${item.tmdb_id}`, { method: 'DELETE' })
       setItems(prev => prev.filter(i => i.id !== item.id))
+      if (expandedId === item.id) setExpandedId(null)
     } catch {} finally { setDeletingId(null) }
   }
 
   const filtered = items.filter(i => !filter || i.name?.toLowerCase().includes(filter.toLowerCase()))
+  const seasons = [...new Set(episodes.map(e => e.season_number))].sort((a, b) => a - b)
+  const filteredEps = episodes.filter(e => e.season_number === seasonFilter)
+  const epsWithUrl = episodes.filter(e => e.video_url).length
 
   return (
     <div className="space-y-5">
+      {/* Toolbar */}
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
@@ -374,11 +449,13 @@ function SeriesTab() {
         </button>
       </div>
 
+      {/* Add panel */}
       <AnimatePresence>
         {showAdd && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-            <p className="text-sm font-semibold text-white mb-3">Rechercher sur TMDB</p>
+            <p className="text-sm font-semibold text-white mb-1">Rechercher sur TMDB</p>
+            <p className="text-xs text-white/30 mb-3">Les saisons et épisodes seront importés automatiquement</p>
             <div className="flex gap-2">
               <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchTMDB()}
                 placeholder="Titre de la série…"
@@ -401,30 +478,183 @@ function SeriesTab() {
         )}
       </AnimatePresence>
 
+      {/* List */}
       {loading ? (
-        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
-          {Array.from({ length: 16 }).map((_, i) => <div key={i} className="rounded-xl bg-white/[0.04] animate-pulse aspect-[2/3]" />)}
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-2xl bg-white/[0.04] animate-pulse" />
+          ))}
         </div>
       ) : (
         <>
           <p className="text-xs text-white/25">{filtered.length} série{filtered.length > 1 ? 's' : ''} au catalogue</p>
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {filtered.map(item => (
-              <PosterCard
-                key={item.id}
-                title={item.name} year={item.first_air_date?.slice(0, 4)}
-                posterPath={item.poster_path} rating={item.vote_average}
-                hasUrl={!!item.video_url}
-                isEditing={editId === item.id} editUrl={editUrl}
-                onEditStart={() => { setEditId(item.id); setEditUrl(item.video_url || '') }}
-                onEditChange={setEditUrl}
-                onEditSave={() => saveUrl(item)}
-                onEditCancel={() => { setEditId(null); setEditUrl('') }}
-                isSaving={savingId === item.id}
-                onDelete={() => deleteSeries(item)} isDeleting={deletingId === item.id}
-                isType="series"
-              />
-            ))}
+          <div className="space-y-3">
+            {filtered.map((item, index) => {
+              const isExpanded = expandedId === item.id
+              const posterUrl = item.poster_path
+                ? `https://image.tmdb.org/t/p/w185${item.poster_path}`
+                : '/images/placeholder-poster.jpg'
+
+              return (
+                <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.02 }}>
+                  <div className={`rounded-2xl border overflow-hidden transition-colors ${isExpanded ? 'border-primary/40 bg-primary/[0.03]' : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12]'}`}>
+
+                    {/* Header row */}
+                    <div className="flex items-center gap-3 p-3">
+                      <div className="relative w-10 h-14 flex-shrink-0 rounded-lg overflow-hidden">
+                        <Image src={posterUrl} alt={item.name} fill className="object-cover" sizes="40px" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{item.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {item.first_air_date && (
+                            <span className="text-xs text-white/30">{item.first_air_date.slice(0, 4)}</span>
+                          )}
+                          {item.number_of_seasons && (
+                            <span className="text-xs text-white/30">{item.number_of_seasons} saison{item.number_of_seasons > 1 ? 's' : ''}</span>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-xs text-white/30">{item.vote_average?.toFixed(1)}</span>
+                          </div>
+                          {isExpanded && episodes.length > 0 && (
+                            <span className="text-xs text-primary/70">{epsWithUrl}/{episodes.length} liens</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => loadEpisodes(item.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isExpanded ? 'bg-primary/20 text-primary' : 'bg-white/[0.06] text-white/60 hover:text-white hover:bg-white/[0.10]'}`}>
+                          {isExpanded ? <><ChevronUp className="w-3.5 h-3.5" />Fermer</> : <><ChevronDown className="w-3.5 h-3.5" />Épisodes</>}
+                        </button>
+                        <button onClick={() => deleteSeries(item)} disabled={deletingId === item.id}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-white/25 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50">
+                          {deletingId === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Episodes panel */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-white/[0.06]">
+                          <div className="p-4">
+                            {loadingEps ? (
+                              <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                              </div>
+                            ) : episodes.length === 0 ? (
+                              <p className="text-white/30 text-sm text-center py-4">Aucun épisode — réimportez la série</p>
+                            ) : (
+                              <>
+                                {/* Season tabs + Speed Série */}
+                                <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+                                  <div className="flex gap-2 flex-wrap">
+                                    {seasons.map(s => (
+                                      <button key={s} onClick={() => { setSeasonFilter(s); setSpeedMode(false); setSpeedText('') }}
+                                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${seasonFilter === s ? 'bg-primary text-white' : 'bg-white/[0.06] text-white/40 hover:text-white hover:bg-white/[0.10]'}`}>
+                                        Saison {s}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <button onClick={() => { setSpeedMode(!speedMode); setSpeedText('') }}
+                                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors ${speedMode ? 'bg-orange-500 text-white' : 'bg-orange-500/15 text-orange-400 hover:bg-orange-500/25'}`}>
+                                    ⚡ Speed Série
+                                  </button>
+                                </div>
+
+                                {/* Speed Série panel */}
+                                {speedMode && (
+                                  <div className="mb-4 p-4 rounded-xl border border-orange-500/25 bg-orange-500/[0.07]">
+                                    <p className="text-orange-400 text-xs font-semibold mb-2">
+                                      ⚡ Format : <code className="bg-black/30 px-1 rounded">numéro url</code> — une ligne par épisode
+                                    </p>
+                                    <textarea value={speedText} onChange={e => setSpeedText(e.target.value)}
+                                      placeholder={"1 https://...\n2 https://...\n3 https://..."} rows={6}
+                                      className="w-full bg-black/30 border border-orange-500/25 rounded-lg p-3 text-xs text-white font-mono placeholder-white/25 outline-none focus:border-orange-500/50 resize-none mb-3" />
+                                    <div className="flex gap-2 justify-end">
+                                      <button onClick={() => { setSpeedMode(false); setSpeedText('') }}
+                                        className="px-3 py-1.5 rounded-lg text-xs text-white/40 hover:text-white transition-colors">
+                                        Annuler
+                                      </button>
+                                      <button onClick={speedImport} disabled={speedSaving || !speedText.trim()}
+                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-orange-500 hover:bg-orange-400 text-white transition-colors disabled:opacity-50">
+                                        {speedSaving ? <><Loader2 className="w-3 h-3 animate-spin" />Sauvegarde…</> : '⚡ Importer tout'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Episodes list */}
+                                <div className="space-y-1.5">
+                                  {filteredEps.map(ep => (
+                                    <div key={ep.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors">
+                                      <span className="text-white/30 text-xs font-mono w-8 shrink-0">
+                                        E{ep.episode_number.toString().padStart(2, '0')}
+                                      </span>
+                                      <span className="text-xs text-white/70 flex-1 truncate">
+                                        {ep.title || `Épisode ${ep.episode_number}`}
+                                      </span>
+
+                                      {/* Video URL */}
+                                      {editingEp === ep.id ? (
+                                        <div className="flex gap-1 w-56">
+                                          <input value={editVideoUrl} onChange={e => setEditVideoUrl(e.target.value)}
+                                            placeholder="https://…" autoFocus
+                                            className="flex-1 bg-white/[0.06] border border-white/[0.10] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-primary/50" />
+                                          <button onClick={() => saveVideoUrl(ep.id)} disabled={savingEp}
+                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white shrink-0">
+                                            {savingEp ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                          </button>
+                                          <button onClick={() => { setEditingEp(null); setEditVideoUrl('') }}
+                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.06] text-white/40 shrink-0">
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button onClick={() => { setEditingEp(ep.id); setEditVideoUrl(ep.video_url || '') }}
+                                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors ${ep.video_url ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'border-white/[0.08] bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]'}`}>
+                                          {ep.video_url ? <><Check className="w-2.5 h-2.5" />Lien</> : <>+ Lien</>}
+                                        </button>
+                                      )}
+
+                                      {/* Download URL */}
+                                      {editingDl === ep.id ? (
+                                        <div className="flex gap-1 w-56">
+                                          <input value={editDlUrl} onChange={e => setEditDlUrl(e.target.value)}
+                                            placeholder="https://…" autoFocus
+                                            className="flex-1 bg-white/[0.06] border border-white/[0.10] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-blue-500/50" />
+                                          <button onClick={() => saveDlUrl(ep.id)} disabled={savingEp}
+                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-600 text-white shrink-0">
+                                            {savingEp ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                          </button>
+                                          <button onClick={() => { setEditingDl(null); setEditDlUrl('') }}
+                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.06] text-white/40 shrink-0">
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button onClick={() => { setEditingDl(ep.id); setEditDlUrl(ep.download_url || '') }}
+                                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors ${ep.download_url ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'border-white/[0.08] bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]'}`}>
+                                          <Download className="w-2.5 h-2.5" />
+                                          {ep.download_url ? 'DL ✓' : 'DL'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              )
+            })}
           </div>
         </>
       )}
