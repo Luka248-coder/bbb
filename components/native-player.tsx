@@ -720,7 +720,7 @@ export function NativePlayer({
         }
         if (!results.length) return
 
-        const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId)) || results[0]
+        const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId))
         if (!match?.id) return
 
         const sheetRes = await fetch(`${PURSTREAM}/media/${match.id}/sheet`, {
@@ -733,7 +733,10 @@ export function NativePlayer({
         let url: string | null = null
 
         if (type === 'movie') {
-          url = items.urls?.[0]?.url || items.video_url || items.url || null
+          const premMovies = (items.urls || []).filter((u: any) => u.url?.includes('premium'))
+          const poolM = premMovies.length ? premMovies : (items.urls || [])
+          const hdM = poolM.find((u: any) => u.name?.includes('1080p'))
+          url = (hdM || poolM[0])?.url || items.video_url || items.url || null
         } else {
           const sNum = initialSeason || 1
           const eNum = initialEpisode || 1
@@ -753,13 +756,15 @@ export function NativePlayer({
           }
 
           if (!url && Array.isArray(items.urls) && items.urls.length) {
-            const seRegex = /\/S(\d+)\/E(\d+)\//i
-            const candidates = items.urls.filter((u: any) => {
+            const seRegex = //S(\d+)/E(\d+)//i
+            // Premium uniquement, S/E exact
+            const premCandidates = items.urls.filter((u: any) => {
+              if (!u.url?.includes('premium')) return false
               const m = u.url?.match(seRegex)
               return m && parseInt(m[1]) === sNum && parseInt(m[2]) === eNum
             })
-            const hd = candidates.find((u: any) => u.name?.includes('1080p'))
-            url = (hd || candidates[0])?.url || null
+            const hd = premCandidates.find((u: any) => u.name?.includes('1080p'))
+            url = (hd || premCandidates[0])?.url || null
           }
         }
 
