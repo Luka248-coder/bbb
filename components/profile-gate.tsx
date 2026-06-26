@@ -23,13 +23,12 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
 
   const isExempt = EXEMPT_PATHS.some(p => pathname.startsWith(p))
 
-  // Splash uniquement au premier chargement de l'onglet
+  // Splash + captcha à chaque chargement de page (pas juste le premier)
   useEffect(() => {
-    const already = sessionStorage.getItem('app_loaded')
-    if (!already) {
-      sessionStorage.setItem('app_loaded', '1')
+    const captchaOk = sessionStorage.getItem('captcha_passed')
+    if (!captchaOk) {
       setShowSplash(true)
-      setTimeout(() => { minDelayRef.current = true }, 2500)
+      setTimeout(() => { minDelayRef.current = true }, 2000)
     }
   }, [])
 
@@ -66,6 +65,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
       theme: 'dark',
       size: 'normal',
       callback: (_token: string) => {
+        sessionStorage.setItem('captcha_passed', '1')
         setCaptchaPassed(true)
       },
       'error-callback': () => {
@@ -147,7 +147,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
 
           {/* Tagline */}
           <div style={{
-            width: 260, letterSpacing: '0.22em', fontSize: 11, fontFamily: 'sans-serif',
+            width: 260, letterSpacing: '0.15em', fontSize: 11, fontFamily: 'sans-serif',
             display: 'flex', justifyContent: 'space-between', marginBottom: 20,
             animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) both',
           }}>
