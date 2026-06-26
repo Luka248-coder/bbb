@@ -50,7 +50,7 @@ function NavContent({ user, pathname, onClose }: { user: User; pathname: string;
     exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Logo */}
       <div className="px-5 py-5 flex items-center justify-between border-b border-white/[0.06]">
         <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
@@ -140,7 +140,7 @@ function NavContent({ user, pathname, onClose }: { user: User; pathname: string;
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-white/[0.06] space-y-1">
+      <div className="p-3 border-t border-white/[0.06] space-y-1 flex-shrink-0">
         <Link href="/" onClick={onClose}>
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/30 hover:text-white/70 hover:bg-white/[0.04] transition-all">
             <Home className="w-4 h-4" />
