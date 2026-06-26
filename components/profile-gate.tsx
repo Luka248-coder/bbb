@@ -13,6 +13,14 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   const [sessionChecked, setSessionChecked] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
+  // Splash uniquement au tout premier chargement de l'onglet
+  const [isFirstLoad] = useState(() => {
+    if (typeof window === 'undefined') return true
+    const already = sessionStorage.getItem('app_loaded')
+    if (!already) { sessionStorage.setItem('app_loaded', '1'); return true }
+    return false
+  })
+
   const isExempt = EXEMPT_PATHS.some(p => pathname.startsWith(p))
 
   // Vérifier la session une seule fois
@@ -42,21 +50,20 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   const stillChecking = !initialized || !sessionChecked
   const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt
 
-  if (stillChecking || needsRedirect) {
+  // N'afficher le splash que lors du tout premier chargement
+  if ((stillChecking || needsRedirect) && isFirstLoad) {
     return (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        {/* Logo */}
         <img
           src="/images/logo.png"
           alt="Logo"
           style={{ width: 90, height: 90, objectFit: 'contain', marginBottom: 64,
             animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
         />
-        {/* Trait dégradé bleu */}
         <div style={{ width: 260, overflow: 'hidden' }}>
           <div style={{
             height: '1.5px',
@@ -79,6 +86,9 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
       </div>
     )
   }
+
+  // Si ce n'est pas le premier chargement, on laisse passer sans bloquer
+  if (needsRedirect) return null
 
   return <>{children}</>
 }
