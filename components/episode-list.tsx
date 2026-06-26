@@ -179,7 +179,7 @@ export function EpisodeList({
       </AnimatePresence>
 
       {/* Episode list */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {episodes.map((ep, index) => {
           const isCurrent = isCurrentEp(ep)
           const future = isFuture(ep)
@@ -199,7 +199,7 @@ export function EpisodeList({
               onMouseEnter={() => setHoveredEp(ep.episode_number)}
               onMouseLeave={() => setHoveredEp(null)}
               onClick={() => !future && playEpisode(ep)}
-              className={`group relative flex gap-0 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border ${
+              className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border ${
                 isCurrent
                   ? 'border-primary/40 bg-primary/5'
                   : future
@@ -207,116 +207,180 @@ export function EpisodeList({
                   : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/10'
               }`}
             >
-              {/* Left accent bar for current */}
+              {/* Left accent bar for current — desktop only */}
               {isCurrent && (
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-full" />
+                <div className="hidden md:block absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-full z-10" />
               )}
 
-              {/* Thumbnail */}
-              <div className="relative flex-shrink-0 w-[220px] aspect-video bg-white/5 overflow-hidden">
-                {still ? (
-                  <Image
-                    src={still}
-                    alt={ep.name}
-                    fill
-                    className={`object-cover transition-transform duration-500 ${isHovered && !future ? 'scale-105' : 'scale-100'}`}
-                    sizes="220px"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-800">
-                    <Play className="w-8 h-8 text-white/20" />
-                  </div>
-                )}
-
-                {/* Overlay — visible au hover sur desktop, toujours visible sur mobile */}
-                <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered && !future ? 'opacity-100' : 'opacity-0 md:opacity-0'} ${!future ? 'max-md:opacity-100' : ''}`}>
-                  <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: isHovered && !future ? 1 : 0.8 }}
-                    transition={{ duration: 0.15 }}
-                    onClick={e => { e.stopPropagation(); if (!future) playEpisode(ep) }}
-                    className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 transition-transform"
-                  >
-                    <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                  </motion.div>
-                </div>
-
-                {/* Episode number badge */}
-                <div className={`absolute bottom-2 left-2 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black backdrop-blur-md ${
-                  isCurrent ? 'bg-primary text-white' : 'bg-black/60 text-white/80'
-                }`}>
-                  {String(ep.episode_number).padStart(2, '0')}
-                </div>
-
-                {/* Future lock */}
-                {future && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <Lock className="w-6 h-6 text-white/40" />
-                  </div>
-                )}
-
-                {/* Current playing indicator */}
-                {isCurrent && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-primary/90 backdrop-blur-sm rounded-lg px-2 py-1">
-                    <div className="flex gap-0.5 items-end h-3">
-                      {[1, 2, 3].map(b => (
-                        <motion.div
-                          key={b}
-                          className="w-0.5 bg-white rounded-full"
-                          animate={{ height: ['4px', '10px', '4px'] }}
-                          transition={{ duration: 0.8, repeat: Infinity, delay: b * 0.15 }}
-                        />
-                      ))}
+              {/* ── MOBILE layout: thumbnail pleine largeur + infos dessous ── */}
+              <div className="md:hidden">
+                {/* Thumbnail */}
+                <div className="relative w-full aspect-video bg-zinc-900 overflow-hidden">
+                  {still ? (
+                    <Image src={still} alt={ep.name} fill className="object-cover" sizes="100vw" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-800">
+                      <Play className="w-8 h-8 text-white/20" />
                     </div>
-                    <span className="text-white text-[10px] font-bold">EN COURS</span>
+                  )}
+
+                  {/* Gradient bas */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+
+                  {/* Badge numéro épisode */}
+                  <div className={`absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-xs font-black backdrop-blur-md ${
+                    isCurrent ? 'bg-primary text-white' : 'bg-black/60 text-white/80'
+                  }`}>
+                    Ép. {String(ep.episode_number).padStart(2, '0')}
+                  </div>
+
+                  {/* EN COURS badge */}
+                  {isCurrent && (
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-primary/90 backdrop-blur-sm rounded-full px-3 py-1.5">
+                      <div className="flex gap-0.5 items-end h-3">
+                        {[1, 2, 3].map(b => (
+                          <motion.div
+                            key={b}
+                            className="w-0.5 bg-white rounded-full"
+                            animate={{ height: ['4px', '10px', '4px'] }}
+                            transition={{ duration: 0.8, repeat: Infinity, delay: b * 0.15 }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-white text-[10px] font-bold tracking-wide">EN COURS</span>
+                    </div>
+                  )}
+
+                  {/* Bouton play centré */}
+                  {!future && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
+                        <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Future lock */}
+                  {future && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <Lock className="w-7 h-7 text-white/40" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Infos sous la vignette */}
+                <div className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className={`font-bold text-sm leading-tight flex-1 ${isCurrent ? 'text-white' : 'text-white/90'}`}>
+                      {ep.name}
+                    </h3>
+                    <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                      {ep.vote_average > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <span className="text-white/60 text-xs font-semibold">{ep.vote_average.toFixed(1)}</span>
+                        </div>
+                      )}
+                      {runtime && (
+                        <div className="flex items-center gap-1 text-white/35">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-xs">{runtime}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {ep.overview && (
+                    <p className="text-white/45 text-xs leading-relaxed line-clamp-2">{ep.overview}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── DESKTOP layout: horizontal ── */}
+              <div className="hidden md:flex gap-0">
+                {/* Thumbnail */}
+                <div className="relative flex-shrink-0 w-[220px] aspect-video bg-white/5 overflow-hidden">
+                  {still ? (
+                    <Image
+                      src={still}
+                      alt={ep.name}
+                      fill
+                      className={`object-cover transition-transform duration-500 ${isHovered && !future ? 'scale-105' : 'scale-100'}`}
+                      sizes="220px"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-800">
+                      <Play className="w-8 h-8 text-white/20" />
+                    </div>
+                  )}
+                  <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered && !future ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xl">
+                      <Play className="w-5 h-5 text-black fill-black ml-0.5" />
+                    </div>
+                  </div>
+                  <div className={`absolute bottom-2 left-2 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black backdrop-blur-md ${
+                    isCurrent ? 'bg-primary text-white' : 'bg-black/60 text-white/80'
+                  }`}>
+                    {String(ep.episode_number).padStart(2, '0')}
+                  </div>
+                  {future && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                      <Lock className="w-6 h-6 text-white/40" />
+                    </div>
+                  )}
+                  {isCurrent && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-primary/90 backdrop-blur-sm rounded-lg px-2 py-1">
+                      <div className="flex gap-0.5 items-end h-3">
+                        {[1, 2, 3].map(b => (
+                          <motion.div
+                            key={b}
+                            className="w-0.5 bg-white rounded-full"
+                            animate={{ height: ['4px', '10px', '4px'] }}
+                            transition={{ duration: 0.8, repeat: Infinity, delay: b * 0.15 }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-white text-[10px] font-bold">EN COURS</span>
+                    </div>
+                  )}
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col justify-center px-5 py-4 min-w-0">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <h3 className={`font-bold leading-tight text-base ${isCurrent ? 'text-white' : 'text-white/90'}`}>
+                      {ep.name}
+                    </h3>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {ep.vote_average > 0 && (
+                        <div className="flex items-center gap-1 opacity-60">
+                          <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                          <span className="text-white text-xs font-semibold">{ep.vote_average.toFixed(1)}</span>
+                        </div>
+                      )}
+                      {runtime && (
+                        <div className="flex items-center gap-1 text-white/40">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">{runtime}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {ep.overview && (
+                    <p className="text-white/50 text-sm leading-relaxed line-clamp-2 mb-2">{ep.overview}</p>
+                  )}
+                  {date && <p className="text-white/25 text-xs">{date}</p>}
+                </div>
+                {!future && (
+                  <div className={`flex items-center pr-4 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                    <div
+                      onClick={e => { e.stopPropagation(); playEpisode(ep) }}
+                      className="w-9 h-9 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Content */}
-              <div className="flex-1 flex flex-col justify-center px-5 py-4 min-w-0">
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <h3 className={`font-bold leading-tight text-base ${isCurrent ? 'text-white' : 'text-white/90'}`}>
-                    {ep.name}
-                  </h3>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {ep.vote_average > 0 && (
-                      <div className="flex items-center gap-1 opacity-60">
-                        <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                        <span className="text-white text-xs font-semibold">{ep.vote_average.toFixed(1)}</span>
-                      </div>
-                    )}
-                    {runtime && (
-                      <div className="flex items-center gap-1 text-white/40">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">{runtime}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {ep.overview && (
-                  <p className="text-white/50 text-sm leading-relaxed line-clamp-2 mb-2">
-                    {ep.overview}
-                  </p>
-                )}
-
-                {date && (
-                  <p className="text-white/25 text-xs">{date}</p>
-                )}
-              </div>
-
-              {/* Right play arrow (on hover) */}
-              {!future && (
-                <div className={`flex items-center pr-4 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                  <div
-                    onClick={e => { e.stopPropagation(); playEpisode(ep) }}
-                    className="w-9 h-9 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-                  </div>
-                </div>
-              )}
             </motion.div>
           )
         })}
