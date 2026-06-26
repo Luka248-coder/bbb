@@ -5,26 +5,16 @@ import { motion } from 'framer-motion'
 
 export function Loading() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px]">
-      <div className="relative flex items-center justify-center">
-        <motion.div
-          className="absolute w-24 h-24 rounded-full"
-          style={{
-            border: '2px solid transparent',
-            borderTopColor: '#e50914',
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        />
-        <Image
-          src="/images/logo.png"
-          alt="Logo"
-          width={80}
-          height={24}
-          className="object-contain relative z-10"
-          priority
-        />
-      </div>
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div
+        style={{
+          width: 32, height: 32, borderRadius: '50%',
+          border: '2px solid rgba(255,255,255,0.1)',
+          borderTopColor: 'rgba(255,255,255,0.4)',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
