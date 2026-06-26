@@ -555,20 +555,20 @@ function SeriesTab() {
 
                                 {/* Speed Série panel */}
                                 {speedMode && (
-                                  <div className="mb-4 p-4 rounded-xl border border-orange-500/25 bg-orange-500/[0.07]">
-                                    <p className="text-orange-400 text-xs font-semibold mb-2">
+                                  <div className="mb-4 p-4 rounded-xl border border-blue-500/25 bg-blue-500/[0.07]">
+                                    <p className="text-blue-400 text-xs font-semibold mb-2">
                                       ⚡ Format : <code className="bg-black/30 px-1 rounded">numéro url</code> — une ligne par épisode
                                     </p>
                                     <textarea value={speedText} onChange={e => setSpeedText(e.target.value)}
                                       placeholder={"1 https://...\n2 https://...\n3 https://..."} rows={6}
-                                      className="w-full bg-black/30 border border-orange-500/25 rounded-lg p-3 text-xs text-white font-mono placeholder-white/25 outline-none focus:border-orange-500/50 resize-none mb-3" />
+                                      className="w-full bg-black/30 border border-blue-500/25 rounded-lg p-3 text-xs text-white font-mono placeholder-white/25 outline-none focus:border-blue-500/50 resize-none mb-3" />
                                     <div className="flex gap-2 justify-end">
                                       <button onClick={() => { setSpeedMode(false); setSpeedText('') }}
                                         className="px-3 py-1.5 rounded-lg text-xs text-white/40 hover:text-white transition-colors">
                                         Annuler
                                       </button>
                                       <button onClick={speedImport} disabled={speedSaving || !speedText.trim()}
-                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-orange-500 hover:bg-orange-400 text-white transition-colors disabled:opacity-50">
+                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors disabled:opacity-50">
                                         {speedSaving ? <><Loader2 className="w-3 h-3 animate-spin" />Sauvegarde…</> : '⚡ Importer tout'}
                                       </button>
                                     </div>
