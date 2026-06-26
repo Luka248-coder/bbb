@@ -75,14 +75,15 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
           <img
             src="/images/logo.png"
             alt="Logo"
-            style={{ width: 80, height: 80, objectFit: 'contain',
+            style={{ width: 120, height: 120, objectFit: 'contain',
+              marginBottom: 32,
               animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
           />
-          <div style={{ width: 260, overflow: 'hidden' }}>
+          <div style={{ width: 260, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{
               height: '1.5px',
               background: 'linear-gradient(90deg, transparent 0%, #1d6fe8 30%, #60a5fa 65%, transparent 100%)',
@@ -93,7 +94,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
           </div>
           <div style={{
             width: 260, letterSpacing: '0.22em', fontSize: 12, fontFamily: 'sans-serif',
-            display: 'flex', justifyContent: 'space-between', opacity: 0,
+            display: 'flex', justifyContent: 'center', gap: 8, opacity: 0,
             animation: 'fadeInUp 0.7s 1.1s cubic-bezier(0.22,1,0.36,1) forwards',
           }}>
             <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
