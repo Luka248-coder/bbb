@@ -692,85 +692,24 @@ export function NativePlayer({
     }
   }, [resetTimer, clearErrorTimer, syncVideoState])
 
-  // ─── Purstream client-side fetch (Vercel bloque côté serveur) ────────────────
+  // ─── Purstream : délègue à l'API route (premium/S/E exact) ─────────────────
   useEffect(() => {
     if (initialVideoUrl || !tmdbId) return
-
-    const PURSTREAM = 'https://api.purstream.mx/api/v1'
     const contentTitle = seriesName || initialTitle
-
     ;(async () => {
       try {
-        const searchRes = await fetch(
-          `${PURSTREAM}/search-bar/search/${encodeURIComponent(contentTitle)}`,
-          { headers: { Accept: 'application/json' } }
-        )
-        if (!searchRes.ok) return
-
-        const data = await searchRes.json()
-        let results: any[] = []
-        const si = data?.data?.items
-        if (si) {
-          results = [
-            ...(si.movies?.items || []),
-            ...(si.series?.items || []),
-          ]
-        } else if (Array.isArray(data)) {
-          results = data
-        }
-        if (!results.length) return
-
-        const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId))
-        if (!match?.id) return
-
-        const sheetRes = await fetch(`${PURSTREAM}/media/${match.id}/sheet`, {
-          headers: { Accept: 'application/json' },
+        const params = new URLSearchParams({
+          title: contentTitle,
+          type,
+          tmdb_id: String(tmdbId),
+          ...(type === 'series' && { season: String(initialSeason || 1), episode: String(initialEpisode || 1) }),
         })
-        if (!sheetRes.ok) return
-
-        const json = await sheetRes.json()
-        const items = json?.data?.items ?? json
-        let url: string | null = null
-
-        if (type === 'movie') {
-          const premMovies = (items.urls || []).filter((u: any) => u.url?.includes('premium'))
-          const poolM = premMovies.length ? premMovies : (items.urls || [])
-          const hdM = poolM.find((u: any) => u.name?.includes('1080p'))
-          url = (hdM || poolM[0])?.url || items.video_url || items.url || null
-        } else {
-          const sNum = initialSeason || 1
-          const eNum = initialEpisode || 1
-
-          if (Array.isArray(items.seasons) && items.seasons.length) {
-            const s = items.seasons.find((s: any) => Number(s.number ?? s.season ?? s.season_number) === sNum)
-            const ep = s?.episodes?.find((e: any) => Number(e.number ?? e.episode ?? e.episode_number) === eNum)
-            url = ep?.urls?.[0]?.url || ep?.url || null
-          }
-
-          if (!url && Array.isArray(items.episodes) && items.episodes.length) {
-            const ep = items.episodes.find((e: any) =>
-              Number(e.season ?? e.season_number) === sNum &&
-              Number(e.episode ?? e.episode_number ?? e.number) === eNum
-            )
-            url = ep?.urls?.[0]?.url || ep?.url || null
-          }
-
-          if (!url && Array.isArray(items.urls) && items.urls.length) {
-            const seRegex = /\/S(\d+)\/E(\d+)\//i
-            // Premium uniquement, S/E exact
-            const premCandidates = items.urls.filter((u: any) => {
-              if (!u.url?.includes('premium')) return false
-              const m = u.url?.match(seRegex)
-              return m && parseInt(m[1]) === sNum && parseInt(m[2]) === eNum
-            })
-            const hd = premCandidates.find((u: any) => u.name?.includes('1080p'))
-            url = (hd || premCandidates[0])?.url || null
-          }
-        }
-
-        if (url) { setVideoUrl(url) }
+        const res = await fetch(`/api/purstream?${params}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.videoUrl) setVideoUrl(data.videoUrl)
       } catch (err) {
-        console.error('[Purstream client]', err)
+        console.error('[Purstream]', err)
       }
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
