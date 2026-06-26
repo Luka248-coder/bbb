@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
   Film, Tv, Zap, Search, Plus, Trash2, Star, Loader2, X,
   Check, Play, Pause, RefreshCw, Library, Link as LinkIcon,
-  ChevronDown, ChevronUp, Zap,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
