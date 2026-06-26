@@ -315,6 +315,8 @@ export function NativePlayer({
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
   const [fetchingEpisode, setFetchingEpisode] = useState(false)
+  const [episodeNotFound, setEpisodeNotFound] = useState(false)
+  const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showError, setShowError] = useState(false)
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoStarted = useRef(false)
@@ -771,7 +773,9 @@ export function NativePlayer({
 
   // Load video whenever videoUrl changes
   useEffect(() => {
+    if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
     if (videoUrl) {
+      setEpisodeNotFound(false)
       loadVideo(videoUrl)
     }
     return () => {
@@ -1151,7 +1155,14 @@ export function NativePlayer({
   const navigateToEpisode = (season: number, episode: number) => {
     clearErrorTimer()
     setShowError(false)
+    setEpisodeNotFound(false)
+    setEpisodeNotFound(false)
     setFetchingEpisode(true)
+    if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current)
+    fetchTimeoutRef.current = setTimeout(() => {
+      setFetchingEpisode(false)
+      setEpisodeNotFound(true)
+    }, 12000)
     setShowEpisodes(false)
     window.location.assign(getEpisodePlayUrl(season, episode))
   }
@@ -1279,7 +1290,7 @@ export function NativePlayer({
 
       {/* Fetching episode — spinner pendant la recherche Purstream */}
       <AnimatePresence>
-        {fetchingEpisode && (
+        {fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-4"
@@ -1288,6 +1299,52 @@ export function NativePlayer({
             <Loader2 className="w-10 h-10 text-white animate-spin" />
             <p className="text-white/50 text-sm font-medium">{displayTitle}</p>
             <p className="text-white/30 text-xs">Chargement de l'épisode...</p>
+          </motion.div>
+        )}
+        {episodeNotFound && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[60] flex flex-col items-center justify-center px-6"
+            style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+              className="flex flex-col items-center text-center max-w-xs w-full gap-5"
+            >
+              {/* Icône */}
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+                  style={{ background: 'rgba(29,111,232,0.08)', border: '1px solid rgba(29,111,232,0.2)' }}>
+                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                    <path d="M4 18h28M18 4l14 14-14 14" stroke="rgba(29,111,232,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="18" cy="18" r="16" stroke="rgba(29,111,232,0.15)" strokeWidth="1.5"/>
+                    <path d="M12 18h12M18 12v12" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div>
+              {/* Texte */}
+              <div className="space-y-2">
+                <h3 className="text-white font-bold text-xl tracking-tight">Épisode non disponible</h3>
+                <p className="text-white/40 text-sm leading-relaxed">
+                  Cet épisode n'est pas encore disponible. Dès qu'il le sera, tu recevras une notification.
+                </p>
+              </div>
+              {/* Badge notification */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                style={{ background: 'rgba(29,111,232,0.08)', border: '1px solid rgba(29,111,232,0.18)' }}>
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                <p className="text-blue-300/80 text-xs font-medium">Tu seras notifié dès sa disponibilité</p>
+              </div>
+              {/* Bouton retour */}
+              <button onClick={() => setEpisodeNotFound(false)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <ArrowLeft className="w-4 h-4" />
+                Retour
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
