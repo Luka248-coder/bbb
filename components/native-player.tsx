@@ -692,10 +692,19 @@ export function NativePlayer({
     }
   }, [resetTimer, clearErrorTimer, syncVideoState])
 
-  // ─── Purstream : délègue à l'API route (premium/S/E exact) ─────────────────
+  // ─── Purstream : délègue à l'API route + timeout 4s si rien ne joue ─────────
   useEffect(() => {
     if (initialVideoUrl || !tmdbId) return
     const contentTitle = seriesName || initialTitle
+
+    // Lancer le timer 4s dès le départ
+    setEpisodeNotFound(false)
+    if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current)
+    fetchTimeoutRef.current = setTimeout(() => {
+      setFetchingEpisode(false)
+      setEpisodeNotFound(true)
+    }, 4000)
+
     ;(async () => {
       try {
         const params = new URLSearchParams({
@@ -707,7 +716,12 @@ export function NativePlayer({
         const res = await fetch(`/api/purstream?${params}`)
         if (!res.ok) return
         const data = await res.json()
-        if (data.videoUrl) setVideoUrl(data.videoUrl)
+        if (data.videoUrl) {
+          // URL trouvée — annuler le timer et charger
+          if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
+          setEpisodeNotFound(false)
+          setVideoUrl(data.videoUrl)
+        }
       } catch (err) {
         console.error('[Purstream]', err)
       }
