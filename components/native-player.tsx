@@ -1247,7 +1247,7 @@ export function NativePlayer({
             className="absolute inset-0 pointer-events-none"
             style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
           >
-            <div className="absolute left-10 max-w-lg" style={{ bottom: '140px' }}>
+            <div className="absolute left-10 max-w-lg" style={{ top: '50%', transform: 'translateY(-50%)' }}>
               {tmdbDetails.logo_path ? (
                 <img
                   src={`https://image.tmdb.org/t/p/w500${tmdbDetails.logo_path}`}
