@@ -1162,7 +1162,7 @@ export function NativePlayer({
     fetchTimeoutRef.current = setTimeout(() => {
       setFetchingEpisode(false)
       setEpisodeNotFound(true)
-    }, 12000)
+    }, 4000)
     setShowEpisodes(false)
     window.location.assign(getEpisodePlayUrl(season, episode))
   }
