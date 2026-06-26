@@ -73,6 +73,17 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
             transformOrigin: 'left',
           }} />
         </div>
+        {/* Tagline */}
+        <p style={{
+          marginTop: 20,
+          letterSpacing: '0.2em',
+          fontSize: 11,
+          fontFamily: 'sans-serif',
+          animation: 'fadeInUp 0.7s 0.9s cubic-bezier(0.22,1,0.36,1) both',
+        }}>
+          <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>LE CINÉMA </span>
+          <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
+        </p>
         <style>{`
           @keyframes fadeInScale {
             from { opacity: 0; transform: scale(0.85); }
@@ -81,6 +92,10 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
           @keyframes slideIn {
             from { transform: scaleX(0); opacity: 0; }
             to   { transform: scaleX(1); opacity: 1; }
+          }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
         `}</style>
       </div>
