@@ -69,7 +69,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
         <img
           src="/images/logo.png"
           alt="Logo"
-          style={{ width: 90, height: 90, objectFit: 'contain', marginBottom: 32,
+          style={{ width: 90, height: 90, objectFit: 'contain', marginBottom: 16,
             animation: 'fadeInScale 0.6s cubic-bezier(0.22,1,0.36,1) forwards' }}
         />
         <div style={{ width: 260, overflow: 'hidden' }}>
@@ -93,7 +93,7 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
           animation: 'fadeInUp 0.7s 0.9s cubic-bezier(0.22,1,0.36,1) both',
         }}>
           <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
-          <span style={{ color: '#c0604a', fontWeight: 700 }}>POUR TOUS</span>
+          <span style={{ color: '#1d6fe8', fontWeight: 700 }}>POUR TOUS</span>
         </p>
         <style>{`
           @keyframes fadeInScale {
