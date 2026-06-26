@@ -1262,39 +1262,65 @@ export function NativePlayer({
         {episodeNotFound && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[60] flex flex-col items-center justify-center px-6"
-            style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)' }}
+            className="absolute inset-0 z-[60] flex items-center justify-center px-6"
+            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(20px)' }}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              initial={{ scale: 0.92, y: 16, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 280 }}
-              className="flex flex-col items-center text-center max-w-xs w-full gap-5"
+              transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+              className="flex flex-col items-center text-center w-full"
+              style={{ maxWidth: 340 }}
             >
               {/* Icône */}
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'rgba(29,111,232,0.08)', border: '1px solid rgba(29,111,232,0.2)' }}>
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <path d="M4 18h28M18 4l14 14-14 14" stroke="rgba(29,111,232,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="18" cy="18" r="16" stroke="rgba(29,111,232,0.15)" strokeWidth="1.5"/>
-                    <path d="M12 18h12M18 12v12" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                </div>
+              <div style={{
+                width: 64, height: 64, borderRadius: 20, marginBottom: 20,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
+                  <path d="M12 7v5.5M12 16.5v.5" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </div>
-              {/* Texte */}
-              <div className="space-y-2">
-                <h3 className="text-white font-bold text-xl tracking-tight">Épisode non disponible</h3>
-                <p className="text-white/40 text-sm leading-relaxed">
-                  Cet épisode n'est pas encore disponible. Dès qu'il le sera, tu recevras une notification.
-                </p>
+
+              {/* Titre */}
+              <p style={{
+                color: 'rgba(255,255,255,0.9)', fontSize: 18, fontWeight: 700,
+                letterSpacing: '-0.02em', marginBottom: 8, fontFamily: 'sans-serif',
+              }}>
+                Épisode indisponible
+              </p>
+
+              {/* Sous-titre */}
+              <p style={{
+                color: 'rgba(255,255,255,0.35)', fontSize: 13, lineHeight: 1.6,
+                marginBottom: 24, fontFamily: 'sans-serif', maxWidth: 260,
+              }}>
+                Cet épisode n'est pas encore disponible sur nos serveurs.
+                Tu seras notifié dès qu'il le sera.
+              </p>
+
+              {/* Badge */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 16px', borderRadius: 100, marginBottom: 24,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: '#60a5fa',
+                  boxShadow: '0 0 6px rgba(96,165,250,0.8)',
+                  animation: 'pulse 2s infinite',
+                }} />
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'sans-serif' }}>
+                  Notification automatique à la mise en ligne
+                </span>
               </div>
-              {/* Badge notification */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
-                style={{ background: 'rgba(29,111,232,0.08)', border: '1px solid rgba(29,111,232,0.18)' }}>
-                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                <p className="text-blue-300/80 text-xs font-medium">Tu seras notifié dès sa disponibilité</p>
-              </div>
+
               {/* Bouton retour */}
               <button onClick={() => setEpisodeNotFound(false)}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors"
