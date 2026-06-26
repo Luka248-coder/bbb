@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
   Film, Tv, Zap, Search, Plus, Trash2, Star, Loader2, X,
   Check, Play, Pause, RefreshCw, Library, Link as LinkIcon,
-  ChevronDown, ChevronUp, Download,
+  ChevronDown, ChevronUp, Zap,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ interface SeriesItem {
 interface Episode {
   id: number; series_id: number
   season_number: number; episode_number: number
-  title: string | null; video_url: string | null; download_url: string | null
+  title: string | null; video_url: string | null
 }
 
 const TMDB_KEY = '1a6aed55d15f2da7f2f0ff0586c52174'
@@ -312,8 +312,6 @@ function SeriesTab() {
   const [seasonFilter, setSeasonFilter] = useState(1)
   const [editingEp, setEditingEp] = useState<number | null>(null)
   const [editVideoUrl, setEditVideoUrl] = useState('')
-  const [editingDl, setEditingDl] = useState<number | null>(null)
-  const [editDlUrl, setEditDlUrl] = useState('')
   const [savingEp, setSavingEp] = useState(false)
   const [speedMode, setSpeedMode] = useState(false)
   const [speedText, setSpeedText] = useState('')
@@ -376,20 +374,6 @@ function SeriesTab() {
       if (r.ok) {
         setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, video_url: editVideoUrl } : e))
         setEditingEp(null); setEditVideoUrl('')
-      }
-    } catch {} finally { setSavingEp(false) }
-  }
-
-  const saveDlUrl = async (epId: number) => {
-    setSavingEp(true)
-    try {
-      const r = await fetch('/api/auth/admin/episodes', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ episodeId: epId, downloadUrl: editDlUrl }),
-      })
-      if (r.ok) {
-        setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, download_url: editDlUrl } : e))
-        setEditingDl(null); setEditDlUrl('')
       }
     } catch {} finally { setSavingEp(false) }
   }
@@ -560,8 +544,12 @@ function SeriesTab() {
                                     ))}
                                   </div>
                                   <button onClick={() => { setSpeedMode(!speedMode); setSpeedText('') }}
-                                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors ${speedMode ? 'bg-orange-500 text-white' : 'bg-orange-500/15 text-orange-400 hover:bg-orange-500/25'}`}>
-                                    ⚡ Speed Série
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${speedMode
+                                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-105'
+                                      : 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 border border-orange-500/25 hover:from-orange-500/30 hover:to-amber-500/30 hover:border-orange-500/40'
+                                    }`}>
+                                    <Zap className="w-3 h-3" />
+                                    Speed Série
                                   </button>
                                 </div>
 
@@ -620,28 +608,6 @@ function SeriesTab() {
                                         </button>
                                       )}
 
-                                      {/* Download URL */}
-                                      {editingDl === ep.id ? (
-                                        <div className="flex gap-1 w-56">
-                                          <input value={editDlUrl} onChange={e => setEditDlUrl(e.target.value)}
-                                            placeholder="https://…" autoFocus
-                                            className="flex-1 bg-white/[0.06] border border-white/[0.10] rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-blue-500/50" />
-                                          <button onClick={() => saveDlUrl(ep.id)} disabled={savingEp}
-                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-600 text-white shrink-0">
-                                            {savingEp ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                                          </button>
-                                          <button onClick={() => { setEditingDl(null); setEditDlUrl('') }}
-                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.06] text-white/40 shrink-0">
-                                            <X className="w-3 h-3" />
-                                          </button>
-                                        </div>
-                                      ) : (
-                                        <button onClick={() => { setEditingDl(ep.id); setEditDlUrl(ep.download_url || '') }}
-                                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors ${ep.download_url ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'border-white/[0.08] bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]'}`}>
-                                          <Download className="w-2.5 h-2.5" />
-                                          {ep.download_url ? 'DL ✓' : 'DL'}
-                                        </button>
-                                      )}
                                     </div>
                                   ))}
                                 </div>
