@@ -183,7 +183,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 bg-zinc-950 border-r border-white/[0.06] flex-col min-h-screen flex-shrink-0">
+      <aside className="hidden md:flex w-56 bg-zinc-950 border-r border-white/[0.06] flex-col h-screen sticky top-0 flex-shrink-0">
         <NavContent user={user} pathname={pathname} />
       </aside>
 
@@ -196,8 +196,8 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           <Menu className="w-5 h-5" />
         </button>
         <Image
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ChatGPT_Image_27_avr._2026_a%CC%80_00_48_07-removebg-preview-q9gJZZAURjXxiGLwtVf8BsKdJaOxq9.png"
-          alt="AtStream" width={90} height={24} className="h-5 w-auto"
+          src="/images/logo.png"
+          alt="Logo" width={24} height={24} className="h-5 w-auto"
         />
       </div>
 
