@@ -43,17 +43,12 @@ function extractSeasonEpisode(url: string): { season: number; episode: number } 
 // Sélectionne la meilleure URL : premium > free, 1080p > 720p
 function bestUrl(urls: { url: string; name?: string }[]): string | null {
   if (!urls || urls.length === 0) return null
-  // Priorité 1 : premium 1080p
-  const p1080 = urls.find(u => (u.name || '').toLowerCase().includes('premium') && (u.name || '').includes('1080p'))
-  if (p1080) return p1080.url
-  // Priorité 2 : premium (toute qualité)
-  const prem = urls.find(u => (u.name || '').toLowerCase().includes('premium'))
-  if (prem) return prem.url
-  // Priorité 3 : 1080p free
-  const f1080 = urls.find(u => (u.name || '').includes('1080p'))
-  if (f1080) return f1080.url
-  // Fallback : premier disponible
-  return urls[0].url
+  // Premium uniquement (vérifier dans l'URL)
+  const premUrls = urls.filter(u => u.url.includes('premium'))
+  const pool = premUrls.length > 0 ? premUrls : urls
+  // Préférer 1080p
+  const hd = pool.find(u => (u.name || '').includes('1080p'))
+  return (hd || pool[0]).url
 }
 
 function parseEpisodes(urls: { url: string; name?: string }[]): {
@@ -217,36 +212,8 @@ async function extractVideoUrl(
         return found.url
       }
 
-      // Fallback : les URLs n'ont peut-être pas de pattern S/E mais sont ordonnées
-      // On filtre par saison si possible, sinon on prend tout, et on indexe par épisode
-      const withSE = allUrls.filter(u => extractSeasonEpisode(u.url) !== null)
-
-      if (withSE.length > 0) {
-        // Certaines URLs ont un pattern mais pas toutes → fallback index sur celles de la bonne saison
-        const seasonUrls = allUrls.filter(u => {
-          const se = extractSeasonEpisode(u.url)
-          return !se || se.season === seasonNum
-        })
-        const idx = episodeNum - 1
-        if (seasonUrls[idx]) {
-          console.log(`[extractVideoUrl] ✅ index fallback S${seasonNum}E${episodeNum} [${idx}] → ${seasonUrls[idx].url.substring(0, 80)}`)
-          return seasonUrls[idx].url
-        }
-      } else {
-        // Aucune URL avec pattern S/E → probablement une seule saison, index direct
-        const idx = episodeNum - 1
-        if (allUrls[idx]) {
-          console.log(`[extractVideoUrl] ✅ no-SE index S${seasonNum}E${episodeNum} [${idx}] → ${allUrls[idx].url.substring(0, 80)}`)
-          return allUrls[idx].url
-        }
-      }
-
-      // Log diagnostic
-      const preview = allUrls.slice(0, 8).map((u, i) => {
-        const se = extractSeasonEpisode(u.url)
-        return `[${i}] ${se ? `S${se.season}E${se.episode}` : 'NO_SE'} → ${u.url.substring(0, 80)}`
-      })
-      console.warn(`[extractVideoUrl] ❌ S${seasonNum}E${episodeNum} introuvable. Aperçu URLs:\n${preview.join('\n')}`)
+      // Pas de fallback par index — si S/E exact pas trouvé → null
+      console.warn(`[extractVideoUrl] ❌ S${seasonNum}E${episodeNum} introuvable — pas de fallback`)
     }
 
     return null
