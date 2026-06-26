@@ -13,7 +13,7 @@ const HEADERS = {
   'sec-fetch-site': 'same-origin',
 }
 
-// Extrait saison/épisode depuis une URL Purstream (tous formats connus)
+// Extrait saison/épisode depuis une URL — pattern strict S{n}/E{n}
 function extractSeasonEpisode(url: string): { season: number; episode: number } | null {
   const patterns = [
     /\/S(\d+)\/E(\d+)\//i,
@@ -29,24 +29,27 @@ function extractSeasonEpisode(url: string): { season: number; episode: number } 
   return null
 }
 
-// Parse et déduplique les épisodes depuis une liste d'URLs (préfère 1080p)
-function parseEpisodes(urls: { url: string; name?: string }[]) {
-  const episodes: { season: number; episode: number; url: string; name: string }[] = []
-  urls.forEach((item) => {
-    const se = extractSeasonEpisode(item.url)
-    if (!se) return
-    const { season, episode } = se
-    const existing = episodes.find(e => e.season === season && e.episode === episode)
-    const is1080 = (item.name || '').includes('1080p')
-    if (!existing) {
-      episodes.push({ season, episode, url: item.url, name: item.name || '' })
-    } else if (is1080 && !existing.name.includes('1080p')) {
-      existing.url = item.url
-      existing.name = item.name || ''
-    }
+// Sélectionne la meilleure URL pour un épisode donné parmi une liste :
+// - préfère "premium" sur "free"
+// - préfère 1080p
+// - retourne null si aucune URL ne correspond EXACTEMENT au bon S/E
+function pickBestUrl(
+  urls: { url: string; name?: string }[],
+  season: number,
+  episode: number
+): string | null {
+  const matches = urls.filter(u => {
+    const se = extractSeasonEpisode(u.url)
+    return se && se.season === season && se.episode === episode
   })
-  episodes.sort((a, b) => a.season - b.season || a.episode - b.episode)
-  return episodes
+
+  if (matches.length === 0) return null
+
+  // Préférer premium > free, puis 1080p
+  const premium = matches.filter(u => u.url.includes('premium') || !u.url.includes('free'))
+  const pool = premium.length > 0 ? premium : matches
+  const hd = pool.find(u => (u.name || '').includes('1080p'))
+  return (hd || pool[0]).url
 }
 
 export async function GET(request: NextRequest) {
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
       const norm = title.toLowerCase().trim()
       match = results.find((r: any) => (r.title || r.name || '').toLowerCase().trim() === norm)
     }
-    // No fuzzy fallback — require exact tmdbId or exact title match
+    // Pas de fallback flou — titre ou tmdbId exact requis
     if (!match?.id) {
       return NextResponse.json({ videoUrl: null, error: 'No exact match found' })
     }
@@ -114,54 +117,48 @@ export async function GET(request: NextRequest) {
 
     let videoUrl: string | null = null
 
-    // ── 3a. Film ──────────────────────────────────────────────────────────────
     if (type === 'movie') {
-      videoUrl = allUrls[0]?.url || sheet.video_url || sheet.url || null
+      // Film : prendre premium si dispo, sinon premier
+      const premium = allUrls.find(u => u.url.includes('premium') || !u.url.includes('free'))
+      videoUrl = (premium || allUrls[0])?.url || null
 
-    // ── 3b. Série ─────────────────────────────────────────────────────────────
     } else {
-      // Format 1 : seasons[].episodes[]
-      if (sheet.seasons?.length > 0) {
+      // ── Format 1 : seasons[].episodes[] ──
+      if (!videoUrl && sheet.seasons?.length > 0) {
         const s = sheet.seasons.find((x: any) =>
           Number(x.number ?? x.season ?? x.season_number) === season
         )
         const ep = s?.episodes?.find((x: any) =>
           Number(x.number ?? x.episode ?? x.episode_number) === episode
         )
-        if (ep) videoUrl = ep.urls?.[0]?.url || ep.url || ep.video_url || null
+        if (ep) {
+          const epUrls: { url: string; name?: string }[] = ep.urls || (ep.url ? [{ url: ep.url }] : [])
+          // Préférer premium
+          const prem = epUrls.find(u => u.url.includes('premium') || !u.url.includes('free'))
+          videoUrl = (prem || epUrls[0])?.url || null
+        }
       }
 
-      // Format 2 : episodes[] plat
+      // ── Format 2 : episodes[] plat ──
       if (!videoUrl && sheet.episodes?.length > 0) {
         const ep = sheet.episodes.find((x: any) =>
           Number(x.season ?? x.season_number) === season &&
           Number(x.episode ?? x.episode_number ?? x.number) === episode
         )
-        if (ep) videoUrl = ep.urls?.[0]?.url || ep.url || ep.video_url || null
+        if (ep) {
+          const epUrls: { url: string; name?: string }[] = ep.urls || (ep.url ? [{ url: ep.url }] : [])
+          const prem = epUrls.find(u => u.url.includes('premium') || !u.url.includes('free'))
+          videoUrl = (prem || epUrls[0])?.url || null
+        }
       }
 
-      // Format 3 (CLEF) : liste plate d'URLs → parseEpisodes avec regex S/E
+      // ── Format 3 : liste plate d'URLs avec pattern S/E dans l'URL ──
       if (!videoUrl && allUrls.length > 0) {
-        // Trier allUrls par S/E avant tout traitement
-        const sortedUrls = [...allUrls].sort((a, b) => {
-          const seA = extractSeasonEpisode(a.url)
-          const seB = extractSeasonEpisode(b.url)
-          if (!seA && !seB) return 0
-          if (!seA) return 1
-          if (!seB) return -1
-          return seA.season - seB.season || seA.episode - seB.episode
-        })
-
-        const parsed = parseEpisodes(sortedUrls)
-        const found = parsed.find(e => e.season === season && e.episode === episode)
-        if (found) {
-          videoUrl = found.url
-          console.log(`[Purstream] ✅ parseEpisodes S${season}E${episode} → ${videoUrl.substring(0, 80)}`)
-        }
-
-        // No index fallback — only return URL if S/E pattern matches exactly
-        if (!videoUrl) {
-          console.warn(`[Purstream] ❌ S${season}E${episode} not found in URL patterns — refusing random fallback`)
+        videoUrl = pickBestUrl(allUrls, season, episode)
+        if (videoUrl) {
+          console.log(`[Purstream] ✅ Format3 S${season}E${episode} → ${videoUrl.substring(0, 80)}`)
+        } else {
+          console.warn(`[Purstream] ❌ S${season}E${episode} introuvable — pas de fallback`)
         }
       }
     }
