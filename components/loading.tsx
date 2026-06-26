@@ -26,14 +26,14 @@ export function SplashScreen() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6, ease: 'easeInOut' }}
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{ background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)' }}
+      style={{ background: '#000000' }}
     >
       {/* Logo */}
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-16"
+        className="mb-28"
       >
         <Image
           src="/images/logo.png"
