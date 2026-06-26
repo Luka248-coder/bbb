@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useProfile } from '@/contexts/ProfileContext'
 
@@ -12,23 +12,21 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [sessionChecked, setSessionChecked] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  // Splash uniquement au tout premier chargement de l'onglet
-  const [isFirstLoad] = useState(() => {
-    if (typeof window === 'undefined') return true
-    const already = sessionStorage.getItem('app_loaded')
-    if (!already) { sessionStorage.setItem('app_loaded', '1'); return true }
-    return false
-  })
-  // Durée minimum d'affichage du splash (2.5s pour voir le message)
-  const [minDelayDone, setMinDelayDone] = useState(!isFirstLoad)
-  useEffect(() => {
-    if (!isFirstLoad) return
-    const t = setTimeout(() => setMinDelayDone(true), 2500)
-    return () => clearTimeout(t)
-  }, [])
+  const [showSplash, setShowSplash] = useState(false)
+  const minDelayRef = useRef(false)
 
   const isExempt = EXEMPT_PATHS.some(p => pathname.startsWith(p))
+
+  // Déterminer côté client si c'est le premier chargement
+  useEffect(() => {
+    const already = sessionStorage.getItem('app_loaded')
+    if (!already) {
+      sessionStorage.setItem('app_loaded', '1')
+      setShowSplash(true)
+      // Garder le splash 2.5s minimum
+      setTimeout(() => { minDelayRef.current = true }, 2500)
+    }
+  }, [])
 
   // Vérifier la session une seule fois
   useEffect(() => {
@@ -44,29 +42,40 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
       .catch(() => setSessionChecked(true))
   }, [])
 
+  // Masquer le splash quand tout est prêt + délai minimum écoulé
+  useEffect(() => {
+    if (!showSplash) return
+    if (!initialized || !sessionChecked) return
+
+    const tryHide = () => {
+      if (minDelayRef.current) {
+        setShowSplash(false)
+      } else {
+        setTimeout(tryHide, 100)
+      }
+    }
+    tryHide()
+  }, [showSplash, initialized, sessionChecked])
+
   // Rediriger vers /profiles si connecté sans profil actif
   useEffect(() => {
     if (!initialized || !sessionChecked || isExempt) return
     if (!isLoggedIn) return
-    if (pathname === '/') return  // Pas de redirect sur la home (ex: après déconnexion)
+    if (pathname === '/') return
     if (!activeProfile) {
       router.replace('/profiles')
     }
   }, [initialized, sessionChecked, isLoggedIn, activeProfile, isExempt, pathname])
 
-  // Bloquer le rendu tant qu'on n'a pas vérifié
-  const stillChecking = !initialized || !sessionChecked
-  const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt
+  const needsRedirect = initialized && sessionChecked && isLoggedIn && !activeProfile && !isExempt && pathname !== '/'
 
-  // N'afficher le splash que lors du tout premier chargement
-  if ((!minDelayDone || stillChecking || needsRedirect) && isFirstLoad) {
+  if (showSplash) {
     return (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'radial-gradient(ellipse at center, #2a0a0a 0%, #0d0205 60%, #000000 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        {/* Bloc centré : logo + trait + tagline groupés */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
           <img
             src="/images/logo.png"
@@ -84,12 +93,8 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
             }} />
           </div>
           <p style={{
-            width: 260,
-            letterSpacing: '0.22em',
-            fontSize: 12,
-            fontFamily: 'sans-serif',
-            display: 'flex',
-            justifyContent: 'space-between',
+            width: 260, letterSpacing: '0.22em', fontSize: 12, fontFamily: 'sans-serif',
+            display: 'flex', justifyContent: 'space-between',
             animation: 'fadeInUp 0.7s 0.9s cubic-bezier(0.22,1,0.36,1) both',
           }}>
             <span style={{ color: 'rgba(200,180,180,0.55)', fontWeight: 700 }}>LE CINÉMA</span>
@@ -97,24 +102,14 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
           </p>
         </div>
         <style>{`
-          @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.85); }
-            to   { opacity: 1; transform: scale(1); }
-          }
-          @keyframes slideIn {
-            from { transform: scaleX(0); opacity: 0; }
-            to   { transform: scaleX(1); opacity: 1; }
-          }
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
+          @keyframes fadeInScale { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+          @keyframes slideIn { from{transform:scaleX(0);opacity:0} to{transform:scaleX(1);opacity:1} }
+          @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         `}</style>
       </div>
     )
   }
 
-  // Si ce n'est pas le premier chargement, on laisse passer sans bloquer
   if (needsRedirect) return null
 
   return <>{children}</>
