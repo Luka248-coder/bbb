@@ -22,6 +22,7 @@ interface WatchItem {
   id: string; title: string; content_type: 'movie' | 'series'
   poster: string | null; season: number | null; episode: number | null
   progress: number; watched_at: string
+  profiles?: { name: string; avatar: string | null } | null
 }
 
 interface UserDetail { user: UserData; history: WatchItem[]; favorites: any[]; requests: any[] }
@@ -344,19 +345,34 @@ export default function AdminUsersPage() {
                     {selected.history.length===0
                       ? <div className="text-center py-12 text-zinc-600"><MonitorPlay className="w-10 h-10 mx-auto mb-3"/><p>Aucun visionnage</p></div>
                       : selected.history.map(item=>(
-                        <div key={item.id} className="flex items-center gap-4 p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div key={item.id} className="flex items-center gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+                          {/* Poster */}
                           {item.poster
                             ? <Image src={`https://image.tmdb.org/t/p/w92${item.poster}`} alt={item.title} width={40} height={56} className="rounded-lg object-cover flex-shrink-0"/>
                             : <div className="w-10 h-14 bg-zinc-800 rounded-lg flex items-center justify-center flex-shrink-0">{item.content_type==='movie'?<Film className="w-4 h-4 text-zinc-600"/>:<Tv className="w-4 h-4 text-zinc-600"/>}</div>
                           }
+                          {/* Infos */}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-white truncate">{item.title}</p>
-                            <p className="text-xs text-zinc-500">{item.content_type==='series'&&item.season?`S${item.season}E${item.episode} · `:''}{timeAgo(item.watched_at)}</p>
+                            <p className="text-xs text-zinc-500 mt-0.5">{item.content_type==='series'&&item.season?`S${item.season}E${item.episode} · `:''}{timeAgo(item.watched_at)}</p>
+                            {item.progress>0&&(
+                              <div className="mt-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[10px] text-zinc-600">Progression</span>
+                                  <span className="text-[10px] text-zinc-500 font-semibold">{item.progress}%</span>
+                                </div>
+                                <div className="w-full h-1 bg-zinc-800 rounded-full"><div className="h-full bg-primary rounded-full" style={{width:`${item.progress}%`}}/></div>
+                              </div>
+                            )}
                           </div>
-                          {item.progress>0&&(
-                            <div className="flex-shrink-0 text-right">
-                              <p className="text-xs text-zinc-500">{item.progress}%</p>
-                              <div className="w-16 h-1 bg-zinc-800 rounded-full mt-1"><div className="h-full bg-primary rounded-full" style={{width:`${item.progress}%`}}/></div>
+                          {/* Profil */}
+                          {item.profiles&&(
+                            <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                              {item.profiles.avatar
+                                ? <Image src={item.profiles.avatar} alt={item.profiles.name} width={28} height={28} className="rounded-full object-cover border border-zinc-700"/>
+                                : <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">{item.profiles.name[0].toUpperCase()}</div>
+                              }
+                              <span className="text-[10px] text-zinc-500 max-w-[60px] truncate text-center">{item.profiles.name}</span>
                             </div>
                           )}
                         </div>

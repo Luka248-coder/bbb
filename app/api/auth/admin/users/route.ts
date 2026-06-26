@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   if (userId) {
     const [userRes, historyRes, favRes, requestsRes] = await Promise.all([
       supabase.from('users').select('*').eq('id', userId).single(),
-      supabase.from('watch_history').select('*').eq('user_id', userId).order('watched_at', { ascending: false }).limit(10),
+      supabase.from('watch_history').select('*, profiles(name, avatar)').eq('user_id', userId).order('watched_at', { ascending: false }).limit(50),
       supabase.from('favorites').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('content_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     ])
