@@ -94,9 +94,9 @@ export async function GET(request: NextRequest) {
       const norm = title.toLowerCase().trim()
       match = results.find((r: any) => (r.title || r.name || '').toLowerCase().trim() === norm)
     }
-    if (!match) match = results[0]
+    // No fuzzy fallback — require exact tmdbId or exact title match
     if (!match?.id) {
-      return NextResponse.json({ videoUrl: null, error: 'No suitable result found' })
+      return NextResponse.json({ videoUrl: null, error: 'No exact match found' })
     }
 
     // ── 2. Sheet ──────────────────────────────────────────────────────────────
@@ -159,36 +159,9 @@ export async function GET(request: NextRequest) {
           console.log(`[Purstream] ✅ parseEpisodes S${season}E${episode} → ${videoUrl.substring(0, 80)}`)
         }
 
-        // Format 4 : fallback par index si aucun pattern S/E dans les URLs
+        // No index fallback — only return URL if S/E pattern matches exactly
         if (!videoUrl) {
-          const withSE = sortedUrls.filter(u => extractSeasonEpisode(u.url) !== null)
-          if (withSE.length === 0) {
-            // URLs sans pattern → supposer une saison, index = épisode - 1
-            const idx = episode - 1
-            if (sortedUrls[idx]) {
-              videoUrl = sortedUrls[idx].url
-              console.log(`[Purstream] ✅ no-SE index fallback E${episode} [${idx}]`)
-            }
-          } else {
-            // Filtrer par saison (triée), puis indexer
-            const seasonUrls = withSE.filter(u => {
-              const se = extractSeasonEpisode(u.url)
-              return se?.season === season
-            })
-            const idx = episode - 1
-            if (seasonUrls[idx]) {
-              videoUrl = seasonUrls[idx].url
-              console.log(`[Purstream] ✅ season-filtered index fallback S${season}E${episode} [${idx}]`)
-            }
-          }
-
-          if (!videoUrl) {
-            const preview = sortedUrls.slice(0, 6).map((u, i) => {
-              const se = extractSeasonEpisode(u.url)
-              return `[${i}] ${se ? `S${se.season}E${se.episode}` : 'NO_SE'} → ${u.url.substring(0, 80)}`
-            })
-            console.warn(`[Purstream] ❌ S${season}E${episode} introuvable:\n${preview.join('\n')}`)
-          }
+          console.warn(`[Purstream] ❌ S${season}E${episode} not found in URL patterns — refusing random fallback`)
         }
       }
     }
