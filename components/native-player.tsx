@@ -756,7 +756,7 @@ export function NativePlayer({
           }
 
           if (!url && Array.isArray(items.urls) && items.urls.length) {
-            const seRegex = //S(\d+)/E(\d+)//i
+            const seRegex = /\/S(\d+)\/E(\d+)\//i
             // Premium uniquement, S/E exact
             const premCandidates = items.urls.filter((u: any) => {
               if (!u.url?.includes('premium')) return false
