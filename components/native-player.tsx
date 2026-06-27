@@ -692,9 +692,9 @@ export function NativePlayer({
     }
   }, [resetTimer, clearErrorTimer, syncVideoState])
 
-  // ─── Si série sans URL dès le départ → épisode non dispo direct ─────────────
+  // ─── Si série en DB mais épisode sans URL → overlay immédiat si pas de tmdbId
   useEffect(() => {
-    if (type !== 'series' || initialVideoUrl || tmdbId) return
+    if (type !== 'series' || !seriesDbId || initialVideoUrl || tmdbId) return
     setEpisodeNotFound(true)
   }, [])
 
@@ -1146,7 +1146,7 @@ export function NativePlayer({
   const progress = duration ? (currentTime / duration) * 100 : 0
 
   // ─── No video ────────────────────────────────────────────────────────────────
-  if (!videoUrl && !fetchingEpisode && type !== 'series') {
+  if (!videoUrl && !fetchingEpisode && (type !== 'series' || !seriesDbId)) {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
