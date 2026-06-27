@@ -3,22 +3,35 @@ import nodemailer from 'nodemailer'
 let cachedTransporter: nodemailer.Transporter | null = null
 
 /**
- * Transporteur SMTP Gmail, réutilisé entre les invocations (warm lambda).
- * Nécessite GMAIL_USER + GMAIL_APP_PASSWORD dans les variables d'environnement.
- * GMAIL_APP_PASSWORD doit être un "mot de passe d'application" généré depuis
- * https://myaccount.google.com/apppasswords (le mot de passe normal du compte
- * ne fonctionne pas avec le SMTP de Gmail si la validation en 2 étapes est activée,
- * et Google bloque de plus en plus les connexions par mot de passe simple).
+ * Transporteur d'email, réutilisé entre les invocations (warm lambda).
+ *
+ * Priorité à Resend (RESEND_API_KEY) : meilleure délivrabilité car les mails
+ * sont envoyés via un domaine authentifié (SPF/DKIM/DMARC), au lieu d'un
+ * compte Gmail personnel qui n'a aucune réputation d'envoi et finit
+ * systématiquement en spam.
+ *
+ * Si RESEND_API_KEY n'est pas défini, on retombe sur Gmail (GMAIL_USER +
+ * GMAIL_APP_PASSWORD) pour ne pas casser ce qui marche déjà pendant la transition.
  */
 export function getMailTransporter() {
   if (cachedTransporter) return cachedTransporter
+
+  if (process.env.RESEND_API_KEY) {
+    cachedTransporter = nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: { user: 'resend', pass: process.env.RESEND_API_KEY },
+    })
+    return cachedTransporter
+  }
 
   const user = process.env.GMAIL_USER
   const pass = process.env.GMAIL_APP_PASSWORD
 
   if (!user || !pass) {
     throw new Error(
-      'GMAIL_USER et GMAIL_APP_PASSWORD doivent être définis dans les variables d\'environnement.',
+      'Aucune config email trouvée : définis soit RESEND_API_KEY (recommandé), soit GMAIL_USER + GMAIL_APP_PASSWORD.',
     )
   }
 

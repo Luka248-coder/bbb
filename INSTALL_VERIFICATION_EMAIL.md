@@ -34,7 +34,23 @@ Exécute `scripts/006_pending_registrations.sql` dans le SQL editor de Supabase.
 
 ## 4. Variables d'environnement
 
-À ajouter en local (`.env.local`) **et** dans Vercel (Project Settings → Environment Variables) :
+### Option recommandée : Resend (bonne délivrabilité, gratuit jusqu'à 3000 mails/mois)
+
+1. Crée un compte sur https://resend.com
+2. **Domains** → ajoute `streamself.fr` → Resend te donne 2-3 enregistrements DNS (SPF, DKIM, parfois DMARC)
+3. Ajoute ces enregistrements chez ton registrar / fournisseur DNS (OVH, Cloudflare...). La vérification peut prendre de quelques minutes à quelques heures.
+4. **API Keys** → crée une clé → copie-la
+5. Dans Vercel (Project Settings → Environment Variables), ajoute :
+   ```
+   RESEND_API_KEY=re_xxxxxxxxxxxx
+   MAIL_FROM=verification@streamself.fr
+   ```
+   (`MAIL_FROM` doit être une adresse sur le domaine que tu viens de vérifier dans Resend, ex: `verification@streamself.fr` ou `noreply@streamself.fr` — pas besoin que la boîte existe réellement, Resend l'envoie pour toi)
+6. Redéploie (Deployments → ... → Redeploy)
+
+Une fois `RESEND_API_KEY` défini, il prend automatiquement le dessus sur Gmail — pas besoin de retirer les variables Gmail.
+
+### Option de secours : Gmail (déjà en place, mais finit souvent en spam)
 
 ```
 GMAIL_USER=cine.streamself@gmail.com
@@ -46,7 +62,7 @@ GMAIL_APP_PASSWORD=xxxxxxxxxxxxxxxx
 2. Va sur https://myaccount.google.com/apppasswords
 3. Crée un mot de passe d'application "Mail" → copie le code généré → c'est cette valeur qui va dans `GMAIL_APP_PASSWORD`
 
-Le mot de passe que tu m'as donné dans le chat (`nebwur-xanxez-kUrno2`) ressemble à un mot de passe de compte classique, pas à un mot de passe d'application Google — il ne fonctionnera probablement pas tel quel avec le SMTP Gmail.
+Même bien configuré, un compte Gmail perso a une réputation d'envoi proche de zéro : les mails finissent quasi systématiquement en spam au début, peu importe le contenu. C'est une limite structurelle de Gmail SMTP, pas un bug du code. → Resend reste la vraie solution si la délivrabilité doit être fiable.
 
 ## 5. Comment ça marche
 

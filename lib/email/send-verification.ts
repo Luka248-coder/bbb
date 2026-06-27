@@ -29,7 +29,7 @@ export async function sendVerificationCodeEmail(to: string, code: string) {
   `
 
   await transporter.sendMail({
-    from: `"StreamSelf" <${process.env.GMAIL_USER}>`,
+    from: `"StreamSelf" <${process.env.MAIL_FROM || process.env.GMAIL_USER}>`,
     to,
     subject: `${code} — Votre code de vérification StreamSelf`,
     html,
