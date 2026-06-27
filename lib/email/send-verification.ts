@@ -15,6 +15,9 @@ export async function sendVerificationCodeEmail(to: string, code: string) {
         <p style="text-align:center;color:#ffffff;font-size:28px;font-weight:bold;letter-spacing:6px;margin:8px 0 20px;">
           ${code}
         </p>
+        <p style="text-align:center;color:#f59e0b;font-size:13px;font-weight:bold;margin-top:4px;">
+          📩 Vous ne trouvez pas ce mail ? Vérifiez votre dossier Spam / Courrier indésirable.
+        </p>
         <p style="text-align:center;color:#666;font-size:12px;margin-top:16px;">
           Ce code expire dans 10 minutes. Vous n'avez pas demandé ce code ? Vous pouvez ignorer cet e-mail.
         </p>

@@ -295,6 +295,8 @@ function LoginContent() {
               </div>
               <p className="text-white/40 text-sm mb-8">
                 On a envoyé un code à 6 chiffres à <span className="text-white/70">{pendingEmail}</span>. Entrez-le ci-dessous pour activer votre compte.
+                <br />
+                <span className="text-amber-400/80">Pensez à vérifier vos spams / courriers indésirables si vous ne le voyez pas.</span>
               </p>
 
               {/* Error */}
