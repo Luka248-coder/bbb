@@ -1106,6 +1106,7 @@ export function NativePlayer({
   const currentIdx = sortedEpisodes.findIndex(e => e.season_number === currentSeason && e.episode_number === currentEpisode)
   const prevEp = currentIdx > 0 ? sortedEpisodes[currentIdx - 1] : null
   const nextEp = currentIdx < sortedEpisodes.length - 1 ? sortedEpisodes[currentIdx + 1] : null
+  const currentEpisodeStill = sortedEpisodes[currentIdx]?.still_path || null
 
   const getEpisodePlayUrl = (season: number, episode: number) => {
     const params = new URLSearchParams({
@@ -1270,67 +1271,75 @@ export function NativePlayer({
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-[60] flex items-center justify-center px-6"
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(20px)' }}
           >
+            {/* Fond : still de l'épisode courant ou précédent */}
+            {(currentEpisodeStill || (prevEp?.still_path)) && (
+              <>
+                <img
+                  src={`https://image.tmdb.org/t/p/w1280${currentEpisodeStill || prevEp?.still_path}`}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ filter: 'brightness(0.18) saturate(0.6)' }}
+                />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.3) 100%)' }} />
+              </>
+            )}
+            {!(currentEpisodeStill || prevEp?.still_path) && (
+              <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(20px)' }} />
+            )}
+
             <motion.div
-              initial={{ scale: 0.92, y: 16, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-              className="flex flex-col items-center text-center w-full"
-              style={{ maxWidth: 340 }}
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 280, delay: 0.1 }}
+              className="relative z-10 flex flex-col items-center text-center w-full"
+              style={{ maxWidth: 380 }}
             >
-              {/* Icône */}
-              <div style={{
-                width: 64, height: 64, borderRadius: 20, marginBottom: 20,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-              }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
-                  <path d="M12 7v5.5M12 16.5v.5" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-
               {/* Titre */}
-              <p style={{
-                color: 'rgba(255,255,255,0.9)', fontSize: 18, fontWeight: 700,
-                letterSpacing: '-0.02em', marginBottom: 8, fontFamily: 'sans-serif',
-              }}>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, fontFamily: 'sans-serif', letterSpacing: '0.15em', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase' }}>
                 Épisode indisponible
-              </p>
+              </motion.p>
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                style={{ color: 'white', fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 12, fontFamily: 'sans-serif' }}>
+                Cet épisode n'est<br/>pas encore disponible
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, lineHeight: 1.6, marginBottom: 36, fontFamily: 'sans-serif', maxWidth: 300 }}>
+                Tu seras automatiquement notifié dès que cet épisode sera mis en ligne.
+              </motion.p>
 
-              {/* Sous-titre */}
-              <p style={{
-                color: 'rgba(255,255,255,0.35)', fontSize: 13, lineHeight: 1.6,
-                marginBottom: 24, fontFamily: 'sans-serif', maxWidth: 260,
-              }}>
-                Cet épisode n'est pas encore disponible sur nos serveurs.
-                Tu seras notifié dès qu'il le sera.
-              </p>
-
-              {/* Badge */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 16px', borderRadius: 100, marginBottom: 24,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}>
-                <div style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: '#60a5fa',
-                  boxShadow: '0 0 6px rgba(96,165,250,0.8)',
-                  animation: 'pulse 2s infinite',
-                }} />
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'sans-serif' }}>
-                  Notification automatique à la mise en ligne
-                </span>
-              </div>
-
-              {/* Bouton retour */}
-              <button onClick={() => setEpisodeNotFound(false)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors"
+              {/* Bouton épisode précédent */}
+              {prevEp && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                  onClick={() => goToEpisode(prevEp)}
+                  className="group flex items-center gap-3 px-6 py-3.5 rounded-2xl text-sm font-semibold text-white transition-all"
+                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                >
+                  <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+                  Retour à l'épisode précédent
+                </motion.button>
+              )}
+              {!prevEp && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                  onClick={() => setEpisodeNotFound(false)}
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-semibold text-white/70 hover:text-white transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Retour
+                </motion.button>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <ArrowLeft className="w-4 h-4" />
                 Retour
