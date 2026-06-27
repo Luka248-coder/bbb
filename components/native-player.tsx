@@ -692,6 +692,12 @@ export function NativePlayer({
     }
   }, [resetTimer, clearErrorTimer, syncVideoState])
 
+  // ─── Si série sans URL dès le départ → épisode non dispo direct ─────────────
+  useEffect(() => {
+    if (type !== 'series' || initialVideoUrl || tmdbId) return
+    setEpisodeNotFound(true)
+  }, [])
+
   // ─── Purstream : délègue à l'API route + timeout 4s si rien ne joue ─────────
   useEffect(() => {
     if (initialVideoUrl || !tmdbId) return
@@ -1140,7 +1146,7 @@ export function NativePlayer({
   const progress = duration ? (currentTime / duration) * 100 : 0
 
   // ─── No video ────────────────────────────────────────────────────────────────
-  if (!videoUrl && !fetchingEpisode) {
+  if (!videoUrl && !fetchingEpisode && type !== 'series') {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
