@@ -737,8 +737,9 @@ export function NativePlayer({
 
   // Load video whenever videoUrl changes
   useEffect(() => {
-    if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
     if (videoUrl) {
+      // URL trouvée — annuler le timer et jouer
+      if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
       setEpisodeNotFound(false)
       loadVideo(videoUrl)
     }
