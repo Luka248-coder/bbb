@@ -1091,6 +1091,7 @@ export function NativePlayer({
               season_number: ep.season_number,
               episode_number: ep.episode_number,
               title: ep.name || `Épisode ${ep.episode_number}`,
+              still_path: ep.still_path || null,
               video_url: null,
             } as any)
           }
