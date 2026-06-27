@@ -1340,13 +1340,6 @@ export function NativePlayer({
             </motion.div>
           </motion.div>
         )}
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <ArrowLeft className="w-4 h-4" />
-                Retour
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {/* 30s error popup */}
