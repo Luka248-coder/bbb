@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createSession } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
-
-const ADMIN_EMAILS = ['dua.lipa140@outlook.fr']
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+import { generateVerificationCode, VERIFICATION_CODE_TTL_MS } from '@/lib/email/code'
+import { sendVerificationCodeEmail } from '@/lib/email/send-verification'
 
 export async function POST(request: NextRequest) {
   const { email, password, username } = await request.json()
@@ -13,13 +11,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 })
   }
 
+  const normalizedEmail = email.toLowerCase().trim()
   const supabase = await createClient()
 
-  // Vérifier si l'email existe déjà
+  // Vérifier si un compte existe déjà avec cet email
   const { data: existing } = await supabase
     .from('users')
     .select('id')
-    .eq('email', email.toLowerCase())
+    .eq('email', normalizedEmail)
     .single()
 
   if (existing) {
@@ -27,45 +26,35 @@ export async function POST(request: NextRequest) {
   }
 
   const password_hash = await bcrypt.hash(password, 12)
-  const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase())
+  const code = generateVerificationCode()
+  const expires_at = new Date(Date.now() + VERIFICATION_CODE_TTL_MS).toISOString()
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .insert({
-      email: email.toLowerCase(),
-      username,
-      password_hash,
-      is_admin: isAdmin,
-      discord_id: `email_${Date.now()}`,
-    })
-    .select()
-    .single()
+  // On stocke l'inscription en attente plutôt que de créer le compte tout de suite
+  const { error: pendingError } = await supabase
+    .from('pending_registrations')
+    .upsert(
+      {
+        email: normalizedEmail,
+        username,
+        password_hash,
+        code,
+        attempts: 0,
+        expires_at,
+      },
+      { onConflict: 'email' },
+    )
 
-  if (error) {
-    console.error('Register error:', error)
+  if (pendingError) {
+    console.error('Pending registration error:', pendingError)
     return NextResponse.json({ error: 'db_failed' }, { status: 500 })
   }
 
-  const sessionUser = {
-    id: user.id,
-    discord_id: user.discord_id,
-    username: user.username,
-    avatar: user.avatar,
-    email: user.email,
-    is_admin: user.is_admin,
+  try {
+    await sendVerificationCodeEmail(normalizedEmail, code)
+  } catch (e) {
+    console.error('Verification email error:', e)
+    return NextResponse.json({ error: 'email_failed' }, { status: 500 })
   }
 
-  const token = await createSession(sessionUser)
-  const response = NextResponse.json({ success: true })
-  response.cookies.set({
-    name: 'session',
-    value: token,
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7,
-    path: '/',
-  })
-
-  return response
+  return NextResponse.json({ success: true, step: 'verify', email: normalizedEmail })
 }
