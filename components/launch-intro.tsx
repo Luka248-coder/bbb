@@ -232,7 +232,8 @@ export default function LaunchIntro() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: '#020202',
+            background:
+              'radial-gradient(ellipse 80% 60% at 50% 45%, #0a1a33 0%, #050d1a 45%, #000000 100%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -242,16 +243,20 @@ export default function LaunchIntro() {
             cursor: 'pointer',
             opacity: overlayOpacity,
             transition: 'opacity 0.5s ease',
+            padding: '0 24px',
+            textAlign: 'center',
           }}
         >
           <h2
             style={{
-              fontSize: '0.85rem',
-              letterSpacing: 6,
+              fontSize: 'clamp(0.65rem, 3vw, 0.85rem)',
+              letterSpacing: 4,
               fontWeight: 300,
               color: 'rgba(255,255,255,0.4)',
               marginBottom: 25,
               textTransform: 'uppercase',
+              textAlign: 'center',
+              maxWidth: 320,
             }}
           >
             Production cinématographique
@@ -261,12 +266,14 @@ export default function LaunchIntro() {
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(255,255,255,0.15)',
               color: '#fff',
-              padding: '15px 45px',
-              fontSize: '0.85rem',
+              padding: '15px 32px',
+              fontSize: 'clamp(0.7rem, 3vw, 0.85rem)',
               fontWeight: 'bold',
               textTransform: 'uppercase',
               letterSpacing: 2,
               borderRadius: 50,
+              whiteSpace: 'nowrap',
+              maxWidth: '100%',
             }}
           >
             Entrer sur StreamSelf
