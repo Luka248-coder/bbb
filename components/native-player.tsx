@@ -1884,38 +1884,39 @@ export function NativePlayer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-[70] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)' }}
             onClick={() => setShowLoginPrompt(false)}
           >
             <motion.div
-              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              initial={{ scale: 0.92, opacity: 0, y: 16 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="mx-4 rounded-2xl p-8 flex flex-col items-center text-center max-w-sm w-full"
-              style={{ background: 'rgba(18,8,8,0.95)', border: '1px solid rgba(229,9,20,0.3)' }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              className="relative mx-4 rounded-3xl p-8 flex flex-col items-center text-center max-w-sm w-full overflow-hidden bg-white/[0.04] border border-white/10 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
-                style={{ background: 'rgba(229,9,20,0.1)', border: '1px solid rgba(229,9,20,0.3)' }}>
-                <Lock className="w-7 h-7 text-red-500" />
+              {/* Lueur douce derrière l'icône */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-primary/20 blur-[50px] pointer-events-none" />
+
+              <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-primary/10 border border-primary/25">
+                <Lock className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-white font-bold text-lg mb-2">Connexion requise</h3>
-              <p className="text-white/50 text-sm leading-relaxed mb-6">
-                Vous devez être connecté pour télécharger ce contenu.
+
+              <h3 className="relative text-white font-bold text-xl mb-2 tracking-tight">Connexion requise</h3>
+              <p className="relative text-white/45 text-sm leading-relaxed mb-7">
+                Connecte-toi pour télécharger ce contenu et accéder à ton espace StreamSelf.
               </p>
-              <div className="flex gap-3 w-full">
+
+              <div className="relative flex gap-3 w-full">
                 <button
                   onClick={() => setShowLoginPrompt(false)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors text-center"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors text-center border border-white/10"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={goToLoginForDownload}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2"
-                  style={{ background: 'rgba(229,9,20,0.85)', border: '1px solid rgba(229,9,20,0.5)' }}
+                  className="flex-1 py-3 rounded-2xl text-sm font-bold text-white transition-all flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
                 >
                   <LogIn className="w-4 h-4" />
                   Connexion
