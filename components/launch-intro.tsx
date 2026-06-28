@@ -1,6 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import localFont from 'next/font/local'
+
+const poppinsBlack = localFont({
+  src: '../assets/fonts/Poppins-900.woff',
+  weight: '900',
+  display: 'swap',
+})
 
 /**
  * Intro cinématique "Paramount & Netflix Hybrid" — portée depuis le fichier HTML/CSS/JS
@@ -154,12 +161,11 @@ export default function LaunchIntro() {
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
       <style>{`
         .si-logo {
-          font-family: 'Impact', 'Arial Black', sans-serif;
           font-size: clamp(2.4rem, 7.8vw, 6.5rem);
           font-weight: 900;
           text-transform: uppercase;
           white-space: nowrap;
-          letter-spacing: clamp(4px, 1.6vw, 16px);
+          letter-spacing: clamp(2px, 0.9vw, 8px);
           margin: 0;
           background: linear-gradient(to bottom, #777 0%, #fefefe 44%, #181818 49%, #ffffff 53%, #a1a1a1 100%);
           -webkit-background-clip: text;
@@ -177,11 +183,10 @@ export default function LaunchIntro() {
           left: 0;
           width: 100%;
           height: 100%;
-          font-family: 'Impact', 'Arial Black', sans-serif;
           font-size: clamp(2.4rem, 7.8vw, 6.5rem);
           font-weight: 900;
           text-transform: uppercase;
-          letter-spacing: clamp(4px, 1.6vw, 16px);
+          letter-spacing: clamp(2px, 0.9vw, 8px);
           white-space: nowrap;
           background: linear-gradient(115deg, transparent 40%, rgba(255, 215, 0, 0.8) 50%, transparent 60%);
           background-size: 200% 100%;
@@ -303,8 +308,8 @@ export default function LaunchIntro() {
             {stageVisible && (
               <div style={{ position: 'relative', transformStyle: 'preserve-3d', zIndex: 10 }}>
                 <div className={rumble ? 'si-rumble' : ''}>
-                  <h1 className="si-logo">Streamself</h1>
-                  <div className="si-shine">Streamself</div>
+                  <h1 className={`si-logo ${poppinsBlack.className}`}>Streamself</h1>
+                  <div className={`si-shine ${poppinsBlack.className}`}>Streamself</div>
                 </div>
               </div>
             )}
