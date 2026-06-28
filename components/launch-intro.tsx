@@ -24,6 +24,7 @@ export default function LaunchIntro() {
   const [started, setStarted] = useState(false)
   const [stageVisible, setStageVisible] = useState(false)
   const [rumble, setRumble] = useState(false)
+  const [overlayVisible, setOverlayVisible] = useState(true)
   const [overlayOpacity, setOverlayOpacity] = useState(1)
   const [viewportOpacity, setViewportOpacity] = useState(1)
   const [removed, setRemoved] = useState(false)
@@ -136,9 +137,10 @@ export default function LaunchIntro() {
   }, [mounted, started])
 
   function handleStart() {
-    setOverlayOpacity(0)
-    setTimeout(() => setStarted(true), 500)
+    setStarted(true)
     setStageVisible(true)
+    setOverlayOpacity(0)
+    setTimeout(() => setOverlayVisible(false), 500)
 
     const audio = new Audio('/launch-intro.mp3')
     audio.volume = 1.0
@@ -224,7 +226,7 @@ export default function LaunchIntro() {
       `}</style>
 
       {/* Overlay de démarrage (obligatoire pour autoriser le son au clic) */}
-      {!started && (
+      {overlayVisible && (
         <div
           onClick={handleStart}
           style={{
