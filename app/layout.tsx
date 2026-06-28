@@ -8,6 +8,7 @@ import { GridBackground } from '@/components/grid-background'
 import { PresenceTracker } from '@/components/presence-tracker'
 import { ProfileProvider } from '@/contexts/ProfileContext'
 import { ProfileGate } from '@/components/profile-gate'
+import LaunchIntro from '@/components/launch-intro'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${inter.variable} ${barlowCondensed.variable} font-sans antialiased`}>
+        <LaunchIntro />
         <GridBackground />
         <PresenceTracker />
 
