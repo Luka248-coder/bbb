@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Search, Menu, X, User, LogOut, Settings, Heart,
+  Search, Menu, X, User, LogOut, LogIn, Settings, Heart,
   Film, Tv, Home, Plus, Bell, Check, Trash2, ChevronRight, Shield, Shuffle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -639,8 +639,8 @@ export function Navbar() {
                   letterSpacing: '0.02em',
                 }}
               >
-                <LogOut className="w-3.5 h-3.5 rotate-180" />
                 Connexion
+                <LogIn className="w-3.5 h-3.5" />
               </div>
             </Link>
           </div>
