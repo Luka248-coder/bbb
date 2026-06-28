@@ -146,17 +146,6 @@ export default function LaunchIntro() {
     audio.play().catch(() => {})
   }
 
-  function handleSkip() {
-    if (audioRef.current) {
-      audioRef.current.pause()
-    }
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    setRemoved(true)
-    try {
-      sessionStorage.setItem(SESSION_KEY, '1')
-    } catch {}
-  }
-
   if (!mounted || removed) return null
 
   return (
@@ -322,25 +311,6 @@ export default function LaunchIntro() {
               zIndex: 500,
             }}
           />
-
-          <button
-            onClick={handleSkip}
-            style={{
-              position: 'fixed',
-              bottom: 24,
-              right: 28,
-              zIndex: 100000,
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255,255,255,0.35)',
-              fontSize: 12,
-              letterSpacing: 1,
-              cursor: 'pointer',
-              fontFamily: 'Arial, sans-serif',
-            }}
-          >
-            passer ›
-          </button>
         </>
       )}
     </div>
