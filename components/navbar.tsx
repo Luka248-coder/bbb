@@ -501,106 +501,108 @@ export function Navbar() {
         </div>
 
         {/* Bell + Avatar desktop */}
-        {user && (
-          <div className="pointer-events-auto ml-auto hidden md:flex items-center gap-2">
+        {/* Search — toujours visible, connecté ou non */}
+        <div className="pointer-events-auto hidden md:flex items-center ml-auto">
+          <div className="flex items-center rounded-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            {/* Search */}
+            <div ref={searchRef} className="relative flex items-center">
+              <AnimatePresence mode="wait">
+                {isSearchOpen ? (
+                  <motion.div
+                    key="open"
+                    initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                    className="flex items-center px-3 gap-2 h-9 overflow-hidden"
+                  >
+                    <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                    <input
+                      value={searchQuery}
+                      onChange={e => handleSearchChange(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
+                      placeholder="Rechercher..."
+                      className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
+                      autoFocus
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                        <X className="w-3 h-3 text-white/30 hover:text-white/60" />
+                      </button>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="closed"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="w-9 h-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
 
-            {/* Loupe + Cloche dans la même pill */}
-            <div className="flex items-center rounded-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
-
-              {/* Search */}
-              <div ref={searchRef} className="relative flex items-center">
-                <AnimatePresence mode="wait">
-                  {isSearchOpen ? (
-                    <motion.div
-                      key="open"
-                      initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                      className="flex items-center px-3 gap-2 h-9 overflow-hidden"
-                    >
-                      <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
-                      <input
-                        value={searchQuery}
-                        onChange={e => handleSearchChange(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
-                        placeholder="Rechercher..."
-                        className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
-                        autoFocus
-                      />
-                      {searchQuery && (
-                        <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                          <X className="w-3 h-3 text-white/30 hover:text-white/60" />
+              {/* Dropdown résultats */}
+              <AnimatePresence>
+                {isSearchOpen && searchResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute top-12 right-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  >
+                    {searchResults.map(result => {
+                      const title = result.title || result.name || ''
+                      const date = result.release_date || result.first_air_date || ''
+                      const year = date ? new Date(date).getFullYear() : ''
+                      const isMovieResult = result.media_type === 'movie'
+                      const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                      return (
+                        <button key={`${result.media_type}-${result.id}`}
+                          onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
+                        >
+                          <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                            {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-semibold text-sm truncate">{title}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
+                              {year && <span className="text-white/30 text-xs">{year}</span>}
+                            </div>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-white/20" />
                         </button>
-                      )}
-                    </motion.div>
-                  ) : (
-                    <motion.button
-                      key="closed"
-                      onClick={() => setIsSearchOpen(true)}
-                      className="w-9 h-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
-                    >
-                      <Search className="w-4 h-4" />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-
-                {/* Dropdown résultats */}
-                <AnimatePresence>
-                  {isSearchOpen && searchResults.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                      className="absolute top-12 right-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
-                      style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
-                    >
-                      {searchResults.map(result => {
-                        const title = result.title || result.name || ''
-                        const date = result.release_date || result.first_air_date || ''
-                        const year = date ? new Date(date).getFullYear() : ''
-                        const isMovieResult = result.media_type === 'movie'
-                        const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                        return (
-                          <button key={`${result.media_type}-${result.id}`}
-                            onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
-                          >
-                            <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                              {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white font-semibold text-sm truncate">{title}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
-                                {year && <span className="text-white/30 text-xs">{year}</span>}
-                              </div>
-                            </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                          </button>
-                        )
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Séparateur */}
-              <div className="w-px h-4 bg-white/10" />
-
-              {/* Bell */}
-              <div ref={notifRef} className="relative">
-                <button
-                  onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
-                  className="relative w-9 h-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
-                >
-                  <Bell className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-
+                      )
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
+            {/* Séparateur + Cloche : uniquement si connecté */}
+            {user && (
+              <>
+                <div className="w-px h-4 bg-white/10" />
+                <div ref={notifRef} className="relative">
+                  <button
+                    onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
+                    className="relative w-9 h-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                  >
+                    <Bell className="w-4 h-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bell + Avatar desktop — connecté seulement */}
+        {user && (
+          <div className="pointer-events-auto hidden md:flex items-center gap-2">
             <button
               onClick={openProfile}
               className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10"
