@@ -527,12 +527,20 @@ export function NativePlayer({
     setPlaying(false)
     setShowError(false)
 
+    // ── Proxy topstream → purstream referer ──────────────────────────────────
+    const isTopstream =
+      url.includes('free.topstream.cloud') || url.includes('topstream.cloud')
+    const effectiveUrl =
+      isTopstream && url.includes('.m3u8')
+        ? `/api/stream-proxy?url=${encodeURIComponent(url)}`
+        : url
+
     const isHls = url.includes('.m3u8')
 
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({ enableWorker: true })
       hlsRef.current = hls
-      hls.loadSource(url)
+      hls.loadSource(effectiveUrl)
       hls.attachMedia(v)
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
@@ -595,7 +603,7 @@ export function NativePlayer({
         }
       })
     } else if (isHls && v.canPlayType('application/vnd.apple.mpegurl')) {
-      v.src = url
+      v.src = effectiveUrl
       v.muted = true
       startErrorTimer()
       v.play().then(() => { v.muted = false }).catch(() => {
@@ -604,7 +612,12 @@ export function NativePlayer({
         setPlaying(false)
       })
     } else {
-      v.src = url
+      // MP4 direct — pour topstream on passe par proxy-download pour le Referer
+      const mp4Url =
+        isTopstream
+          ? `/api/proxy-download?url=${encodeURIComponent(url)}&filename=video.mp4`
+          : url
+      v.src = mp4Url
       v.muted = true
       startErrorTimer()
       v.play().then(() => { v.muted = false }).catch(() => {
