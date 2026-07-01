@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import {
   Film, Tv, Zap, Search, Plus, Trash2, Star, Loader2, X,
-  Check, Library, Link as LinkIcon, ChevronDown, ChevronUp,
+  Check, Library, Link as LinkIcon, ChevronDown, ChevronUp, AlertTriangle,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -636,6 +636,32 @@ function ApiTab() {
   const [addingId, setAddingId] = useState<number | null>(null)
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
 
+  // ── Purge par préfixe ────────────────────────────────────────────────────────
+  const [purgePrefix, setPurgePrefix] = useState('')
+  const [purging, setPurging] = useState(false)
+  const [purgeResult, setPurgeResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const handlePurge = async () => {
+    if (!purgePrefix.trim() || purging) return
+    setPurging(true)
+    setPurgeResult(null)
+    try {
+      const res = await fetch('/api/auth/admin/purge-prefix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix: purgePrefix.trim() }),
+      })
+      const data = await res.json()
+      setPurgeResult({ success: res.ok && data.success, message: data.message || data.error })
+    } catch (e) {
+      setPurgeResult({ success: false, message: 'Erreur réseau' })
+    } finally {
+      setPurging(false)
+      setConfirmOpen(false)
+    }
+  }
+
   const searchTMDB = async () => {
     if (!query.trim()) return
     setSearching(true)
@@ -660,6 +686,80 @@ function ApiTab() {
 
   return (
     <div className="space-y-5">
+      {/* ── Purge par préfixe URL ────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Trash2 className="w-3.5 h-3.5 text-white/30" />
+          <p className="text-sm font-semibold text-white">Purge d'URLs par préfixe</p>
+        </div>
+        <p className="text-xs text-white/30 mb-4">
+          Supprime (met à NULL) toutes les <code className="text-white/40">video_url</code> de films et épisodes qui commencent par ce préfixe.
+        </p>
+
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20" />
+            <input
+              value={purgePrefix}
+              onChange={e => { setPurgePrefix(e.target.value); setPurgeResult(null); setConfirmOpen(false) }}
+              placeholder="https://exemple.com/videos/"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-red-500/30 transition-colors font-mono"
+            />
+          </div>
+          <button
+            onClick={() => { if (!purgePrefix.trim()) return; setConfirmOpen(true); setPurgeResult(null) }}
+            disabled={!purgePrefix.trim() || purging}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/5"
+          >
+            {purging ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Purger'}
+          </button>
+        </div>
+
+        {/* Confirmation */}
+        <AnimatePresence>
+          {confirmOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3 flex items-center gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <p className="text-xs text-white/50 flex-1">
+                  Supprimer toutes les URLs commençant par <span className="text-white/70 font-mono break-all">{purgePrefix}</span> ?
+                </p>
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={() => setConfirmOpen(false)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white/40 hover:text-white/70 transition-colors">
+                    Annuler
+                  </button>
+                  <button onClick={handlePurge} disabled={purging}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-50">
+                    {purging ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirmer'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Résultat */}
+        <AnimatePresence>
+          {purgeResult && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border ${
+                purgeResult.success
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                  : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}
+            >
+              {purgeResult.success ? <Check className="w-3.5 h-3.5 shrink-0" /> : <X className="w-3.5 h-3.5 shrink-0" />}
+              {purgeResult.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Ajout via API Catalogue ──────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
         <p className="text-sm font-semibold text-white mb-1">Ajout via API Catalogue</p>
         <p className="text-xs text-white/30 mb-4">Ajoute du contenu sans lien vidéo manuel — le lien est résolu automatiquement à la lecture.</p>
