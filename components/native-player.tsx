@@ -364,7 +364,7 @@ export function NativePlayer({
   const gainNodeRef = useRef<GainNode | null>(null)
   const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
-  // ─── Save watch progress ─────────────────────────────────────────────────────
+  // ─── Save watch progress ───────────────────────────────────────────────────���─
   const currentTimeRef = useRef(0)
   const durationRef = useRef(0)
   const currentSeasonRef = useRef(initialSeason)
@@ -926,6 +926,15 @@ export function NativePlayer({
     }
   }
 
+  // Tap sur la surface vidéo : si les contrôles sont masqués, on les révèle
+  // seulement (sans lancer/mettre en pause à l'aveugle). S'ils sont déjà
+  // visibles, le tap bascule la lecture. Corrige les taps "fantômes" sur mobile.
+  const handleSurfaceTap = () => {
+    if (!showControls) { resetTimer(); return }
+    togglePlay()
+    resetTimer()
+  }
+
   const skip = (s: number) => {
     const v = videoRef.current
     if (v) { v.currentTime = Math.max(0, Math.min(duration, v.currentTime + s)); resetTimer() }
@@ -1213,12 +1222,13 @@ export function NativePlayer({
       className="bg-black relative overflow-hidden player-fullscreen"
       onMouseMove={resetTimer}
       onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
+      onTouchStart={resetTimer}
     >
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
         playsInline
-        onClick={togglePlay}
+        onClick={handleSurfaceTap}
       />
 
       {/* Écran pause — infos film/série */}
