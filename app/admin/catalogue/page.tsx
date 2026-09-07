@@ -159,6 +159,7 @@ function FilmsTab() {
   const [editId, setEditId] = useState<number | null>(null)
   const [editUrl, setEditUrl] = useState('')
   const [savingId, setSavingId] = useState<number | null>(null)
+  const [clearingLinks, setClearingLinks] = useState(false)
 
   useEffect(() => {
     fetch('/api/content/movies')
@@ -216,6 +217,19 @@ function FilmsTab() {
     } catch {} finally { setDeletingId(null) }
   }
 
+  const clearAllLinks = async () => {
+    if (clearingLinks) return
+    if (!confirm('Supprimer TOUS les liens vidéo définis des films ? Les films restent au catalogue.')) return
+    setClearingLinks(true)
+    try {
+      const r = await fetch('/api/auth/admin/clear-links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'movie' }),
+      })
+      if (r.ok) setItems(prev => prev.map(i => ({ ...i, video_url: null })))
+    } catch {} finally { setClearingLinks(false) }
+  }
+
   const filtered = items.filter(i => !filter || i.title?.toLowerCase().includes(filter.toLowerCase()))
 
   return (
@@ -226,6 +240,11 @@ function FilmsTab() {
           <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filtrer les films…"
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-primary/40 transition-colors" />
         </div>
+        <button onClick={clearAllLinks} disabled={clearingLinks}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-50">
+          {clearingLinks ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          Supprimer les liens défini
+        </button>
         <button onClick={() => setShowAdd(o => !o)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
           {showAdd ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -303,6 +322,7 @@ function SeriesTab() {
   const [addingId, setAddingId] = useState<number | null>(null)
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [clearingLinks, setClearingLinks] = useState(false)
 
   // Episodes
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -411,6 +431,19 @@ function SeriesTab() {
     } catch {} finally { setDeletingId(null) }
   }
 
+  const clearAllLinks = async () => {
+    if (clearingLinks) return
+    if (!confirm('Supprimer TOUS les liens vidéo définis des séries (tous les épisodes) ? Les séries restent au catalogue.')) return
+    setClearingLinks(true)
+    try {
+      const r = await fetch('/api/auth/admin/clear-links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'series' }),
+      })
+      if (r.ok) setEpisodes(prev => prev.map(e => ({ ...e, video_url: null })))
+    } catch {} finally { setClearingLinks(false) }
+  }
+
   const filtered = items.filter(i => !filter || i.name?.toLowerCase().includes(filter.toLowerCase()))
   const seasons = [...new Set(episodes.map(e => e.season_number))].sort((a, b) => a - b)
   const filteredEps = episodes.filter(e => e.season_number === seasonFilter)
@@ -425,6 +458,11 @@ function SeriesTab() {
           <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filtrer les séries…"
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-primary/40 transition-colors" />
         </div>
+        <button onClick={clearAllLinks} disabled={clearingLinks}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-50">
+          {clearingLinks ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          Supprimer les liens défini
+        </button>
         <button onClick={() => setShowAdd(o => !o)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
           {showAdd ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
