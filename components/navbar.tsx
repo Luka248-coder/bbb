@@ -117,31 +117,31 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
 
   return (
     <div ref={containerRef} className="relative flex items-center">
-      {/* Halo doux derrière l'onglet actif */}
+      {/* Capsule glass rouge qui glisse sous l'onglet actif */}
       <div
         className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
         style={{
           left: pillStyle.left,
           width: pillStyle.width,
-          height: '30px',
+          height: '34px',
           opacity: pillStyle.opacity,
-          background: 'rgba(220,38,38,0.10)',
-          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
+          background: 'linear-gradient(180deg, rgba(239,68,68,0.28) 0%, rgba(153,27,27,0.20) 100%)',
+          border: '1px solid rgba(239,68,68,0.35)',
+          boxShadow: '0 2px 14px rgba(220,38,38,0.30), inset 0 1px 0 rgba(255,255,255,0.14)',
+          transition: 'left 0.34s cubic-bezier(0.34,1.4,0.5,1), width 0.34s cubic-bezier(0.34,1.4,0.5,1), opacity 0.15s',
         }}
       />
-      {/* Soulignement rouge lumineux qui glisse */}
+      {/* Point lumineux sous l'onglet actif */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none rounded-full"
         style={{
-          left: pillStyle.left + 10,
-          width: Math.max(0, pillStyle.width - 20),
-          bottom: '-3px',
-          height: '2px',
+          left: pillStyle.left + pillStyle.width / 2 - 2,
+          width: '4px', height: '4px',
+          bottom: '-5px',
           opacity: pillStyle.opacity,
-          borderRadius: '2px',
-          background: 'linear-gradient(90deg, transparent, #dc2626 25%, #ef4444 50%, #dc2626 75%, transparent)',
-          boxShadow: '0 0 10px rgba(220,38,38,0.9), 0 0 4px rgba(220,38,38,0.7)',
-          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
+          background: '#ef4444',
+          boxShadow: '0 0 8px rgba(239,68,68,0.9)',
+          transition: 'left 0.34s cubic-bezier(0.34,1.4,0.5,1), opacity 0.15s',
         }}
       />
       {navLinks.map(link => {
@@ -519,9 +519,8 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Bell + Avatar desktop */}
-        {/* Search — toujours visible, connecté ou non */}
-        <div className="pointer-events-auto hidden md:flex items-center ml-auto">
+        {/* Recherche — toujours visible, connecté ou non (collée au cluster de droite) */}
+        <div className="pointer-events-auto hidden md:flex items-center ml-auto mr-2">
           <div className="flex items-center rounded-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
             {/* Search */}
             <div ref={searchRef} className="relative flex items-center">
@@ -647,16 +646,16 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Connexion desktop */}
+        {/* Connexion desktop — placée juste après la recherche */}
         {!user && (
-          <div className="pointer-events-auto ml-auto hidden md:flex" style={{ marginRight: '1rem' }}>
+          <div className="pointer-events-auto hidden md:flex" style={{ marginRight: '1rem' }}>
             <Link href="/login">
               <div
-                className="flex items-center gap-2 px-5 py-2 rounded-full text-white text-[13px] font-semibold tracking-wide transition-all duration-200 hover:bg-white/10"
+                className="flex items-center gap-2 pl-5 pr-4 py-2.5 rounded-full text-white text-[13px] font-bold tracking-wide transition-all duration-200 active:scale-95 hover:brightness-110"
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  backdropFilter: 'blur(12px)',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                  border: '1px solid rgba(239,68,68,0.5)',
+                  boxShadow: '0 4px 18px rgba(220,38,38,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
                   letterSpacing: '0.02em',
                 }}
               >

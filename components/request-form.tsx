@@ -205,23 +205,45 @@ export function RequestForm({ userId }: RequestFormProps) {
     <div className="min-h-screen px-4 py-8 max-w-5xl mx-auto">
 
       {/* ── HEADER ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-red-500 text-xs font-bold uppercase tracking-widest mb-2">Catalogue participatif</p>
-            <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
-              Demandes
-            </h1>
-            <p className="text-white/35 mt-2 text-sm">Vote pour les titres que tu veux voir arriver sur StreamSelf</p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <div className="relative overflow-hidden rounded-3xl border border-white/8 p-6 md:p-8"
+          style={{ background: 'radial-gradient(120% 120% at 100% 0%, rgba(220,38,38,0.16) 0%, transparent 50%), linear-gradient(160deg, rgba(24,24,27,0.9), rgba(10,10,12,0.9))' }}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <p className="inline-flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-widest mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Catalogue participatif
+              </p>
+              <h1 className="text-4xl md:text-5xl font-black text-white leading-tight tracking-tight">
+                Souhaits
+              </h1>
+              <p className="text-white/40 mt-2 text-sm max-w-md">Vote pour les titres que tu veux voir arriver sur StreamSelf. Les plus demandés sont ajoutés en priorité.</p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => setView(view === 'new' ? 'list' : 'new')}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm transition-all shrink-0"
+              style={view === 'new'
+                ? { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }
+                : { background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 6px 20px rgba(220,38,38,0.4)', color: '#fff' }}
+            >
+              {view === 'new' ? <><X className="w-4 h-4" /> Annuler</> : <><Plus className="w-4 h-4" /> Faire une demande</>}
+            </motion.button>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            onClick={() => setView(view === 'new' ? 'list' : 'new')}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm transition-all"
-            style={{ background: view === 'new' ? 'rgba(255,255,255,0.1)' : 'rgba(220,38,38,1)' }}
-          >
-            {view === 'new' ? <><X className="w-4 h-4" /> Annuler</> : <><Plus className="w-4 h-4" /> Faire une demande</>}
-          </motion.button>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7">
+            {[
+              { label: 'Demandes', value: requests.length, color: '#fff' },
+              { label: 'En attente', value: requests.filter(r => r.status === 'pending').length, color: '#facc15' },
+              { label: 'Validées', value: requests.filter(r => r.status === 'approved').length, color: '#4ade80' },
+              { label: 'Votes cumulés', value: requests.reduce((s, r) => s + (r.votes || 0), 0), color: '#f87171' },
+            ].map(stat => (
+              <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-2xl font-black tabular-nums" style={{ color: stat.color }}>{stat.value}</p>
+                <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mt-0.5">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </motion.div>
 
@@ -375,65 +397,68 @@ export function RequestForm({ userId }: RequestFormProps) {
         {view === 'list' && (
           <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
-            {/* Podium top 3 */}
+            {/* Leaderboard top 3 */}
             {top3.length >= 2 && (
-              <div className="mb-12">
-                <div className="flex items-center gap-2 mb-6">
+              <div className="mb-10">
+                <div className="flex items-center gap-2 mb-4">
                   <Trophy className="w-4 h-4 text-yellow-400" />
-                  <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Classement live</p>
+                  <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Classement en direct</p>
                 </div>
-                <div className="grid grid-cols-3 gap-3 items-end">
-                  {[top3[1], top3[0], top3[2]].map((req, podiumIndex) => {
-                    if (!req) return <div key={podiumIndex} />
-                    const realRank = podiumIndex === 0 ? 2 : podiumIndex === 1 ? 1 : 3
-                    const isFirst = realRank === 1
+                <div className="flex flex-col gap-2.5">
+                  {top3.map((req, idx) => {
+                    const rank = idx + 1
                     const hasVoted = votedIds.has(req.id)
+                    const leaderVotes = top3[0]?.votes || 1
+                    const pct = Math.max(6, Math.round(((req.votes || 0) / leaderVotes) * 100))
+                    const rankColor = rank === 1 ? '#facc15' : rank === 2 ? '#d4d4d8' : '#d97706'
                     return (
                       <motion.div
                         key={req.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: podiumIndex * 0.1 }}
-                        className={`relative flex flex-col items-center ${isFirst ? 'order-2' : podiumIndex === 0 ? 'order-1' : 'order-3'}`}
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.08 }}
+                        className="relative flex items-center gap-4 rounded-2xl p-3 pr-4 overflow-hidden"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${rank === 1 ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.07)'}` }}
                       >
-                        {/* Rank badge */}
-                        <div className={`absolute -top-3 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black border-2 ${
-                          realRank === 1 ? 'bg-yellow-500 border-yellow-400 text-black' :
-                          realRank === 2 ? 'bg-zinc-400 border-zinc-300 text-black' :
-                          'bg-amber-700 border-amber-600 text-white'
-                        }`}>
-                          {realRank === 1 ? '👑' : `#${realRank}`}
+                        {/* Barre de progression de fond */}
+                        <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${rank === 1 ? 'rgba(250,204,21,0.10)' : 'rgba(239,68,68,0.07)'}, transparent)` }} />
+
+                        {/* Rang */}
+                        <div className="relative w-8 text-center shrink-0">
+                          <span className="text-2xl font-black tabular-nums" style={{ color: rankColor }}>{rank}</span>
                         </div>
 
                         {/* Poster */}
-                        <div className={`relative overflow-hidden rounded-2xl mb-3 ${isFirst ? 'w-full aspect-[2/3]' : 'w-full aspect-[2/3]'}`}
-                          style={{ boxShadow: isFirst ? '0 20px 60px rgba(234,179,8,0.2)' : '0 8px 24px rgba(0,0,0,0.6)' }}>
+                        <div className="relative w-11 h-16 rounded-lg overflow-hidden bg-zinc-800 shrink-0 shadow-lg">
                           {req.poster ? (
-                            <Image src={`https://image.tmdb.org/t/p/w300${req.poster}`} alt={req.title} fill className="object-cover" sizes="200px" />
+                            <Image src={`https://image.tmdb.org/t/p/w92${req.poster}`} alt={req.title} fill className="object-cover" sizes="44px" />
                           ) : (
-                            <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                              {req.content_type === 'movie' ? <Film className="w-8 h-8 text-zinc-600" /> : <Tv className="w-8 h-8 text-zinc-600" />}
+                            <div className="w-full h-full flex items-center justify-center">
+                              {req.content_type === 'movie' ? <Film className="w-5 h-5 text-zinc-600" /> : <Tv className="w-5 h-5 text-zinc-600" />}
                             </div>
                           )}
-                          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)' }} />
                         </div>
 
-                        {/* Info + vote */}
-                        <p className="text-white font-bold text-xs text-center truncate w-full mb-2">{req.title}</p>
-                        <div className={`text-xs font-bold px-2 py-0.5 rounded-full border mb-2 ${STATUS_CONFIG[req.status].color}`}>
-                          {STATUS_CONFIG[req.status].label}
+                        {/* Infos */}
+                        <div className="relative flex-1 min-w-0">
+                          <p className="text-white font-bold text-sm truncate">{req.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${STATUS_CONFIG[req.status].color}`}>{STATUS_CONFIG[req.status].label}</span>
+                            <span className="text-white/35 text-xs">{req.content_type === 'movie' ? 'Film' : 'Série'}</span>
+                          </div>
                         </div>
-                        <button
+
+                        {/* Vote */}
+                        <motion.button
+                          whileTap={{ scale: 0.88 }}
                           onClick={() => handleVote(req)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                            hasVoted
-                              ? 'bg-red-600/20 border border-red-500/40 text-red-400'
-                              : 'bg-white/8 border border-white/12 text-white/50 hover:text-white hover:bg-white/12'
+                          className={`relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-xl border transition-all shrink-0 ${
+                            hasVoted ? 'bg-red-600/20 border-red-500/40 text-red-400' : 'bg-white/6 border-white/12 text-white/55 hover:text-white hover:bg-white/12'
                           }`}
                         >
-                          <ThumbsUp className={`w-3 h-3 ${hasVoted ? 'fill-red-400' : ''}`} />
-                          {req.votes || 0}
-                        </button>
+                          <ThumbsUp className={`w-4 h-4 ${hasVoted ? 'fill-red-400' : ''}`} />
+                          <span className="text-[11px] font-black tabular-nums">{req.votes || 0}</span>
+                        </motion.button>
                       </motion.div>
                     )
                   })}
@@ -500,6 +525,10 @@ export function RequestForm({ userId }: RequestFormProps) {
                       transition={{ delay: Math.min(i * 0.04, 0.3) }}
                       className="group flex items-center gap-4 bg-zinc-900/60 hover:bg-zinc-900/90 border border-white/6 hover:border-white/12 rounded-2xl p-3 transition-all"
                     >
+                      {/* Rang (tri par votes) */}
+                      {sortBy === 'votes' && (
+                        <span className="w-6 text-center text-sm font-black tabular-nums text-white/25 shrink-0">{i + 1}</span>
+                      )}
                       {/* Poster */}
                       <div className="relative w-12 h-16 rounded-xl overflow-hidden bg-zinc-800 shrink-0">
                         {req.poster ? (
@@ -520,7 +549,7 @@ export function RequestForm({ userId }: RequestFormProps) {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-white/30">
-                          <span className={`px-1.5 py-0.5 rounded-md ${req.content_type === 'movie' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'} font-bold`}>
+                          <span className={`px-1.5 py-0.5 rounded-md ${req.content_type === 'movie' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'} font-bold`}>
                             {req.content_type === 'movie' ? 'Film' : 'Série'}
                           </span>
                           <span>par {req.user?.username || 'Anonyme'}</span>

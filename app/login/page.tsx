@@ -140,12 +140,55 @@ function LoginContent() {
   const displayError = localError || (error ? errorMessages[error] : '') || ''
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
-      {/* Background glows */}
-      <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/15 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
+    <div className="min-h-screen flex bg-black">
 
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
+      {/* ── Panneau de marque (desktop) ── */}
+      <div className="hidden lg:flex relative w-[46%] overflow-hidden border-r border-white/5">
+        {/* Fond dégradé rouge/noir + grille */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 20% 15%, rgba(220,38,38,0.28) 0%, transparent 55%), linear-gradient(160deg, #14060a 0%, #08080a 60%, #050506 100%)' }} />
+        <div className="absolute inset-0 opacity-[0.35]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '46px 46px', maskImage: 'radial-gradient(80% 80% at 30% 20%, #000 0%, transparent 75%)' }} />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full blur-[130px] pointer-events-none" style={{ background: 'rgba(220,38,38,0.18)' }} />
+
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }}>
+              <span className="text-white font-black text-xl">S</span>
+            </div>
+            <span className="text-white font-black text-xl tracking-tight">StreamSelf</span>
+          </div>
+
+          <div>
+            <h2 className="text-white font-black text-[2.75rem] leading-[1.05] tracking-tight text-balance mb-5">
+              Le cinéma,<br />sans limites.
+            </h2>
+            <p className="text-white/45 text-base leading-relaxed max-w-sm mb-10">
+              Des milliers de films et séries en illimité, en qualité maximale. Rejoins la communauté et vote pour les prochains ajouts.
+            </p>
+            <ul className="space-y-4">
+              {[
+                'Catalogue mis à jour chaque jour',
+                'Lecture 4K sur tous tes écrans',
+                'Demandes et votes communautaires',
+              ].map(feat => (
+                <li key={feat} className="flex items-center gap-3 text-white/70 text-sm">
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.4)' }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  </span>
+                  {feat}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="text-white/20 text-xs">© {new Date().getFullYear()} StreamSelf · Connexion chiffrée de bout en bout</p>
+        </div>
+      </div>
+
+      {/* ── Panneau formulaire ── */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+        <div className="lg:hidden absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-primary/15 rounded-full blur-[120px] pointer-events-none" />
+
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
 
         {/* Back */}
         {step === 'form' ? (
@@ -358,7 +401,8 @@ function LoginContent() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 }
