@@ -140,269 +140,217 @@ function LoginContent() {
   const displayError = localError || (error ? errorMessages[error] : '') || ''
 
   return (
-    <div className="min-h-screen flex bg-black">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden px-4 py-10" style={{ background: '#060608' }}>
 
-      {/* ── Panneau de marque (desktop) ── */}
-      <div className="hidden lg:flex relative w-[46%] overflow-hidden border-r border-white/5">
-        {/* Fond dégradé rouge/noir + grille */}
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 20% 15%, rgba(220,38,38,0.28) 0%, transparent 55%), linear-gradient(160deg, #14060a 0%, #08080a 60%, #050506 100%)' }} />
-        <div className="absolute inset-0 opacity-[0.35]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '46px 46px', maskImage: 'radial-gradient(80% 80% at 30% 20%, #000 0%, transparent 75%)' }} />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full blur-[130px] pointer-events-none" style={{ background: 'rgba(220,38,38,0.18)' }} />
+      {/* Ambiance cinéma : projecteur rouge + vignette */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(90% 60% at 50% -10%, rgba(220,38,38,0.22) 0%, transparent 55%)' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(120% 120% at 50% 100%, rgba(0,0,0,0.7) 0%, transparent 60%)' }} />
+      {/* Grain */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.04]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }} />
 
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }}>
-              <span className="text-white font-black text-xl">S</span>
+      {/* Bandes de pellicule perforées (signature) */}
+      <div className="hidden sm:block absolute left-0 top-0 bottom-0 w-9" style={{ background: '#0c0c0e', backgroundImage: 'radial-gradient(circle at 50% 15px, rgba(255,255,255,0.10) 3px, transparent 4px)', backgroundSize: '100% 30px', borderRight: '1px solid rgba(255,255,255,0.05)' }} />
+      <div className="hidden sm:block absolute right-0 top-0 bottom-0 w-9" style={{ background: '#0c0c0e', backgroundImage: 'radial-gradient(circle at 50% 15px, rgba(255,255,255,0.10) 3px, transparent 4px)', backgroundSize: '100% 30px', borderLeft: '1px solid rgba(255,255,255,0.05)' }} />
+
+      <motion.div initial={{ opacity: 0, y: 26, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 w-full max-w-md">
+
+        {/* Carte-ticket */}
+        <div className="relative rounded-[28px] overflow-hidden" style={{ background: 'linear-gradient(180deg, rgba(24,24,27,0.9), rgba(12,12,14,0.94))', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 40px 100px -30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)' }}>
+
+          {/* Liseré rouge en haut */}
+          <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, transparent, #ef4444 25%, #b91c1c 50%, #ef4444 75%, transparent)' }} />
+
+          <div className="p-7 sm:p-9">
+
+            {/* Marque + retour */}
+            <div className="flex items-center justify-between mb-7">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 6px 18px rgba(220,38,38,0.4)' }}>
+                  <span className="text-white font-black text-lg leading-none">S</span>
+                </div>
+                <span className="text-white font-black text-lg tracking-tight">StreamSelf</span>
+              </div>
+              {step === 'form' ? (
+                <Link href="/" className="text-white/35 hover:text-white/80 transition-colors text-xs font-medium">Accueil</Link>
+              ) : (
+                <button onClick={() => { setStep('form'); setLocalError('') }} className="text-white/35 hover:text-white/80 transition-colors text-xs font-medium">Modifier</button>
+              )}
             </div>
-            <span className="text-white font-black text-xl tracking-tight">StreamSelf</span>
-          </div>
 
-          <div>
-            <h2 className="text-white font-black text-[2.75rem] leading-[1.05] tracking-tight text-balance mb-5">
-              Le cinéma,<br />sans limites.
-            </h2>
-            <p className="text-white/45 text-base leading-relaxed max-w-sm mb-10">
-              Des milliers de films et séries en illimité, en qualité maximale. Rejoins la communauté et vote pour les prochains ajouts.
-            </p>
-            <ul className="space-y-4">
-              {[
-                'Catalogue mis à jour chaque jour',
-                'Lecture 4K sur tous tes écrans',
-                'Demandes et votes communautaires',
-              ].map(feat => (
-                <li key={feat} className="flex items-center gap-3 text-white/70 text-sm">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.4)' }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                  </span>
-                  {feat}
-                </li>
-              ))}
-            </ul>
-          </div>
+            <AnimatePresence mode="wait">
+              {step === 'form' ? (
+                <motion.div key="form" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
+                  {/* Titre */}
+                  <div className="mb-6">
+                    <p className="text-red-400 text-[11px] font-bold uppercase tracking-[0.2em] mb-2">
+                      {tab === 'login' ? 'Séance privée' : 'Nouveau membre'}
+                    </p>
+                    <h1 className="text-[2rem] leading-none font-black text-white tracking-tight">
+                      {tab === 'login' ? 'Bon retour' : 'Crée ton compte'}
+                    </h1>
+                    <p className="text-white/40 text-sm mt-2.5">
+                      {isDownloadIntent
+                        ? 'Connecte-toi pour télécharger ce contenu.'
+                        : tab === 'login' ? 'Reprends là où tu t\'étais arrêté.' : 'Rejoins la communauté en quelques secondes.'}
+                    </p>
+                  </div>
 
-          <p className="text-white/20 text-xs">© {new Date().getFullYear()} StreamSelf · Connexion chiffrée de bout en bout</p>
-        </div>
-      </div>
+                  {/* Erreur */}
+                  <AnimatePresence>
+                    {displayError && (
+                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl p-3.5 mb-5 text-sm">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span className="flex-1">{displayError}</span>
+                        <button onClick={() => setLocalError('')}><X className="w-4 h-4" /></button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-      {/* ── Panneau formulaire ── */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
-        <div className="lg:hidden absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-primary/15 rounded-full blur-[120px] pointer-events-none" />
+                  {/* Discord */}
+                  <a href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="w-full h-13 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-white text-sm mb-5 transition-all"
+                      style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)', boxShadow: '0 8px 24px rgba(88,101,242,0.28)' }}>
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                      </svg>
+                      Continuer avec Discord
+                    </motion.button>
+                  </a>
 
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
+                  {/* Séparateur */}
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="flex-1 h-px bg-white/8" />
+                    <span className="text-white/25 text-[10px] font-bold tracking-[0.2em]">OU PAR E-MAIL</span>
+                    <div className="flex-1 h-px bg-white/8" />
+                  </div>
 
-        {/* Back */}
-        {step === 'form' ? (
-          <Link href="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white/80 mb-8 transition-colors text-sm">
-            ← Retour à l'accueil
-          </Link>
-        ) : (
-          <button onClick={() => { setStep('form'); setLocalError('') }} className="inline-flex items-center gap-2 text-white/40 hover:text-white/80 mb-8 transition-colors text-sm">
-            ← Modifier mes informations
-          </button>
-        )}
-
-        <AnimatePresence mode="wait">
-          {step === 'form' ? (
-            <motion.div key="form" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}>
-              {/* Title */}
-              <div className="mb-8">
-                <h1 className="text-4xl font-black text-white mb-2">
-                  {tab === 'login' ? 'Bon retour' : 'Rejoindre l\'élite'}
-                </h1>
-                <p className="text-white/40 text-sm">
-                  {isDownloadIntent
-                    ? 'Connectez-vous pour télécharger ce contenu.'
-                    : tab === 'login' ? 'Connectez-vous pour continuer votre session.' : 'Créez votre compte en quelques secondes.'}
-                </p>
-              </div>
-
-              {/* Error */}
-              <AnimatePresence>
-                {displayError && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl p-4 mb-6 text-sm">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{displayError}</span>
-                    <button onClick={() => setLocalError('')} className="ml-auto"><X className="w-4 h-4" /></button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Discord button */}
-              <a href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 font-semibold text-white text-base mb-6 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)' }}>
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                  </svg>
-                  Continuer avec Discord
-                </motion.button>
-              </a>
-
-              {/* Divider */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-white/30 text-xs font-medium tracking-widest">OU AVEC L'EMAIL</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              {/* Tab switcher */}
-              <div className="flex bg-white/5 rounded-2xl p-1 mb-6 border border-white/10">
-                {(['login', 'register'] as const).map(t => (
-                  <button key={t} onClick={() => { setTab(t); setLocalError('') }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                      tab === t ? 'bg-primary text-white shadow-lg' : 'text-white/40 hover:text-white/70'
-                    }`}>
-                    {t === 'login' ? 'Se connecter' : 'Créer un compte'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Fields */}
-              <div className="space-y-3 mb-4">
-                <AnimatePresence>
-                  {tab === 'register' && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                        <input
-                          type="text"
-                          placeholder="Nom d'utilisateur"
-                          value={username}
-                          onChange={e => setUsername(e.target.value)}
-                          className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-all text-sm"
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                  <input
-                    type="email"
-                    placeholder="Adresse e-mail"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-all text-sm"
-                  />
-                </div>
-
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Mot de passe"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-all text-sm"
-                  />
-                  <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit */}
-              <motion.button
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                onClick={handleSubmit}
-                disabled={loading}
-                className="w-full h-14 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 mt-2"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    {tab === 'login' ? 'Accéder à mon espace' : 'Créer mon compte'}
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </motion.button>
-
-              <p className="text-white/20 text-xs text-center mt-6">Connexion chiffrée de bout en bout</p>
-            </motion.div>
-          ) : (
-            <motion.div key="verify" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}>
-              {/* Title */}
-              <div className="mb-2 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
-                  <MailCheck className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-black text-white">Vérifiez votre e-mail</h1>
-                </div>
-              </div>
-              <p className="text-white/40 text-sm mb-8">
-                On a envoyé un code à 6 chiffres à <span className="text-white/70">{pendingEmail}</span>. Entrez-le ci-dessous pour activer votre compte.
-                <br />
-                <span className="text-amber-400/80">Pensez à vérifier vos spams / courriers indésirables si vous ne le voyez pas.</span>
-              </p>
-
-              {/* Error */}
-              <AnimatePresence>
-                {displayError && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl p-4 mb-6 text-sm">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{displayError}</span>
-                    <button onClick={() => setLocalError('')} className="ml-auto"><X className="w-4 h-4" /></button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="flex justify-center mb-8">
-                <InputOTP
-                  maxLength={6}
-                  value={otp}
-                  onChange={setOtp}
-                  onComplete={handleVerify}
-                >
-                  <InputOTPGroup>
-                    {[0, 1, 2, 3, 4, 5].map(i => (
-                      <InputOTPSlot
-                        key={i}
-                        index={i}
-                        className="w-12 h-14 text-lg bg-white/5 border-white/10 text-white first:rounded-xl last:rounded-xl rounded-xl mx-1 border"
-                      />
+                  {/* Tabs à indicateur glissant */}
+                  <div className="relative flex p-1 rounded-2xl mb-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    {(['login', 'register'] as const).map(t => (
+                      <button key={t} onClick={() => { setTab(t); setLocalError('') }} className="relative flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                        {tab === t && (
+                          <motion.div layoutId="authTabIndicator" transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                            className="absolute inset-0 rounded-xl" style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 6px 16px rgba(220,38,38,0.35)' }} />
+                        )}
+                        <span className={`relative z-10 ${tab === t ? 'text-white' : 'text-white/45'}`}>
+                          {t === 'login' ? 'Se connecter' : 'Créer un compte'}
+                        </span>
+                      </button>
                     ))}
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
+                  </div>
 
-              {/* Submit */}
-              <motion.button
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                onClick={handleVerify}
-                disabled={loading || otp.length !== 6}
-                className="w-full h-14 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Confirmer mon compte
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </motion.button>
+                  {/* Champs */}
+                  <div className="space-y-3 mb-5">
+                    <AnimatePresence>
+                      {tab === 'register' && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                          <div className="group flex items-center gap-3 h-14 px-4 rounded-2xl transition-all" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.09)' }}
+                            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.55)'; e.currentTarget.style.background = 'rgba(239,68,68,0.05)' }}
+                            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
+                            <User className="w-5 h-5 text-white/30 shrink-0" />
+                            <input type="text" placeholder="Nom d'utilisateur" value={username} onChange={e => setUsername(e.target.value)}
+                              className="flex-1 bg-transparent text-white placeholder-white/30 focus:outline-none text-sm" />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
-              <button
-                onClick={handleResend}
-                disabled={resendCooldown > 0 || resending}
-                className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-white/70 disabled:opacity-40 text-sm mt-6 transition-colors"
-              >
-                <RotateCw className={`w-4 h-4 ${resending ? 'animate-spin' : ''}`} />
-                {resendCooldown > 0 ? `Renvoyer le code (${resendCooldown}s)` : 'Renvoyer le code'}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        </motion.div>
-      </div>
+                    <div className="group flex items-center gap-3 h-14 px-4 rounded-2xl transition-all" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.09)' }}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.55)'; e.currentTarget.style.background = 'rgba(239,68,68,0.05)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
+                      <Mail className="w-5 h-5 text-white/30 shrink-0" />
+                      <input type="email" placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                        className="flex-1 bg-transparent text-white placeholder-white/30 focus:outline-none text-sm" />
+                    </div>
+
+                    <div className="group flex items-center gap-3 h-14 px-4 rounded-2xl transition-all" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.09)' }}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.55)'; e.currentTarget.style.background = 'rgba(239,68,68,0.05)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
+                      <Lock className="w-5 h-5 text-white/30 shrink-0" />
+                      <input type={showPassword ? 'text' : 'password'} placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                        className="flex-1 bg-transparent text-white placeholder-white/30 focus:outline-none text-sm" />
+                      <button onClick={() => setShowPassword(!showPassword)} className="text-white/30 hover:text-white/60 transition-colors shrink-0">
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submit */}
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={loading}
+                    className="group w-full h-14 disabled:opacity-50 rounded-2xl text-white font-bold text-[15px] flex items-center justify-center gap-2 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 10px 30px rgba(220,38,38,0.35)' }}>
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        {tab === 'login' ? 'Accéder à mon espace' : 'Créer mon compte'}
+                        <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </motion.button>
+
+                  <p className="text-white/20 text-[11px] text-center mt-5">Connexion chiffrée de bout en bout</p>
+                </motion.div>
+              ) : (
+                <motion.div key="verify" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.25 }}>
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                      <MailCheck className="w-6 h-6 text-primary" />
+                    </div>
+                    <h1 className="text-2xl font-black text-white leading-tight">Vérifie ton e-mail</h1>
+                  </div>
+                  <p className="text-white/40 text-sm mb-7">
+                    On a envoyé un code à 6 chiffres à <span className="text-white/70 font-medium">{pendingEmail}</span>. Entre-le pour activer ton compte.
+                    <br />
+                    <span className="text-amber-400/80">Pense à vérifier tes spams si tu ne le vois pas.</span>
+                  </p>
+
+                  <AnimatePresence>
+                    {displayError && (
+                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl p-3.5 mb-5 text-sm">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span className="flex-1">{displayError}</span>
+                        <button onClick={() => setLocalError('')}><X className="w-4 h-4" /></button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="flex justify-center mb-7">
+                    <InputOTP maxLength={6} value={otp} onChange={setOtp} onComplete={handleVerify}>
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map(i => (
+                          <InputOTPSlot key={i} index={i}
+                            className="w-12 h-14 text-lg bg-white/5 border-white/10 text-white first:rounded-xl last:rounded-xl rounded-xl mx-1 border" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleVerify} disabled={loading || otp.length !== 6}
+                    className="group w-full h-14 disabled:opacity-50 rounded-2xl text-white font-bold text-[15px] flex items-center justify-center gap-2 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 10px 30px rgba(220,38,38,0.35)' }}>
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>Confirmer mon compte<ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" /></>
+                    )}
+                  </motion.button>
+
+                  <button onClick={handleResend} disabled={resendCooldown > 0 || resending}
+                    className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-white/70 disabled:opacity-40 text-sm mt-5 transition-colors">
+                    <RotateCw className={`w-4 h-4 ${resending ? 'animate-spin' : ''}`} />
+                    {resendCooldown > 0 ? `Renvoyer le code (${resendCooldown}s)` : 'Renvoyer le code'}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
