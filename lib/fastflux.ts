@@ -77,9 +77,32 @@ function parseEpisodes(urls: { url: string; name?: string }[]): {
   return episodes
 }
 
+// ─── Helpers de désambiguïsation ─────────────────────────────────────────────
+function normalizeTitle(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retirer les accents
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getResultYear(r: any): number | null {
+  const raw = r?.year ?? r?.releaseDate ?? r?.release_date ?? r?.firstAirDate
+    ?? r?.first_air_date ?? r?.date ?? r?.startYear ?? r?.aired ?? ''
+  const m = String(raw).match(/\d{4}/)
+  return m ? parseInt(m[0]) : null
+}
+
 // ─── Recherche Purstream ─────────────────────────────────────────────────────
-async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbId?: number): Promise<number | null> {
-  // Essai 1 : lookup direct par tmdbId
+// year = année de sortie (issue de notre DB) — sert à distinguer p.ex.
+// l'animé One Piece (1999) de la série live-action One Piece (2023).
+async function purstream_searchId(
+  title: string,
+  type: 'movie' | 'series',
+  tmdbId?: number,
+  year?: number,
+): Promise<number | null> {
+  // Essai 1 : lookup direct par tmdbId (autoritaire)
   if (tmdbId) {
     const endpoints = [
       `${PURSTREAM_BASE}/media/tmdb/${tmdbId}`,
@@ -109,6 +132,7 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
     if (si) {
       const movies = si.movies?.items || si.movie?.items || []
       const series = si.series?.items || si.serie?.items || []
+      // On garde le bon type en priorité pour ne pas confondre film et série
       results = type === 'series' ? [...series, ...movies] : [...movies, ...series]
     } else if (Array.isArray(d)) {
       results = d
@@ -116,14 +140,42 @@ async function purstream_searchId(title: string, type: 'movie' | 'series', tmdbI
 
     if (results.length === 0) return null
 
-    // Priorité : match par tmdbId puis par titre exact puis premier résultat
+    // Priorité 1 : tmdbId exact (le plus fiable)
     if (tmdbId) {
       const match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === String(tmdbId))
-      if (match?.id) { console.log(`[Purstream] ✅ tmdbId match in search → ${match.id}`); return match.id }
+      if (match?.id) { console.log(`[Purstream] ✅ tmdbId match → ${match.id}`); return match.id }
     }
-    const norm = title.toLowerCase().trim()
-    const titleMatch = results.find((r: any) => (r.title || r.name || '').toLowerCase().trim() === norm)
-    if (titleMatch?.id) { console.log(`[Purstream] ✅ title match → ${titleMatch.id}`); return titleMatch.id }
+
+    // Candidats au titre exact
+    const norm = normalizeTitle(title)
+    const titleMatches = results.filter((r: any) => normalizeTitle(r.title || r.name || '') === norm)
+
+    // Priorité 2 : titre exact départagé par l'année
+    if (year && titleMatches.length > 0) {
+      const withYear = titleMatches
+        .map((r: any) => ({ r, y: getResultYear(r) }))
+        .filter((x: any) => x.y != null) as { r: any; y: number }[]
+      if (withYear.length > 0) {
+        withYear.sort((a, b) => Math.abs(a.y - year) - Math.abs(b.y - year))
+        const best = withYear[0]
+        console.log(`[Purstream] ✅ title+year match (${best.y} vs ${year}) → ${best.r.id}`)
+        return best.r.id
+      }
+    }
+
+    // Priorité 3 : un seul titre exact → sans ambiguïté
+    if (titleMatches.length === 1) {
+      console.log(`[Purstream] ✅ single title match → ${titleMatches[0].id}`)
+      return titleMatches[0].id
+    }
+
+    // Priorité 4 : plusieurs titres exacts mais pas d'année pour départager
+    if (titleMatches.length > 1) {
+      console.warn(`[Purstream] ⚠️ ${titleMatches.length} correspondances "${title}" sans année — 1er titre pris`)
+      return titleMatches[0].id
+    }
+
+    // Priorité 5 : aucun titre exact → premier résultat (compat)
     if (results[0]?.id) { console.log(`[Purstream] ✅ first result → ${results[0].id}`); return results[0].id }
   } catch (err) {
     console.error('[Purstream search error]', err)
@@ -290,7 +342,8 @@ export async function getMovieVideoUrl(tmdbId: number, titleOverride?: string): 
   if (movie?.video_url) return movie.video_url
 
   const title = titleOverride || movie?.title || movie?.original_title || ''
-  const purstreamId = await purstream_searchId(title, 'movie', tmdbId)
+  const year = movie?.release_date ? parseInt(movie.release_date.slice(0, 4)) : undefined
+  const purstreamId = await purstream_searchId(title, 'movie', tmdbId, year)
   if (!purstreamId) return null
 
   return extractVideoUrl(purstreamId, 'movie')
@@ -304,8 +357,9 @@ export async function getEpisodeVideoUrl(
 ): Promise<string | null> {
   const series = await getSeriesById(tmdbId)
   const title = titleOverride || series?.name || series?.original_name || ''
+  const year = series?.first_air_date ? parseInt(series.first_air_date.slice(0, 4)) : undefined
 
-  const purstreamId = await purstream_searchId(title, 'series', tmdbId)
+  const purstreamId = await purstream_searchId(title, 'series', tmdbId, year)
   if (!purstreamId) return null
 
   return extractVideoUrl(purstreamId, 'series', season, episode)

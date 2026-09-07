@@ -39,6 +39,7 @@ interface NativePlayerProps {
   poster?: string | null
   seriesName?: string | null
   downloadUrl?: string | null
+  year?: number | null
 }
 
 // ─── Episodes Panel ────────────────────────────────────────────────────────────
@@ -277,6 +278,7 @@ export function NativePlayer({
   poster = null,
   seriesName = null,
   downloadUrl = null,
+  year = null,
 }: NativePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
@@ -730,6 +732,7 @@ export function NativePlayer({
           title: contentTitle,
           type,
           tmdb_id: String(tmdbId),
+          ...(year && { year: String(year) }),
           ...(type === 'series' && { season: String(initialSeason || 1), episode: String(initialEpisode || 1) }),
         })
         const res = await fetch(`/api/purstream?${params}`)

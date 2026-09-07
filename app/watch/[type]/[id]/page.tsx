@@ -56,6 +56,7 @@ async function WatchContent({
   let seriesDbId: number | undefined
   let poster: string | null = null
   let seriesName: string | null = null
+  let contentYear: number | undefined
 
   if (type === 'movie') {
     const movie = await getMovieById(tmdbId)
@@ -82,6 +83,7 @@ async function WatchContent({
     }
 
     poster = movie?.poster_path ? getPosterUrl(movie.poster_path) : null
+    contentYear = movie?.release_date ? parseInt(movie.release_date.slice(0, 4)) : undefined
 
   } else {
     const series = await getSeriesById(tmdbId)
@@ -130,6 +132,7 @@ async function WatchContent({
     }
 
     poster = series?.poster_path ? getPosterUrl(series.poster_path) : null
+    contentYear = series?.first_air_date ? parseInt(series.first_air_date.slice(0, 4)) : undefined
   }
 
   const backUrl = '/'
@@ -149,6 +152,7 @@ async function WatchContent({
         profileId={profileId}
         poster={poster}
         seriesName={seriesName}
+        year={contentYear}
       />
     )
   }
