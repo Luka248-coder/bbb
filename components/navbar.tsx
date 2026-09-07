@@ -117,16 +117,31 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
 
   return (
     <div ref={containerRef} className="relative flex items-center">
+      {/* Halo doux derrière l'onglet actif */}
       <div
-        className="absolute top-0 bottom-0 rounded-full pointer-events-none"
+        className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
         style={{
           left: pillStyle.left,
           width: pillStyle.width,
+          height: '30px',
           opacity: pillStyle.opacity,
-          background: 'linear-gradient(135deg, rgba(220,38,38,0.32) 0%, rgba(150,20,24,0.18) 100%)',
-          boxShadow: '0 0 16px rgba(220,38,38,0.22), inset 0 1px 0 rgba(255,255,255,0.12)',
-          border: '1px solid rgba(220,38,38,0.30)',
-          transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
+          background: 'rgba(220,38,38,0.10)',
+          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
+        }}
+      />
+      {/* Soulignement rouge lumineux qui glisse */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: pillStyle.left + 10,
+          width: Math.max(0, pillStyle.width - 20),
+          bottom: '-3px',
+          height: '2px',
+          opacity: pillStyle.opacity,
+          borderRadius: '2px',
+          background: 'linear-gradient(90deg, transparent, #dc2626 25%, #ef4444 50%, #dc2626 75%, transparent)',
+          boxShadow: '0 0 10px rgba(220,38,38,0.9), 0 0 4px rgba(220,38,38,0.7)',
+          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
         }}
       />
       {navLinks.map(link => {
@@ -421,6 +436,10 @@ export function Navbar() {
   return (
     <>
     <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-3">
+
+      {/* Dégradé de lisibilité derrière la navbar */}
+      <div className="absolute top-0 left-0 right-0 h-[110px] pointer-events-none -z-10"
+        style={{ background: 'linear-gradient(to bottom, rgba(6,6,8,0.75) 0%, rgba(6,6,8,0.35) 55%, transparent 100%)' }} />
 
       <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
 
