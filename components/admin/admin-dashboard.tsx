@@ -71,10 +71,10 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
         setRefreshMsg(`${d.moviesUpdated} films et ${d.seriesUpdated} séries actualisés${d.failed ? ` · ${d.failed} échecs` : ''}`)
         setTimeout(() => window.location.reload(), 1200)
       } else {
-        setRefreshMsg('Échec de l\'actualisation')
+        setRefreshMsg(d?.error ? `Échec : ${d.error}` : 'Échec de l\'actualisation')
       }
-    } catch {
-      setRefreshMsg('Échec de l\'actualisation')
+    } catch (e: any) {
+      setRefreshMsg(`Échec : ${e?.message || 'réseau'}`)
     } finally {
       setRefreshing(false)
     }
