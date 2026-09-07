@@ -69,12 +69,12 @@ function timeAgo(date: string) {
 }
 
 const prefConfig = [
-  { key: 'new_movies', label: 'Nouveaux films', icon: Film, color: 'bg-blue-500/20 text-blue-400' },
-  { key: 'new_series', label: 'Nouvelles séries', icon: Tv, color: 'bg-blue-500/20 text-blue-400' },
-  { key: 'new_episodes', label: 'Nouveaux épisodes', icon: Bell, color: 'bg-blue-500/20 text-blue-400' },
+  { key: 'new_movies', label: 'Nouveaux films', icon: Film, color: 'bg-red-500/20 text-red-400' },
+  { key: 'new_series', label: 'Nouvelles séries', icon: Tv, color: 'bg-red-500/20 text-red-400' },
+  { key: 'new_episodes', label: 'Nouveaux épisodes', icon: Bell, color: 'bg-red-500/20 text-red-400' },
   { key: 'request_approved', label: 'Demande acceptée', icon: Check, color: 'bg-green-500/20 text-green-400' },
-  { key: 'request_rejected', label: 'Demande refusée', icon: X, color: 'bg-blue-500/20 text-blue-400' },
-  { key: 'announcements', label: 'Annonces', icon: Bell, color: 'bg-blue-500/20 text-blue-400' },
+  { key: 'request_rejected', label: 'Demande refusée', icon: X, color: 'bg-red-500/20 text-red-400' },
+  { key: 'announcements', label: 'Annonces', icon: Bell, color: 'bg-red-500/20 text-red-400' },
 ]
 
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
@@ -117,16 +117,16 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
 
   return (
     <div ref={containerRef} className="relative flex items-center">
+      {/* Pastille blanche qui glisse sous l'onglet actif */}
       <div
-        className="absolute top-0 bottom-0 rounded-full pointer-events-none"
+        className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none bg-white"
         style={{
           left: pillStyle.left,
           width: pillStyle.width,
+          height: '34px',
           opacity: pillStyle.opacity,
-          background: 'linear-gradient(135deg, rgba(29,111,232,0.35) 0%, rgba(21,88,192,0.25) 100%)',
-          boxShadow: '0 0 12px rgba(29,111,232,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
-          border: '1px solid rgba(29,111,232,0.3)',
-          transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.15s',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
+          transition: 'left 0.34s cubic-bezier(0.34,1.3,0.5,1), width 0.34s cubic-bezier(0.34,1.3,0.5,1), opacity 0.15s',
         }}
       />
       {navLinks.map(link => {
@@ -136,8 +136,8 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
             <div
               data-active={isActive ? 'true' : 'false'}
               className={cn(
-                'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-150',
-                isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
+                'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-200',
+                isActive ? 'text-black' : 'text-white/55 hover:text-white'
               )}
             >
               {link.label}
@@ -422,6 +422,10 @@ export function Navbar() {
     <>
     <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-3">
 
+      {/* Dégradé de lisibilité derrière la navbar */}
+      <div className="absolute top-0 left-0 right-0 h-[110px] pointer-events-none -z-10"
+        style={{ background: 'linear-gradient(to bottom, rgba(6,6,8,0.75) 0%, rgba(6,6,8,0.35) 55%, transparent 100%)' }} />
+
       <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
 
         {/* Logo */}
@@ -439,11 +443,11 @@ export function Navbar() {
           <div
             className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
             style={{
-              background: 'rgba(29,111,232,0.06)',
+              background: 'rgba(255,255,255,0.04)',
               backdropFilter: 'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',
               border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 0 0 1px rgba(29,111,232,0.06), 0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+              boxShadow: '0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
           >
             <NavPill pathname={pathname} navLinks={navLinks} />
@@ -500,9 +504,8 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Bell + Avatar desktop */}
-        {/* Search — toujours visible, connecté ou non */}
-        <div className="pointer-events-auto hidden md:flex items-center ml-auto">
+        {/* Recherche — toujours visible, connecté ou non (collée au cluster de droite) */}
+        <div className="pointer-events-auto hidden md:flex items-center ml-auto mr-2">
           <div className="flex items-center rounded-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
             {/* Search */}
             <div ref={searchRef} className="relative flex items-center">
@@ -589,7 +592,7 @@ export function Navbar() {
                   >
                     <Bell className="w-4 h-4" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                      <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
@@ -614,7 +617,7 @@ export function Navbar() {
                 ) : avatarUrl ? (
                   <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+                  <div className="w-full h-full bg-red-600 flex items-center justify-center">
                     <User className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -628,16 +631,16 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Connexion desktop */}
+        {/* Connexion desktop — placée juste après la recherche */}
         {!user && (
-          <div className="pointer-events-auto ml-auto hidden md:flex" style={{ marginRight: '1rem' }}>
+          <div className="pointer-events-auto hidden md:flex" style={{ marginRight: '1rem' }}>
             <Link href="/login">
               <div
-                className="flex items-center gap-2 px-5 py-2 rounded-full text-white text-[13px] font-semibold tracking-wide transition-all duration-200 hover:bg-white/10"
+                className="flex items-center gap-2 pl-5 pr-4 py-2.5 rounded-full text-white text-[13px] font-bold tracking-wide transition-all duration-200 active:scale-95 hover:brightness-110"
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  backdropFilter: 'blur(12px)',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                  border: '1px solid rgba(239,68,68,0.5)',
+                  boxShadow: '0 4px 18px rgba(220,38,38,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
                   letterSpacing: '0.02em',
                 }}
               >
@@ -736,7 +739,7 @@ export function Navbar() {
             >
               <Bell className="w-[17px] h-[17px]" />
               {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -761,7 +764,7 @@ export function Navbar() {
                 top: 70,
                 right: 16,
                 width: 'min(380px, calc(100vw - 32px))',
-                background: 'linear-gradient(145deg, rgba(28,12,12,0.92) 0%, rgba(10,10,14,0.96) 60%, rgba(20,8,20,0.93) 100%)',
+                background: 'linear-gradient(145deg, rgba(24,24,27,0.94) 0%, rgba(14,14,16,0.97) 60%, rgba(18,18,21,0.94) 100%)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 backdropFilter: 'blur(32px)',
                 boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
@@ -775,7 +778,7 @@ export function Navbar() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.12))', border: '1px solid rgba(239,68,68,0.25)' }}>
-                          <Bell className="w-4 h-4 text-blue-400" />
+                          <Bell className="w-4 h-4 text-red-400" />
                         </div>
                         <div>
                           <p className="font-bold text-white text-[15px] leading-tight">Notifications</p>
@@ -786,7 +789,7 @@ export function Navbar() {
                       </div>
                       <div className="flex items-center gap-1">
                         {unreadCount > 0 && <button onClick={markAllRead} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-green-500/10 hover:text-green-400 transition-all"><Check className="w-3.5 h-3.5" /></button>}
-                        {notifications.length > 0 && <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-blue-500/10 hover:text-blue-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>}
+                        {notifications.length > 0 && <button onClick={clearAll} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-red-500/10 hover:text-red-400 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>}
                         <button onClick={() => setShowNotifications(false)} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:bg-white/7 hover:text-white transition-all"><X className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
@@ -815,7 +818,7 @@ export function Navbar() {
                             {notif.image_url ? (
                               <div className="relative w-11 h-[62px] flex-shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}><Image src={notif.image_url} alt="" fill className="object-cover" sizes="44px" /></div>
                             ) : (
-                              <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(29,111,232,0.15), rgba(21,88,192,0.08))', border: '1px solid rgba(29,111,232,0.15)' }}><Bell className="w-4 h-4 text-blue-400" /></div>
+                              <div className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.15), rgba(150,20,24,0.08))', border: '1px solid rgba(220,38,38,0.15)' }}><Bell className="w-4 h-4 text-red-400" /></div>
                             )}
                             <div className="flex-1 min-w-0 py-0.5">
                               <p className="text-[13px] font-semibold mb-1 leading-tight" style={{ color: notif.is_read ? 'rgba(255,255,255,0.6)' : 'white' }}>{notif.title}</p>
@@ -992,7 +995,7 @@ export function Navbar() {
                           ) : avatarUrl ? (
                             <Image src={avatarUrl} alt={user.username} width={68} height={68} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+                            <div className="w-full h-full bg-red-600 flex items-center justify-center">
                               <span className="text-white font-bold text-2xl">{(activeProfile?.name || user.username)[0].toUpperCase()}</span>
                             </div>
                           )}
@@ -1077,13 +1080,13 @@ export function Navbar() {
                             }}
                             className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] transition-colors relative text-left"
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />}
+                            {!item.finished && item.progress > 0 && <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />}
                             <div className="relative w-10 h-[58px] rounded-xl overflow-hidden bg-zinc-800/60 flex-shrink-0">
                               {item.poster_url ? <Image src={item.poster_url} alt={item.title} fill className="object-cover" sizes="40px" /> : <div className="w-full h-full flex items-center justify-center">{item.content_type === 'movie' ? <Film className="w-4 h-4 text-zinc-600" /> : <Tv className="w-4 h-4 text-zinc-600" />}</div>}
                             </div>
                             <div className="flex-1 min-w-0 pr-4">
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded', item.content_type === 'movie' ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-500/15 text-blue-400')}>
+                                <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded', item.content_type === 'movie' ? 'bg-red-500/15 text-red-400' : 'bg-red-500/15 text-red-400')}>
                                   {item.content_type === 'movie' ? <Film className="w-2 h-2" /> : <Tv className="w-2 h-2" />}
                                   {item.content_type === 'movie' ? 'FILM' : 'SÉRIE'}
                                 </span>
@@ -1131,28 +1134,28 @@ export function Navbar() {
         {/* Accueil */}
         <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Home className={`w-[22px] h-[22px] relative z-10 ${pathname === '/' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.3 : 1.7} />
+          <Home className={`w-[22px] h-[22px] relative z-10 ${pathname === '/' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/' ? 'text-white/80' : 'text-white/28'}`}>Accueil</span>
         </Link>
 
         {/* Films */}
         <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/movies' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Film className={`w-[22px] h-[22px] relative z-10 ${pathname === '/movies' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.3 : 1.7} />
+          <Film className={`w-[22px] h-[22px] relative z-10 ${pathname === '/movies' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/movies' ? 'text-white/80' : 'text-white/28'}`}>Films</span>
         </Link>
 
         {/* Séries */}
         <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/series' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Tv className={`w-[22px] h-[22px] relative z-10 ${pathname === '/series' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.3 : 1.7} />
+          <Tv className={`w-[22px] h-[22px] relative z-10 ${pathname === '/series' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/series' ? 'text-white/80' : 'text-white/28'}`}>Séries</span>
         </Link>
 
         {/* Souhaits */}
         <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
           {pathname === '/request' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Plus className={`w-[22px] h-[22px] relative z-10 ${pathname === '/request' ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={pathname === '/request' ? 2.3 : 1.7} />
+          <Plus className={`w-[22px] h-[22px] relative z-10 ${pathname === '/request' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/request' ? 2.3 : 1.7} />
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/request' ? 'text-white/80' : 'text-white/28'}`}>Souhaits</span>
         </Link>
 
@@ -1162,8 +1165,8 @@ export function Navbar() {
           style={{ WebkitTapHighlightColor: 'transparent' }}>
           {showProfile && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
           {user && (activeProfile?.avatar_url || avatarUrl)
-            ? <Image src={activeProfile?.avatar_url || avatarUrl!} alt={activeProfile?.name || user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-blue-400' : 'ring-1 ring-white/20'}`} />
-            : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-blue-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
+            ? <Image src={activeProfile?.avatar_url || avatarUrl!} alt={activeProfile?.name || user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
+            : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-red-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
           }
           <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${showProfile ? 'text-white/80' : 'text-white/28'}`}>Profil</span>
         </button>

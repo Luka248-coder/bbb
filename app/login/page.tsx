@@ -4,8 +4,9 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSession } from '@/components/session-provider'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, AlertCircle, X, MailCheck, RotateCw } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowUpRight, AlertCircle, X, MailCheck, RotateCw, ShieldCheck } from 'lucide-react'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
 const errorMessages: Record<string, string> = {
@@ -52,6 +53,24 @@ function LoginContent() {
   const [otp, setOtp] = useState('')
   const [resendCooldown, setResendCooldown] = useState(0)
   const [resending, setResending] = useState(false)
+
+  const [posters, setPosters] = useState<string[]>([])
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/content/movies')
+      .then(r => r.json())
+      .then((list) => {
+        if (!active || !Array.isArray(list)) return
+        const urls = list
+          .filter((m: any) => m?.poster_path)
+          .slice(0, 12)
+          .map((m: any) => `https://image.tmdb.org/t/p/w342${m.poster_path}`)
+        setPosters(urls)
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -140,232 +159,250 @@ function LoginContent() {
   const displayError = localError || (error ? errorMessages[error] : '') || ''
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
-      {/* Background glows */}
-      <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/15 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-black px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-5xl grid lg:grid-cols-2 rounded-[32px] overflow-hidden"
+        style={{ background: '#0a0a0b', border: '1px solid rgba(255,255,255,0.07)', minHeight: '600px' }}
+      >
 
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
-
-        {/* Back */}
-        {step === 'form' ? (
-          <Link href="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white/80 mb-8 transition-colors text-sm">
-            ← Retour à l'accueil
-          </Link>
-        ) : (
-          <button onClick={() => { setStep('form'); setLocalError('') }} className="inline-flex items-center gap-2 text-white/40 hover:text-white/80 mb-8 transition-colors text-sm">
-            ← Modifier mes informations
-          </button>
-        )}
-
-        <AnimatePresence mode="wait">
-          {step === 'form' ? (
-            <motion.div key="form" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}>
-              {/* Title */}
-              <div className="mb-8">
-                <h1 className="text-4xl font-black text-white mb-2">
-                  {tab === 'login' ? 'Bon retour' : 'Rejoindre l\'élite'}
-                </h1>
-                <p className="text-white/40 text-sm">
-                  {isDownloadIntent
-                    ? 'Connectez-vous pour télécharger ce contenu.'
-                    : tab === 'login' ? 'Connectez-vous pour continuer votre session.' : 'Créez votre compte en quelques secondes.'}
-                </p>
-              </div>
-
-              {/* Error */}
-              <AnimatePresence>
-                {displayError && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl p-4 mb-6 text-sm">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{displayError}</span>
-                    <button onClick={() => setLocalError('')} className="ml-auto"><X className="w-4 h-4" /></button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Discord button */}
-              <a href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 font-semibold text-white text-base mb-6 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)' }}>
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                  </svg>
-                  Continuer avec Discord
-                </motion.button>
-              </a>
-
-              {/* Divider */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-white/30 text-xs font-medium tracking-widest">OU AVEC L'EMAIL</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              {/* Tab switcher */}
-              <div className="flex bg-white/5 rounded-2xl p-1 mb-6 border border-white/10">
-                {(['login', 'register'] as const).map(t => (
-                  <button key={t} onClick={() => { setTab(t); setLocalError('') }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                      tab === t ? 'bg-primary text-white shadow-lg' : 'text-white/40 hover:text-white/70'
-                    }`}>
-                    {t === 'login' ? 'Se connecter' : 'Créer un compte'}
-                  </button>
+        {/* ── Panneau gauche : mur de posters ── */}
+        <div className="relative hidden lg:block overflow-hidden">
+          {/* Mur de posters */}
+          <div className="absolute inset-0 grid grid-cols-3 gap-3 p-3">
+            {[0, 1, 2].map(col => (
+              <div key={col} className="flex flex-col gap-3" style={{ transform: `translateY(${col === 1 ? '-28px' : col === 2 ? '14px' : '0px'})` }}>
+                {(posters.length ? posters : Array(12).fill('')).slice(col * 4, col * 4 + 4).map((src, i) => (
+                  <div key={i} className="relative w-full rounded-xl overflow-hidden bg-zinc-900" style={{ aspectRatio: '2/3' }}>
+                    {src && <Image src={src || "/placeholder.svg"} alt="" fill className="object-cover" sizes="180px" />}
+                  </div>
                 ))}
               </div>
+            ))}
+          </div>
 
-              {/* Fields */}
-              <div className="space-y-3 mb-4">
+          {/* Voile dégradé pour lisibilité */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(115deg, rgba(10,10,11,0.97) 0%, rgba(10,10,11,0.85) 34%, rgba(10,10,11,0.45) 62%, rgba(10,10,11,0.25) 100%)' }} />
+
+          {/* Contenu éditorial */}
+          <div className="relative z-10 h-full flex flex-col justify-between p-10">
+            <p className="flex items-center gap-3 text-white/45 text-xs font-semibold tracking-[0.28em]">
+              <span className="w-8 h-px bg-white/40" /> STREAMFLIX
+            </p>
+
+            <div>
+              <h2 className="text-white font-black tracking-tight leading-[0.95] text-balance" style={{ fontSize: 'clamp(2.75rem, 5vw, 4rem)' }}>
+                Entrez<br />dans<br />l&apos;image.
+              </h2>
+              <p className="text-white/55 text-[15px] leading-relaxed mt-6 max-w-xs">
+                Votre espace personnel. Reprises, favoris, historique — tout en un seul endroit.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 text-white/40 text-xs font-semibold tracking-widest uppercase">
+              <span>12K Titres</span>
+              <span className="w-1 h-1 rounded-full bg-white/30" />
+              <span>4K Ready</span>
+              <span className="w-1 h-1 rounded-full bg-white/30" />
+              <span>Sans pub</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Panneau droit : formulaire ── */}
+        <div className="relative flex flex-col justify-center p-8 sm:p-12">
+
+          {/* Fermer */}
+          <Link
+            href="/"
+            aria-label="Fermer"
+            className="absolute top-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <X className="w-4 h-4" />
+          </Link>
+
+          <AnimatePresence mode="wait">
+            {step === 'form' ? (
+              <motion.div key="form" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={{ duration: 0.22 }}>
+
+                {/* Onglets */}
+                <div className="flex items-center gap-8 mb-10">
+                  {(['login', 'register'] as const).map(t => (
+                    <button key={t} onClick={() => { setTab(t); setLocalError('') }} className="relative pb-2 text-lg font-bold transition-colors">
+                      <span className={tab === t ? 'text-white' : 'text-white/35 hover:text-white/60'}>
+                        {t === 'login' ? 'Connexion' : 'Inscription'}
+                      </span>
+                      {tab === t && (
+                        <motion.div layoutId="authUnderline" transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                          className="absolute -bottom-px left-0 right-0 h-0.5 bg-white rounded-full" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sous-titre contextuel */}
+                {isDownloadIntent && (
+                  <p className="text-white/45 text-sm mb-6 -mt-4">Connectez-vous pour télécharger ce contenu.</p>
+                )}
+
+                {/* Erreur */}
                 <AnimatePresence>
-                  {tab === 'register' && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                        <input
-                          type="text"
-                          placeholder="Nom d'utilisateur"
-                          value={username}
-                          onChange={e => setUsername(e.target.value)}
-                          className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-all text-sm"
-                        />
-                      </div>
+                  {displayError && (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      className="flex items-center gap-3 bg-red-500/10 border border-red-500/25 text-red-400 rounded-2xl p-3.5 mb-5 text-sm">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span className="flex-1">{displayError}</span>
+                      <button onClick={() => setLocalError('')}><X className="w-4 h-4" /></button>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                  <input
-                    type="email"
-                    placeholder="Adresse e-mail"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-all text-sm"
-                  />
+                {/* Champs */}
+                <div className="space-y-3.5 mb-7">
+                  <AnimatePresence>
+                    {tab === 'register' && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                        <Field icon={<User className="w-5 h-5" />}>
+                          <input type="text" placeholder="Pseudo" value={username} onChange={e => setUsername(e.target.value)}
+                            className="flex-1 bg-transparent text-white placeholder-white/35 focus:outline-none text-[15px]" />
+                        </Field>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <Field icon={<Mail className="w-5 h-5" />}>
+                    <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                      className="flex-1 bg-transparent text-white placeholder-white/35 focus:outline-none text-[15px]" />
+                  </Field>
+
+                  <Field icon={<Lock className="w-5 h-5" />}>
+                    <input type={showPassword ? 'text' : 'password'} placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                      className="flex-1 bg-transparent text-white placeholder-white/35 focus:outline-none text-[15px]" />
+                    <button onClick={() => setShowPassword(!showPassword)} className="text-white/35 hover:text-white/70 transition-colors shrink-0">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </Field>
                 </div>
 
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Mot de passe"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-all text-sm"
-                  />
-                  <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {/* CTA blanc */}
+                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSubmit} disabled={loading}
+                  className="group w-full h-15 py-4 rounded-2xl bg-white text-black font-bold text-[15px] flex items-center justify-between px-6 disabled:opacity-60 transition-all">
+                  {loading ? (
+                    <span className="mx-auto w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>{tab === 'login' ? 'Accéder' : 'Créer le compte'}</span>
+                      <ArrowUpRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </>
+                  )}
+                </motion.button>
+
+                {/* Lien secondaire */}
+                {tab === 'login' && (
+                  <div className="text-center mt-5">
+                    <button className="text-white/40 hover:text-white/70 text-sm transition-colors">Mot de passe oublié ?</button>
+                  </div>
+                )}
+
+                {/* Discord (secondaire) */}
+                <div className="flex items-center gap-4 my-6">
+                  <div className="flex-1 h-px bg-white/8" />
+                  <span className="text-white/25 text-[10px] font-bold tracking-[0.2em]">OU</span>
+                  <div className="flex-1 h-px bg-white/8" />
+                </div>
+                <a href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
+                  <button className="w-full h-13 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-white/80 text-sm transition-all hover:text-white"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#5865F2]">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                    </svg>
+                    Continuer avec Discord
                   </button>
+                </a>
+
+                {/* Note sécurité */}
+                <p className="flex items-center justify-center gap-2 text-white/30 text-xs mt-7">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Données sécurisées · Compte StreamFlix
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div key="verify" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={{ duration: 0.22 }}>
+                <button onClick={() => { setStep('form'); setLocalError('') }} className="text-white/40 hover:text-white/80 text-sm mb-6 transition-colors">← Retour</button>
+
+                <div className="w-12 h-12 rounded-2xl bg-white/8 border border-white/12 flex items-center justify-center mb-4">
+                  <MailCheck className="w-6 h-6 text-white" />
                 </div>
-              </div>
+                <h1 className="text-2xl font-black text-white leading-tight mb-2">Vérifiez votre e-mail</h1>
+                <p className="text-white/45 text-sm mb-7">
+                  On a envoyé un code à 6 chiffres à <span className="text-white/80 font-medium">{pendingEmail}</span>.
+                  <br /><span className="text-amber-400/80">Pensez à vérifier vos spams si vous ne le voyez pas.</span>
+                </p>
 
-              {/* Submit */}
-              <motion.button
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                onClick={handleSubmit}
-                disabled={loading}
-                className="w-full h-14 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 mt-2"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    {tab === 'login' ? 'Accéder à mon espace' : 'Créer mon compte'}
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </motion.button>
+                <AnimatePresence>
+                  {displayError && (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      className="flex items-center gap-3 bg-red-500/10 border border-red-500/25 text-red-400 rounded-2xl p-3.5 mb-5 text-sm">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span className="flex-1">{displayError}</span>
+                      <button onClick={() => setLocalError('')}><X className="w-4 h-4" /></button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              <p className="text-white/20 text-xs text-center mt-6">Connexion chiffrée de bout en bout</p>
-            </motion.div>
-          ) : (
-            <motion.div key="verify" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}>
-              {/* Title */}
-              <div className="mb-2 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
-                  <MailCheck className="w-6 h-6 text-primary" />
+                <div className="flex justify-center mb-7">
+                  <InputOTP maxLength={6} value={otp} onChange={setOtp} onComplete={handleVerify}>
+                    <InputOTPGroup>
+                      {[0, 1, 2, 3, 4, 5].map(i => (
+                        <InputOTPSlot key={i} index={i}
+                          className="w-12 h-14 text-lg bg-white/5 border-white/10 text-white first:rounded-xl last:rounded-xl rounded-xl mx-1 border" />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-black text-white">Vérifiez votre e-mail</h1>
-                </div>
-              </div>
-              <p className="text-white/40 text-sm mb-8">
-                On a envoyé un code à 6 chiffres à <span className="text-white/70">{pendingEmail}</span>. Entrez-le ci-dessous pour activer votre compte.
-                <br />
-                <span className="text-amber-400/80">Pensez à vérifier vos spams / courriers indésirables si vous ne le voyez pas.</span>
-              </p>
 
-              {/* Error */}
-              <AnimatePresence>
-                {displayError && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl p-4 mb-6 text-sm">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{displayError}</span>
-                    <button onClick={() => setLocalError('')} className="ml-auto"><X className="w-4 h-4" /></button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleVerify} disabled={loading || otp.length !== 6}
+                  className="group w-full py-4 rounded-2xl bg-white text-black font-bold text-[15px] flex items-center justify-between px-6 disabled:opacity-50 transition-all">
+                  {loading ? (
+                    <span className="mx-auto w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>Confirmer mon compte</span>
+                      <ArrowUpRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </>
+                  )}
+                </motion.button>
 
-              <div className="flex justify-center mb-8">
-                <InputOTP
-                  maxLength={6}
-                  value={otp}
-                  onChange={setOtp}
-                  onComplete={handleVerify}
-                >
-                  <InputOTPGroup>
-                    {[0, 1, 2, 3, 4, 5].map(i => (
-                      <InputOTPSlot
-                        key={i}
-                        index={i}
-                        className="w-12 h-14 text-lg bg-white/5 border-white/10 text-white first:rounded-xl last:rounded-xl rounded-xl mx-1 border"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-
-              {/* Submit */}
-              <motion.button
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                onClick={handleVerify}
-                disabled={loading || otp.length !== 6}
-                className="w-full h-14 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Confirmer mon compte
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </motion.button>
-
-              <button
-                onClick={handleResend}
-                disabled={resendCooldown > 0 || resending}
-                className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-white/70 disabled:opacity-40 text-sm mt-6 transition-colors"
-              >
-                <RotateCw className={`w-4 h-4 ${resending ? 'animate-spin' : ''}`} />
-                {resendCooldown > 0 ? `Renvoyer le code (${resendCooldown}s)` : 'Renvoyer le code'}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <button onClick={handleResend} disabled={resendCooldown > 0 || resending}
+                  className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-white/70 disabled:opacity-40 text-sm mt-5 transition-colors">
+                  <RotateCw className={`w-4 h-4 ${resending ? 'animate-spin' : ''}`} />
+                  {resendCooldown > 0 ? `Renvoyer le code (${resendCooldown}s)` : 'Renvoyer le code'}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
+    </div>
+  )
+}
+
+function Field({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 h-14 px-4 rounded-2xl transition-colors focus-within:border-white/30 focus-within:bg-white/[0.07]"
+      style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.09)' }}>
+      <span className="text-white/35 shrink-0">{icon}</span>
+      {children}
     </div>
   )
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
       <LoginContent />
     </Suspense>
   )

@@ -122,190 +122,144 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
   const typeLabel = isMovie(pick) ? 'FILM' : 'SÉRIE'
 
   return (
-    <section style={{ padding: '1.5rem 1rem 2rem' }}>
+    <section style={{ padding: '1.25rem 1rem 2rem' }}>
 
-      {/* Keyframes injectés */}
       <style>{`
-        @keyframes posterFloat {
-          0%   { transform: rotate(4deg) translateY(-8px); box-shadow: 0 24px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06); }
-          50%  { transform: rotate(4deg) translateY(8px);  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06); }
-          100% { transform: rotate(4deg) translateY(-8px); box-shadow: 0 24px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06); }
-        }
-        @keyframes cursorBlink {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
-        }
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.4; }
-        }
+        @keyframes badgePulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.85); } }
+        @keyframes kenBurns { 0% { transform: scale(1.06) translateY(0); } 100% { transform: scale(1.14) translateY(-2%); } }
       `}</style>
 
-      {/* En-tête */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '1rem', paddingLeft: '0.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '3px', height: '18px', background: '#1d6fe8', borderRadius: '2px' }} />
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>À la une</span>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', marginLeft: '2px' }}>· Notre sélection du moment</span>
-        </div>
-      </div>
-
-      {/* Wrapper : position relative pour sortir le poster du overflow:hidden */}
-      <div style={{ position: 'relative' }}>
-
-        {/* Carte principale avec overflow hidden */}
-        <div style={{
-          position: 'relative',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          height: '420px',
-          background: '#0d0d0d',
-        }}>
-          {/* Backdrop */}
+      {/* Panneau cinématographique plein cadre, contenu ancré en bas */}
+      <div style={{
+        position: 'relative',
+        borderRadius: '24px',
+        overflow: 'hidden',
+        minHeight: '520px',
+        display: 'flex',
+        background: '#08080a',
+        boxShadow: '0 30px 80px -30px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(255,255,255,0.06)',
+      }}>
+        {/* Backdrop plein cadre avec léger ken-burns */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
           <Image
             src={`https://image.tmdb.org/t/p/original${pick.backdrop_path}`}
             alt={title}
             fill
+            priority
             className="object-cover object-center"
-            style={{ opacity: 0.5 }}
+            style={{ animation: 'kenBurns 18s ease-out infinite alternate' }}
           />
-
-          {/* Dégradé gauche */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(105deg, rgba(6,3,4,1) 0%, rgba(6,3,4,0.95) 20%, rgba(6,3,4,0.75) 42%, rgba(6,3,4,0.3) 62%, rgba(6,3,4,0.05) 78%, transparent 100%)',
-          }} />
-          {/* Dégradé bas */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(6,3,4,0.8) 0%, transparent 45%)',
-          }} />
-
-          {/* Contenu texte */}
-          <div style={{
-            position: 'absolute', inset: 0, zIndex: 3,
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            padding: '2.5rem 3rem',
-            maxWidth: '600px',
-          }}>
-
-            {/* Badge "Sélection du moment" — moderne */}
-            <div style={{ marginBottom: '18px' }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '7px',
-                background: 'rgba(220, 38, 38, 0.15)',
-                border: '1px solid rgba(220, 38, 38, 0.55)',
-                color: '#f87171',
-                fontSize: '0.65rem', fontWeight: 700,
-                letterSpacing: '0.14em', textTransform: 'uppercase',
-                padding: '5px 13px 5px 10px', borderRadius: '100px',
-                backdropFilter: 'blur(8px)',
-              }}>
-                <span style={{
-                  width: '6px', height: '6px', borderRadius: '50%',
-                  background: '#3b82f6', display: 'inline-block',
-                  animation: 'badgePulse 2s ease-in-out infinite',
-                  boxShadow: '0 0 6px rgba(239,68,68,0.8)',
-                }} />
-                Sélection du moment
-              </span>
-            </div>
-
-            {/* Logo / Titre */}
-            <div style={{ marginBottom: '16px' }}>
-              <FeaturedLogo tmdbId={tmdbId} type={type} title={title} />
-            </div>
-
-            {/* Méta */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              {pick.vote_average > 0 && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontWeight: 700, fontSize: '0.88rem' }}>
-                  ★ {pick.vote_average.toFixed(1)}
-                </span>
-              )}
-              {year && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem' }}>
-                  <Calendar style={{ width: '12px', height: '12px' }} />
-                  {year}
-                </span>
-              )}
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '5px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: 'rgba(255,255,255,0.5)', fontSize: '0.68rem', fontWeight: 600,
-                padding: '3px 10px', borderRadius: '100px', letterSpacing: '0.07em',
-                background: 'rgba(255,255,255,0.04)',
-              }}>
-                <Clapperboard style={{ width: '10px', height: '10px' }} />
-                {typeLabel}
-              </span>
-            </div>
-
-            {/* Synopsis animé */}
-            {pick.overview && <TypewriterText text={pick.overview.slice(0, 180) + (pick.overview.length > 180 ? '...' : '')} />}
-
-            {/* Boutons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Link href={`/watch/${type}/${tmdbId}?play=1`}>
-                <button style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  background: '#fff', color: '#000',
-                  fontWeight: 700, fontSize: '0.875rem',
-                  padding: '11px 24px', borderRadius: '100px',
-                  border: 'none', cursor: 'pointer',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
-                  transition: 'transform 0.15s, background 0.15s',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.9)'; e.currentTarget.style.transform = 'scale(1.03)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'scale(1)' }}
-                >
-                  <Play style={{ width: '14px', height: '14px', fill: '#000' }} />
-                  Regarder
-                </button>
-              </Link>
-
-              <button
-                onClick={() => openDrawer(type as 'movie' | 'series', tmdbId)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)',
-                  fontWeight: 600, fontSize: '0.875rem',
-                  padding: '11px 20px', borderRadius: '100px',
-                  border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
-                  backdropFilter: 'blur(12px)',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.13)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.03)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; e.currentTarget.style.transform = 'scale(1)' }}
-              >
-                Détails
-                <ChevronRight style={{ width: '14px', height: '14px' }} />
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Poster HORS du overflow:hidden — animation libre */}
-        {pick.poster_path && (
-          <div style={{
-            position: 'absolute',
-            right: '40px',
-            top: '50%',
-            width: '155px',
-            aspectRatio: '2/3',
-            borderRadius: '14px',
-            overflow: 'hidden',
-            zIndex: 10,
-            animation: 'posterFloat 5s ease-in-out infinite',
-            transformOrigin: 'center center',
+        {/* Scrims cinématographiques : bas lourd + gauche + vignette rouge subtile */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,8,10,0.98) 0%, rgba(8,8,10,0.85) 22%, rgba(8,8,10,0.35) 50%, rgba(8,8,10,0.05) 75%, transparent 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, rgba(8,8,10,0.85) 0%, rgba(8,8,10,0.4) 35%, transparent 65%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 100% 0%, rgba(220,38,38,0.10) 0%, transparent 55%)' }} />
+
+        {/* Kicker "À la une" en haut à gauche, dans la carte */}
+        <div style={{ position: 'absolute', top: '22px', left: '28px', zIndex: 4, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '7px',
+            background: 'rgba(220,38,38,0.12)',
+            border: '1px solid rgba(220,38,38,0.45)',
+            color: '#f87171',
+            fontSize: '0.62rem', fontWeight: 800,
+            letterSpacing: '0.18em', textTransform: 'uppercase',
+            padding: '6px 13px 6px 11px', borderRadius: '100px',
+            backdropFilter: 'blur(10px)',
           }}>
-            <Image
-              src={`https://image.tmdb.org/t/p/w342${pick.poster_path}`}
-              alt={title}
-              fill
-              className="object-cover"
-            />
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626', animation: 'badgePulse 2s ease-in-out infinite', boxShadow: '0 0 8px rgba(220,38,38,0.9)' }} />
+            À la une
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', fontWeight: 500 }}>Notre sélection du moment</span>
+        </div>
+
+        {/* Contenu ancré en bas — éditorial */}
+        <div style={{
+          position: 'relative', zIndex: 4, marginTop: 'auto', width: '100%',
+          display: 'flex', flexDirection: 'column',
+          padding: 'clamp(1.5rem, 4vw, 3rem)',
+          maxWidth: '760px',
+        }}>
+          {/* Filet rouge + type */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+            <span style={{ width: '34px', height: '2px', background: '#dc2626', borderRadius: '2px' }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.14em' }}>
+              <Clapperboard style={{ width: '11px', height: '11px' }} />
+              {typeLabel}
+            </span>
           </div>
-        )}
+
+          {/* Logo / Titre géant */}
+          <div style={{ marginBottom: '18px' }}>
+            <FeaturedLogo tmdbId={tmdbId} type={type} title={title} />
+          </div>
+
+          {/* Méta */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            {pick.vote_average > 0 && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#fbbf24', fontWeight: 700, fontSize: '0.9rem' }}>
+                ★ {pick.vote_average.toFixed(1)}
+              </span>
+            )}
+            {year && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+                <Calendar style={{ width: '13px', height: '13px' }} />
+                {year}
+              </span>
+            )}
+          </div>
+
+          {/* Synopsis — clean, 2 lignes */}
+          {pick.overview && (
+            <p style={{
+              color: 'rgba(255,255,255,0.62)', fontSize: '0.92rem', lineHeight: 1.65,
+              marginBottom: '26px', maxWidth: '540px',
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+            }}>
+              {pick.overview}
+            </p>
+          )}
+
+          {/* Boutons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <Link href={`/watch/${type}/${tmdbId}?play=1`}>
+              <button style={{
+                display: 'flex', alignItems: 'center', gap: '9px',
+                background: '#fff', color: '#000',
+                fontWeight: 700, fontSize: '0.9rem',
+                padding: '13px 30px', borderRadius: '100px',
+                border: 'none', cursor: 'pointer',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 10px 36px rgba(0,0,0,0.6)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)' }}
+              >
+                <Play style={{ width: '15px', height: '15px', fill: '#000' }} />
+                Regarder
+              </button>
+            </Link>
+
+            <button
+              onClick={() => openDrawer(type as 'movie' | 'series', tmdbId)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)',
+                fontWeight: 600, fontSize: '0.9rem',
+                padding: '13px 24px', borderRadius: '100px',
+                border: '1px solid rgba(255,255,255,0.16)', cursor: 'pointer',
+                backdropFilter: 'blur(14px)',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.04)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; e.currentTarget.style.transform = 'scale(1)' }}
+            >
+              Plus d&apos;infos
+              <ChevronRight style={{ width: '15px', height: '15px' }} />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   )

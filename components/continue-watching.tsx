@@ -101,7 +101,7 @@ export function ContinueWatching() {
           <div
             className="w-[3px] rounded-sm"
             style={{
-              background: '#1d6fe8',
+              background: '#dc2626',
               height: '1rem',
             }}
           />
@@ -160,7 +160,7 @@ export function ContinueWatching() {
 
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
                     <div
-                      className="h-full bg-blue-500 rounded-full"
+                      className="h-full bg-red-500 rounded-full"
                       style={{ width: `${item.progress}%` }}
                     />
                   </div>

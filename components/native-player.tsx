@@ -364,7 +364,7 @@ export function NativePlayer({
   const gainNodeRef = useRef<GainNode | null>(null)
   const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
-  // ─── Save watch progress ───────────────────────────────────────────────────���─
+  // ─── Save watch progress ───────────────────────────────────────────────────�������─
   const currentTimeRef = useRef(0)
   const durationRef = useRef(0)
   const currentSeasonRef = useRef(initialSeason)
@@ -1215,7 +1215,7 @@ export function NativePlayer({
     )
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  // ��── Render ──────────────────────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
@@ -1436,7 +1436,7 @@ export function NativePlayer({
             initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
-            <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.9), rgba(153,27,27,0.85))', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(6px)', boxShadow: '0 0 40px rgba(220,38,38,0.5), inset 0 1px 0 rgba(255,255,255,0.25)' }}>
               <Play className="w-11 h-11 text-white fill-white ml-1.5" />
             </div>
           </motion.div>
@@ -1510,10 +1510,10 @@ export function NativePlayer({
                 onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.height = '6px' }}
                 onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.height = '4px' }}
               >
-                <div className="absolute inset-0 bg-white/20 rounded-full" />
-                <div className="absolute inset-y-0 left-0 bg-white/30 rounded-full" style={{ width: `${buffered}%` }} />
-                <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${progress}%` }}>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" />
+                <div className="absolute inset-0 bg-white/15 rounded-full" />
+                <div className="absolute inset-y-0 left-0 bg-white/25 rounded-full" style={{ width: `${buffered}%` }} />
+                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #b91c1c, #ef4444)', boxShadow: '0 0 10px rgba(239,68,68,0.7)' }}>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" style={{ boxShadow: '0 0 0 4px rgba(239,68,68,0.35), 0 2px 8px rgba(0,0,0,0.5)' }} />
                 </div>
                 {hoverTime !== null && (
                   <div className="absolute -top-8 bg-black/80 text-white text-xs px-2 py-1 rounded-lg pointer-events-none -translate-x-1/2 whitespace-nowrap" style={{ left: hoverX }}>
@@ -1635,7 +1635,7 @@ export function NativePlayer({
                             >
                               {tab === 'audio' ? 'AUDIO' : tab === 'subtitles' ? 'SOUS-TITRES' : 'EFFETS'}
                               {settingsTab === tab && (
-                                <span className="absolute bottom-0 left-0 right-0" style={{ height: '2px', background: '#1d6fe8' }} />
+                                <span className="absolute bottom-0 left-0 right-0" style={{ height: '2px', background: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }} />
                               )}
                             </button>
                           ))}
@@ -1657,12 +1657,12 @@ export function NativePlayer({
                                 >
                                   <span style={{
                                     width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
-                                    background: active ? '#1d6fe8' : 'rgba(255,255,255,0.28)',
+                                    background: active ? '#ef4444' : 'rgba(255,255,255,0.28)',
                                   }} />
                                   <span style={{
                                     fontSize: '13px',
                                     fontWeight: active ? 600 : 400,
-                                    color: active ? '#1d6fe8' : 'rgba(255,255,255,0.82)',
+                                    color: active ? '#ef4444' : 'rgba(255,255,255,0.82)',
                                   }}>
                                     {lang === 'fr' ? 'Français' : 'Anglais'}
                                   </span>
@@ -1686,12 +1686,12 @@ export function NativePlayer({
                                 >
                                   <span style={{
                                     width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
-                                    background: active ? '#1d6fe8' : 'rgba(255,255,255,0.28)',
+                                    background: active ? '#ef4444' : 'rgba(255,255,255,0.28)',
                                   }} />
                                   <span style={{
                                     fontSize: '13px',
                                     fontWeight: active ? 600 : 400,
-                                    color: active ? '#1d6fe8' : 'rgba(255,255,255,0.82)',
+                                    color: active ? '#ef4444' : 'rgba(255,255,255,0.82)',
                                   }}>
                                     {sub === 'off' ? 'Désactivés' : sub === 'fr' ? 'FR Full · SRT' : 'ENG Full · SRT'}
                                   </span>
@@ -1709,7 +1709,7 @@ export function NativePlayer({
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
                                   SON AMPLIFIÉ
                                 </span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: audioBoost > 100 ? '#1d6fe8' : 'rgba(255,255,255,0.7)' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: audioBoost > 100 ? '#ef4444' : 'rgba(255,255,255,0.7)' }}>
                                   {audioBoost}%
                                 </span>
                               </div>
@@ -1727,7 +1727,7 @@ export function NativePlayer({
                               {audioBoost > 100 && (
                                 <button
                                   onClick={() => changeAudioBoost(100)}
-                                  style={{ fontSize: '10px', color: '#1d6fe8', marginTop: '4px' }}
+                                  style={{ fontSize: '10px', color: '#ef4444', marginTop: '4px' }}
                                   className="hover:underline"
                                 >
                                   Réinitialiser
@@ -1743,7 +1743,7 @@ export function NativePlayer({
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
                                   LUMINOSITÉ
                                 </span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: brightness !== 100 ? '#1d6fe8' : 'rgba(255,255,255,0.7)' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: brightness !== 100 ? '#ef4444' : 'rgba(255,255,255,0.7)' }}>
                                   {brightness}%
                                 </span>
                               </div>
@@ -1766,7 +1766,7 @@ export function NativePlayer({
                                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
                                   CONTRASTE
                                 </span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: contrast !== 100 ? '#1d6fe8' : 'rgba(255,255,255,0.7)' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: contrast !== 100 ? '#ef4444' : 'rgba(255,255,255,0.7)' }}>
                                   {contrast}%
                                 </span>
                               </div>
