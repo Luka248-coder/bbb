@@ -286,7 +286,7 @@ export async function renderVerificationCodeImage(code: string): Promise<Buffer>
               letterSpacing: 1.5,
             }}
           >
-            STREAMSELF.FR
+            STREAMSELF.DEV
           </div>
 
           <div

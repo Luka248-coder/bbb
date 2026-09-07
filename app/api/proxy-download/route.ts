@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
         'Accept-Language': 'fr-FR,fr;q=0.9',
-        'Referer': isTopstream ? 'https://purstream.mx/' : new URL(url).origin + '/',
-        ...(isTopstream && { 'Origin': 'https://purstream.mx' }),
+        'Referer': isTopstream ? 'https://purstream.ad/' : new URL(url).origin + '/',
+        ...(isTopstream && { 'Origin': 'https://purstream.ad' }),
       },
       redirect: 'follow',
     })

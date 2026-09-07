@@ -22,7 +22,7 @@ export async function sendVerificationCodeEmail(to: string, code: string) {
           Ce code expire dans 10 minutes. Vous n'avez pas demandé ce code ? Vous pouvez ignorer cet e-mail.
         </p>
         <p style="text-align:center;color:#444;font-size:11px;margin-top:24px;">
-          StreamSelf — <a href="https://streamself.fr" style="color:#666;">streamself.fr</a>
+          StreamSelf — <a href="https://streamself.dev" style="color:#666;">streamself.dev</a>
         </p>
       </div>
     </div>

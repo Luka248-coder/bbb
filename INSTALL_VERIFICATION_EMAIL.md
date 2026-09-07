@@ -37,15 +37,15 @@ Exécute `scripts/006_pending_registrations.sql` dans le SQL editor de Supabase.
 ### Option recommandée : Resend (bonne délivrabilité, gratuit jusqu'à 3000 mails/mois)
 
 1. Crée un compte sur https://resend.com
-2. **Domains** → ajoute `streamself.fr` → Resend te donne 2-3 enregistrements DNS (SPF, DKIM, parfois DMARC)
+2. **Domains** → ajoute `streamself.dev` → Resend te donne 2-3 enregistrements DNS (SPF, DKIM, parfois DMARC)
 3. Ajoute ces enregistrements chez ton registrar / fournisseur DNS (OVH, Cloudflare...). La vérification peut prendre de quelques minutes à quelques heures.
 4. **API Keys** → crée une clé → copie-la
 5. Dans Vercel (Project Settings → Environment Variables), ajoute :
    ```
    RESEND_API_KEY=re_xxxxxxxxxxxx
-   MAIL_FROM=verification@streamself.fr
+   MAIL_FROM=verification@streamself.dev
    ```
-   (`MAIL_FROM` doit être une adresse sur le domaine que tu viens de vérifier dans Resend, ex: `verification@streamself.fr` ou `noreply@streamself.fr` — pas besoin que la boîte existe réellement, Resend l'envoie pour toi)
+   (`MAIL_FROM` doit être une adresse sur le domaine que tu viens de vérifier dans Resend, ex: `verification@streamself.dev` ou `noreply@streamself.dev` — pas besoin que la boîte existe réellement, Resend l'envoie pour toi)
 6. Redéploie (Deployments → ... → Redeploy)
 
 Une fois `RESEND_API_KEY` défini, il prend automatiquement le dessus sur Gmail — pas besoin de retirer les variables Gmail.
@@ -74,6 +74,6 @@ Même bien configuré, un compte Gmail perso a une réputation d'envoi proche de
 
 ## 6. L'image envoyée par e-mail
 
-Générée dynamiquement (next/og — Satori) à chaque envoi, donc toujours avec le bon code : logo (sans fond blanc), cadre avec les 6 chiffres en bleu `#0068FF` (comme ton image de référence), confettis argentés/pailletés tout autour, "streamself.fr" en petit en bas. Aucune dépendance externe à l'exécution (police + logo sont inclus dans `assets/`).
+Générée dynamiquement (next/og — Satori) à chaque envoi, donc toujours avec le bon code : logo (sans fond blanc), cadre avec les 6 chiffres en bleu `#0068FF` (comme ton image de référence), confettis argentés/pailletés tout autour, "streamself.dev" en petit en bas. Aucune dépendance externe à l'exécution (police + logo sont inclus dans `assets/`).
 
 Aperçu joint : `apercu-code-verification.png`.
