@@ -277,6 +277,8 @@ export function EmbedPlayer({
   }, [initialLoading]) // ← SEULEMENT initialLoading
 
   const togglePlay = () => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause() }
+  // Tap surface : contrôles masqués → on les révèle seulement ; visibles → bascule lecture
+  const handleSurfaceTap = () => { if (!showControls) { resetTimer(); return } togglePlay(); resetTimer() }
   const skip = (s: number) => { const v = videoRef.current; if (v) { v.currentTime = Math.max(0, Math.min(duration, v.currentTime + s)); resetTimer() } }
   const toggleMute = () => { const v = videoRef.current; if (v) { v.muted = !v.muted; setMuted(v.muted) } }
   const changeVolume = (val: number) => { const v = videoRef.current; if (!v) return; v.volume = val; setVolume(val); setMuted(val === 0) }
@@ -364,8 +366,9 @@ export function EmbedPlayer({
 
   return (
     <div ref={containerRef} className="w-screen bg-black relative overflow-hidden" style={{ height: '100dvh' }}
-      onMouseMove={resetTimer} onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}>
-      <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" playsInline onClick={togglePlay} />
+      onMouseMove={resetTimer} onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
+      onTouchStart={resetTimer}>
+      <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" playsInline onClick={handleSurfaceTap} />
 
       {/* STREAMSELF cinematic loading overlay */}
       <AnimatePresence>

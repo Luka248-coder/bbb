@@ -39,6 +39,7 @@ interface NativePlayerProps {
   poster?: string | null
   seriesName?: string | null
   downloadUrl?: string | null
+  year?: number | null
 }
 
 // ─── Episodes Panel ────────────────────────────────────────────────────────────
@@ -277,6 +278,7 @@ export function NativePlayer({
   poster = null,
   seriesName = null,
   downloadUrl = null,
+  year = null,
 }: NativePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
@@ -362,7 +364,7 @@ export function NativePlayer({
   const gainNodeRef = useRef<GainNode | null>(null)
   const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
-  // ─── Save watch progress ─────────────────────────────────────────────────────
+  // ─── Save watch progress ───────────────────────────────────────────────────���─
   const currentTimeRef = useRef(0)
   const durationRef = useRef(0)
   const currentSeasonRef = useRef(initialSeason)
@@ -730,6 +732,7 @@ export function NativePlayer({
           title: contentTitle,
           type,
           tmdb_id: String(tmdbId),
+          ...(year && { year: String(year) }),
           ...(type === 'series' && { season: String(initialSeason || 1), episode: String(initialEpisode || 1) }),
         })
         const res = await fetch(`/api/purstream?${params}`)
@@ -921,6 +924,15 @@ export function NativePlayer({
     } else {
       v.pause()
     }
+  }
+
+  // Tap sur la surface vidéo : si les contrôles sont masqués, on les révèle
+  // seulement (sans lancer/mettre en pause à l'aveugle). S'ils sont déjà
+  // visibles, le tap bascule la lecture. Corrige les taps "fantômes" sur mobile.
+  const handleSurfaceTap = () => {
+    if (!showControls) { resetTimer(); return }
+    togglePlay()
+    resetTimer()
   }
 
   const skip = (s: number) => {
@@ -1210,12 +1222,13 @@ export function NativePlayer({
       className="bg-black relative overflow-hidden player-fullscreen"
       onMouseMove={resetTimer}
       onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
+      onTouchStart={resetTimer}
     >
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
         playsInline
-        onClick={togglePlay}
+        onClick={handleSurfaceTap}
       />
 
       {/* Écran pause — infos film/série */}

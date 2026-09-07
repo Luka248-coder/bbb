@@ -13,6 +13,42 @@ const HEADERS = {
   'sec-fetch-site': 'same-origin',
 }
 
+function normalizeTitle(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getResultYear(r: any): number | null {
+  const raw = r?.year ?? r?.releaseDate ?? r?.release_date ?? r?.firstAirDate
+    ?? r?.first_air_date ?? r?.date ?? r?.startYear ?? r?.aired ?? ''
+  const m = String(raw).match(/\d{4}/)
+  return m ? parseInt(m[0]) : null
+}
+
+// Choisit le bon résultat : tmdbId exact > titre+année > titre unique > premier
+function pickMatch(results: any[], title: string, tmdbId: string | null, year: number | null): any {
+  if (tmdbId) {
+    const m = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === tmdbId)
+    if (m?.id) return m
+  }
+  const norm = normalizeTitle(title)
+  const titleMatches = results.filter((r: any) => normalizeTitle(r.title || r.name || '') === norm)
+  if (year && titleMatches.length > 0) {
+    const withYear = titleMatches
+      .map((r: any) => ({ r, y: getResultYear(r) }))
+      .filter((x: any) => x.y != null) as { r: any; y: number }[]
+    if (withYear.length > 0) {
+      withYear.sort((a, b) => Math.abs(a.y - year) - Math.abs(b.y - year))
+      return withYear[0].r
+    }
+  }
+  if (titleMatches.length >= 1) return titleMatches[0]
+  return null
+}
+
 // Extrait saison/épisode depuis une URL — pattern strict S{n}/E{n}
 function extractSeasonEpisode(url: string): { season: number; episode: number } | null {
   const patterns = [
@@ -53,6 +89,8 @@ export async function GET(request: NextRequest) {
   const title = searchParams.get('title')
   const type = searchParams.get('type')
   const tmdbId = searchParams.get('tmdb_id')
+  const yearParam = searchParams.get('year')
+  const year = yearParam ? parseInt(yearParam) : null
   const season = parseInt(searchParams.get('season') || '1')
   const episode = parseInt(searchParams.get('episode') || '1')
 
@@ -85,15 +123,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ videoUrl: null, error: 'Not found on Purstream' })
     }
 
-    let match: any
-    if (tmdbId) {
-      match = results.find((r: any) => String(r.tmdbId || r.tmdb_id) === tmdbId)
-    }
-    if (!match) {
-      const norm = title.toLowerCase().trim()
-      match = results.find((r: any) => (r.title || r.name || '').toLowerCase().trim() === norm)
-    }
-    // Pas de fallback flou — titre ou tmdbId exact requis
+    // Sélection stricte : tmdbId exact > titre+année > titre exact
+    const match = pickMatch(results, title, tmdbId, year)
     if (!match?.id) {
       return NextResponse.json({ videoUrl: null, error: 'No exact match found' })
     }

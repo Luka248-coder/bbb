@@ -57,6 +57,29 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir'
 
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshMsg, setRefreshMsg] = useState<string | null>(null)
+
+  const handleRefreshTMDB = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    setRefreshMsg(null)
+    try {
+      const r = await fetch('/api/auth/admin/refresh-tmdb', { method: 'POST' })
+      const d = await r.json()
+      if (r.ok) {
+        setRefreshMsg(`${d.moviesUpdated} films et ${d.seriesUpdated} séries actualisés${d.failed ? ` · ${d.failed} échecs` : ''}`)
+        setTimeout(() => window.location.reload(), 1200)
+      } else {
+        setRefreshMsg('Échec de l\'actualisation')
+      }
+    } catch {
+      setRefreshMsg('Échec de l\'actualisation')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   const reqChartData = useMemo(() => {
     const days: { label: string; value: number }[] = []
     for (let i = 13; i >= 0; i--) {
@@ -100,10 +123,24 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
 
         {/* Header */}
-        <motion.div {...fade(0)}>
-          <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-1">Panel de contrôle</p>
-          <h1 className="text-2xl md:text-3xl font-black text-white">{greeting} 👋</h1>
-          <p className="text-white/30 text-sm mt-1">Voici un aperçu de votre plateforme aujourd'hui.</p>
+        <motion.div {...fade(0)} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-1">Panel de contrôle</p>
+            <h1 className="text-2xl md:text-3xl font-black text-white">{greeting} 👋</h1>
+            <p className="text-white/30 text-sm mt-1">Voici un aperçu de votre plateforme aujourd'hui.</p>
+          </div>
+          <div className="flex flex-col items-start sm:items-end gap-1.5">
+            <button
+              onClick={handleRefreshTMDB}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Actualisation…' : 'Actualisation TMDB'}
+            </button>
+            {refreshMsg && <span className="text-[11px] text-white/40">{refreshMsg}</span>}
+            <span className="text-[10px] text-white/20">Met à jour populaires, hero &amp; top 10</span>
+          </div>
         </motion.div>
 
         {/* KPI row */}
