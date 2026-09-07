@@ -186,7 +186,7 @@ function LoginContent() {
               </AnimatePresence>
 
               {/* Discord button */}
-              <Link href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
+              <a href={`/api/auth/discord${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 font-semibold text-white text-base mb-6 transition-all"
                   style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)' }}>
@@ -195,7 +195,7 @@ function LoginContent() {
                   </svg>
                   Continuer avec Discord
                 </motion.button>
-              </Link>
+              </a>
 
               {/* Divider */}
               <div className="flex items-center gap-4 mb-6">
