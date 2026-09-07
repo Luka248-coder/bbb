@@ -117,31 +117,16 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
 
   return (
     <div ref={containerRef} className="relative flex items-center">
-      {/* Capsule glass rouge qui glisse sous l'onglet actif */}
+      {/* Pastille blanche qui glisse sous l'onglet actif */}
       <div
-        className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none bg-white"
         style={{
           left: pillStyle.left,
           width: pillStyle.width,
           height: '34px',
           opacity: pillStyle.opacity,
-          background: 'linear-gradient(180deg, rgba(239,68,68,0.28) 0%, rgba(153,27,27,0.20) 100%)',
-          border: '1px solid rgba(239,68,68,0.35)',
-          boxShadow: '0 2px 14px rgba(220,38,38,0.30), inset 0 1px 0 rgba(255,255,255,0.14)',
-          transition: 'left 0.34s cubic-bezier(0.34,1.4,0.5,1), width 0.34s cubic-bezier(0.34,1.4,0.5,1), opacity 0.15s',
-        }}
-      />
-      {/* Point lumineux sous l'onglet actif */}
-      <div
-        className="absolute pointer-events-none rounded-full"
-        style={{
-          left: pillStyle.left + pillStyle.width / 2 - 2,
-          width: '4px', height: '4px',
-          bottom: '-5px',
-          opacity: pillStyle.opacity,
-          background: '#ef4444',
-          boxShadow: '0 0 8px rgba(239,68,68,0.9)',
-          transition: 'left 0.34s cubic-bezier(0.34,1.4,0.5,1), opacity 0.15s',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
+          transition: 'left 0.34s cubic-bezier(0.34,1.3,0.5,1), width 0.34s cubic-bezier(0.34,1.3,0.5,1), opacity 0.15s',
         }}
       />
       {navLinks.map(link => {
@@ -151,8 +136,8 @@ function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: s
             <div
               data-active={isActive ? 'true' : 'false'}
               className={cn(
-                'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-150',
-                isActive ? 'text-white' : 'text-white/45 hover:text-white/80'
+                'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-200',
+                isActive ? 'text-black' : 'text-white/55 hover:text-white'
               )}
             >
               {link.label}
