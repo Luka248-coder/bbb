@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export const maxDuration = 60
 
 const TOPSTREAM_HOST = 'free.topstream.cloud'
-const SPOOF_REFERER = 'https://purstream.mx/'
-const SPOOF_ORIGIN = 'https://purstream.mx'
+const SPOOF_REFERER = 'https://purstream.ad/'
+const SPOOF_ORIGIN = 'https://purstream.ad'
 
 const SPOOF_HEADERS = {
   'Referer': SPOOF_REFERER,
