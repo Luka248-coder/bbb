@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
   const error = searchParams.get('error')
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  // On reste sur l'hôte exact qui a servi le callback (ex: www.streamself.dev),
+  // sinon le cookie de session posé ici ne serait pas renvoyé après la redirection
+  // vers un domaine différent (www vs non-www).
+  const appUrl = request.nextUrl.origin
 
   // "state" porte l'URL de retour souhaitée (transmise par /api/auth/discord).
   // On ne garde que les chemins relatifs internes, jamais une URL externe.
