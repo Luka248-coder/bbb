@@ -166,7 +166,7 @@ export function Hero({ content }: HeroProps) {
           />
           <div className="absolute inset-x-0 bottom-0" style={{
             height: '75%',
-            background: 'linear-gradient(to top, #050a14 0%, #050a14 8%, rgba(5,10,20,0.96) 20%, rgba(5,10,20,0.75) 38%, rgba(5,10,20,0.35) 58%, rgba(5,10,20,0.08) 78%, transparent 100%)'
+            background: 'linear-gradient(to top, #08080a 0%, #08080a 8%, rgba(8,8,10,0.96) 20%, rgba(8,8,10,0.75) 38%, rgba(8,8,10,0.35) 58%, rgba(8,8,10,0.08) 78%, transparent 100%)'
           }} />
         </motion.div>
       </AnimatePresence>
@@ -256,7 +256,7 @@ export function Hero({ content }: HeroProps) {
                 title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               >
                 {isFav
-                  ? <BookmarkCheck className="w-4 h-4 text-blue-400" />
+                  ? <BookmarkCheck className="w-4 h-4 text-red-400" />
                   : <Bookmark className="w-4 h-4 text-white/60" />
                 }
               </button>

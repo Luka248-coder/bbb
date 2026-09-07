@@ -4,16 +4,16 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Streamself Dark Theme - Red & Black */
-  --background: rgba(18, 8, 10, 0.82);
+  /* Streamself Dark Theme - Black/Gray base, Red accent */
+  --background: rgba(12, 12, 14, 0.85);
   --foreground: oklch(0.98 0 0);
-  --card: rgba(20, 10, 12, 0.85);
+  --card: rgba(20, 20, 23, 0.85);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.13 0 0);
+  --popover: oklch(0.14 0.005 285);
   --popover-foreground: oklch(0.98 0 0);
   --primary: oklch(0.55 0.22 25);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: rgba(25, 10, 14, 0.80);
+  --secondary: rgba(24, 24, 27, 0.80);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.2 0 0);
   --muted-foreground: oklch(0.6 0 0);
@@ -160,7 +160,7 @@
 }
 
 /* Grid background — keep visible */
-html { background: #12080a; }
+html { background: #0a0a0c; }
 @media (min-width: 768px) {
   .page-scaled {
     transform: scale(0.92);
@@ -169,8 +169,8 @@ html { background: #12080a; }
   }
 }
 body { background: transparent !important; }
-.bg-background { background-color: rgba(18,8,10,0.82) !important; }
-.bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(18,8,10,0.82) !important; }
+.bg-background { background-color: rgba(12,12,14,0.85) !important; }
+.bg-\[\#111\], .bg-\[\#0a0a0a\] { background-color: rgba(12,12,14,0.85) !important; }
 .min-h-screen { background: transparent !important; }
 
 /* Player fullscreen */
