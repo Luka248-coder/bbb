@@ -90,14 +90,13 @@ export function PlayerPage({ type, tmdbId, initialSeason = 1, initialEpisode = 1
   const [resumeEpisode, setResumeEpisode] = useState<number | null>(null)
 
   useEffect(() => {
-    const id = profileId || userId
-    if (!id || !tmdbId) return
-    const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
-    fetch(`/api/watch-history?${param}`)
+    if (!tmdbId) return
+    const param = profileId ? `profile_id=${profileId}` : userId ? `user_id=${userId}` : ''
+    fetch(`/api/watch-history${param ? `?${param}` : ''}`)
       .then(r => r.json())
       .then((data: any[]) => {
         if (!Array.isArray(data)) return
-        const match = data.find(item => item.content_id === tmdbId && item.content_type === type && !item.finished)
+        const match = data.find(item => (item.tmdb_id ?? item.content_id) === tmdbId && item.content_type === type && !item.finished)
         if (match && match.progress > 0 && match.progress < 98) {
           setWatchProgress(match.progress)
           if (type === 'series' && match.season && match.episode) {

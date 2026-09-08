@@ -394,15 +394,14 @@ export function NativePlayer({
   }, [])
 
   useEffect(() => {
-    const id = profileId || userId
-    if (!id || !tmdbId) return
-    const param = profileId ? `profile_id=${profileId}` : `user_id=${userId}`
-    fetch(`/api/watch-history?${param}`)
+    if (!tmdbId) return
+    const param = profileId ? `profile_id=${profileId}` : userId ? `user_id=${userId}` : ''
+    fetch(`/api/watch-history${param ? `?${param}` : ''}`)
       .then(r => r.json())
       .then((data: any[]) => {
         if (!Array.isArray(data)) return
         const match = data.find(item =>
-          item.content_id === tmdbId &&
+          (item.tmdb_id ?? item.content_id) === tmdbId &&
           item.content_type === type &&
           (type === 'movie' || (item.season === (initialSeason ?? null) && item.episode === (initialEpisode ?? null)))
         )
@@ -457,8 +456,6 @@ export function NativePlayer({
 
   const saveProgress = useCallback(async () => {
     if (!tmdbId) return
-    const id = profileId || userId
-    if (!id) return
     const ct = currentTimeRef.current
     const dur = durationRef.current
     if (dur < 10) return
@@ -468,7 +465,7 @@ export function NativePlayer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: profileId ? null : userId,
+          user_id: profileId ? null : userId || null,
           profile_id: profileId || null,
           tmdb_id: tmdbId,
           content_type: type,
@@ -483,10 +480,9 @@ export function NativePlayer({
   }, [userId, profileId, tmdbId, type, poster])
 
   useEffect(() => {
-    if (!userId && !profileId) return
     const interval = setInterval(saveProgress, 30000)
     return () => clearInterval(interval)
-  }, [saveProgress, userId, profileId])
+  }, [saveProgress])
 
   useEffect(() => {
     return () => { saveProgress() }
