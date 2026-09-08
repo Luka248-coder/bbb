@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
     .eq('series_id', seriesId)
     .order('season_number')
     .order('episode_number')
+    .range(0, 4999)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

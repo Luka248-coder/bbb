@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetch-all'
 
 const TMDB_KEY = process.env.TMDB_API_KEY || '1a6aed55d15f2da7f2f0ff0586c52174'
 const TMDB = 'https://api.themoviedb.org/3'
@@ -45,22 +46,10 @@ export async function POST() {
   try {
     const supabase = await createClient()
 
-    const [moviesRes, seriesRes] = await Promise.all([
-      supabase.from('movies').select('tmdb_id'),
-      supabase.from('series').select('tmdb_id'),
+    const [movies, series] = await Promise.all([
+      fetchAllRows<{ tmdb_id: number }>(() => supabase.from('movies').select('tmdb_id') as any),
+      fetchAllRows<{ tmdb_id: number }>(() => supabase.from('series').select('tmdb_id') as any),
     ])
-
-    if (moviesRes.error) {
-      console.log('[v0] refresh-tmdb movies read error:', moviesRes.error.message)
-      return NextResponse.json({ error: `Lecture films: ${moviesRes.error.message}` }, { status: 500 })
-    }
-    if (seriesRes.error) {
-      console.log('[v0] refresh-tmdb series read error:', seriesRes.error.message)
-      return NextResponse.json({ error: `Lecture séries: ${seriesRes.error.message}` }, { status: 500 })
-    }
-
-    const movies = moviesRes.data || []
-    const series = seriesRes.data || []
     console.log(`[v0] refresh-tmdb: ${movies.length} films, ${series.length} séries à traiter`)
 
     let moviesUpdated = 0
@@ -73,7 +62,7 @@ export async function POST() {
       if (!res || !res.ok) { failed++; if (res) lastError = `TMDB ${res.status}`; return }
       const d = await res.json()
       const { error } = await supabase.from('movies').update({
-        title: d.title,
+        title: d.title || d.original_title,
         original_title: d.original_title || d.title,
         overview: d.overview || '',
         poster_path: d.poster_path,
@@ -93,7 +82,7 @@ export async function POST() {
       if (!res || !res.ok) { failed++; if (res) lastError = `TMDB ${res.status}`; return }
       const d = await res.json()
       const { error } = await supabase.from('series').update({
-        name: d.name,
+        name: d.name || d.original_name,
         original_name: d.original_name || d.name,
         overview: d.overview || '',
         poster_path: d.poster_path,

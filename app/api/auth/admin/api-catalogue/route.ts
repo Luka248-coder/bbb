@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (type === 'movie') {
     const { error } = await supabase.from('movies').upsert({
       tmdb_id: data.id,
-      title: data.title,
+      title: data.title || data.original_title,
       original_title: data.original_title || data.title,
       overview: data.overview || '',
       poster_path: data.poster_path,
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   } else {
     const { error } = await supabase.from('series').upsert({
       tmdb_id: data.id,
-      name: data.name,
+      name: data.name || data.original_name,
       original_name: data.original_name || data.name,
       overview: data.overview || '',
       poster_path: data.poster_path,

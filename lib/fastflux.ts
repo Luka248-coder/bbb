@@ -1,5 +1,6 @@
 // SERVEUR UNIQUEMENT — ne pas importer dans des Client Components
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetch-all'
 import type { Movie, Series, Episode } from '@/lib/content-types'
 
 export type { Movie, Series, Episode } from '@/lib/content-types'
@@ -279,16 +280,18 @@ async function extractVideoUrl(
 export async function getMovies(): Promise<Movie[]> {
   try {
     const supabase = await createClient()
-    const { data } = await supabase.from('movies').select('*').order('popularity', { ascending: false })
-    return data || []
+    return await fetchAllRows<Movie>(() =>
+      supabase.from('movies').select('*').order('popularity', { ascending: false }) as any
+    )
   } catch { return [] }
 }
 
 export async function getSeries(): Promise<Series[]> {
   try {
     const supabase = await createClient()
-    const { data } = await supabase.from('series').select('*').order('popularity', { ascending: false })
-    return data || []
+    return await fetchAllRows<Series>(() =>
+      supabase.from('series').select('*').order('popularity', { ascending: false }) as any
+    )
   } catch { return [] }
 }
 
@@ -328,10 +331,11 @@ export async function getEpisodes(seriesId: number, seasonNumber?: number): Prom
 export async function searchContent(query: string): Promise<{ movies: Movie[]; series: Series[] }> {
   try {
     const supabase = await createClient()
-    const search = `%${query}%`
+    const safe = query.replace(/[%_,()]/g, ' ').trim()
+    const search = `%${safe}%`
     const [{ data: movies }, { data: series }] = await Promise.all([
-      supabase.from('movies').select('*').ilike('title', search),
-      supabase.from('series').select('*').ilike('name', search),
+      supabase.from('movies').select('*').or(`title.ilike."${search}",original_title.ilike."${search}"`).limit(100),
+      supabase.from('series').select('*').or(`name.ilike."${search}",original_name.ilike."${search}"`).limit(100),
     ])
     return { movies: movies || [], series: series || [] }
   } catch { return { movies: [], series: [] } }
