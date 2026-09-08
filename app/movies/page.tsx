@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { Suspense } from 'react'
 import { getMovies } from '@/lib/fastflux'
-import { Footer } from '@/components/footer'
 import { ContentGrid } from '@/components/content-grid'
 import { Loading } from '@/components/loading'
 
@@ -17,12 +16,9 @@ async function MoviesContent() {
 export default function MoviesPage() {
   return (
     <div className="min-h-screen bg-[#08080a]">
-      <main>
-        <Suspense fallback={<Loading />}>
-          <MoviesContent />
-        </Suspense>
-      </main>
-      <Footer />
+      <Suspense fallback={<Loading />}>
+        <MoviesContent />
+      </Suspense>
     </div>
   )
 }
