@@ -128,7 +128,8 @@ export function SupportWidget() {
         body: JSON.stringify({ ticket_id: ticket.id, message: reply }),
       })
       if (res.ok) {
-        setMessages(prev => [...prev, await res.json()])
+        const data = await res.json()
+        setMessages(prev => [...prev, data])
         setReply('')
       }
     } catch {}
