@@ -153,10 +153,11 @@ export function SupportWidget() {
             <div className="flex items-center gap-2 px-4 h-14 border-b border-white/10 bg-red-600">
               {screen !== 'home' && (
                 <button
-                  onClick={() => screen === 'discussion' || screen === 'success' ? setScreen('home') : setScreen('home')}
-                  className="text-white/80 hover:text-white"
+                  type="button"
+                  onClick={() => setScreen('home')}
+                  className="w-11 h-11 -ml-2 flex items-center justify-center text-white"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-6 h-6" />
                 </button>
               )}
               <p className="flex-1 text-white text-sm font-semibold truncate">
@@ -164,7 +165,7 @@ export function SupportWidget() {
                   : screen === 'discussion' ? (ticket?.subject || 'Discussion')
                   : 'Support'}
               </p>
-              <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white">
+              <button type="button" onClick={() => setOpen(false)} className="w-11 h-11 -mr-2 flex items-center justify-center text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>

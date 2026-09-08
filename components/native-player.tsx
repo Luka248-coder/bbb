@@ -1201,14 +1201,13 @@ export function NativePlayer({
             </p>
           </div>
 
-          <Link href={backUrl}>
-            <button className="mt-2 group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-sm font-semibold text-white transition-all"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
-              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-              Retour
-            </button>
+          <Link
+            href={backUrl}
+            className="mt-2 inline-flex items-center gap-2.5 px-6 py-3.5 min-h-11 rounded-2xl text-sm font-semibold text-white"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour
           </Link>
         </div>
       </div>
@@ -1222,12 +1221,14 @@ export function NativePlayer({
       className="bg-black relative overflow-hidden player-fullscreen"
       onMouseMove={resetTimer}
       onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
-      onTouchStart={resetTimer}
     >
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
         playsInline
+      />
+      <div
+        className="absolute inset-0 z-[15]"
         onClick={handleSurfaceTap}
       />
 
@@ -1448,7 +1449,7 @@ export function NativePlayer({
         <AnimatePresence>
           {showControls && !fetchingEpisode && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
+              className="absolute inset-0 z-20 flex items-center justify-between px-8 pointer-events-none">
               <button
                 onClick={() => prevEp && goToEpisode(prevEp)}
                 disabled={!prevEp}
@@ -1474,14 +1475,20 @@ export function NativePlayer({
         {showControls && !fetchingEpisode && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            className="absolute inset-0 flex flex-col justify-between pointer-events-none"
+            className="absolute inset-0 z-20 flex flex-col justify-between pointer-events-none"
           >
             {/* Top bar */}
-            <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
-              <Link href={backUrl} className="shrink-0">
-                <button className="w-10 h-10 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 text-white transition-all duration-200 active:scale-95">
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
+            <div
+              className="pointer-events-auto px-4 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-3"
+              style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}
+              onClick={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <Link
+                href={backUrl}
+                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center bg-black/70 border border-white/15 text-white"
+              >
+                <ArrowLeft className="w-5 h-5" />
               </Link>
               <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
 
@@ -1497,7 +1504,7 @@ export function NativePlayer({
             </div>
 
             {/* Bottom controls */}
-            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
               <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
 
               <div

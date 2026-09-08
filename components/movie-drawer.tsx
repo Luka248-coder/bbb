@@ -102,10 +102,8 @@ export function MovieDrawerProvider({ children }: { children: React.ReactNode })
               {/* Close button */}
               <button
                 onClick={closeDrawer}
-                className="absolute top-5 right-5 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.18)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)' }}
+                className="absolute top-4 right-4 z-30 w-11 h-11 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)' }}
               >
                 <X className="w-4 h-4 text-white" />
               </button>
