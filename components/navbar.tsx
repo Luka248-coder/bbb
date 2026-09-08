@@ -95,57 +95,30 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
 import { usePresence } from '@/hooks/use-presence'
 
 
-// ─── Sliding Pill Navigation ──────────────────────────────────────────────────
-function NavPill({ pathname, navLinks }: { pathname: string; navLinks: { href: string; label: string; icon: any }[] }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 })
-
-  useEffect(() => {
-    // Double rAF: wait for browser to finish scroll + paint before measuring
-    let raf1: number, raf2: number
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        const container = containerRef.current
-        if (!container) return
-        const activeEl = container.querySelector('[data-active="true"]') as HTMLElement
-        if (!activeEl) { setPillStyle(s => ({ ...s, opacity: 0 })); return }
-        setPillStyle({ left: activeEl.offsetLeft, width: activeEl.offsetWidth, opacity: 1 })
-      })
-    })
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
-  }, [pathname])
-
+function NavLinks({ pathname }: { pathname: string }) {
   return (
-    <div ref={containerRef} className="relative flex items-center">
-      {/* Pastille blanche qui glisse sous l'onglet actif */}
-      <div
-        className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none bg-white"
-        style={{
-          left: pillStyle.left,
-          width: pillStyle.width,
-          height: '34px',
-          opacity: pillStyle.opacity,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
-          transition: 'left 0.34s cubic-bezier(0.34,1.3,0.5,1), width 0.34s cubic-bezier(0.34,1.3,0.5,1), opacity 0.15s',
-        }}
-      />
+    <nav className="hidden md:flex items-center gap-0.5">
       {navLinks.map(link => {
-        const isActive = pathname === link.href
+        const active = link.href === '/'
+          ? pathname === '/'
+          : pathname === link.href || pathname.startsWith(link.href + '/')
         return (
-          <Link key={link.href} href={link.href} className="select-none">
-            <div
-              data-active={isActive ? 'true' : 'false'}
-              className={cn(
-                'relative z-10 px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-200',
-                isActive ? 'text-black' : 'text-white/55 hover:text-white'
-              )}
-            >
-              {link.label}
-            </div>
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn(
+              'relative px-3 py-2 text-[13px] font-medium transition-colors',
+              active ? 'text-white' : 'text-white/45 hover:text-white',
+            )}
+          >
+            {link.label}
+            {active && (
+              <span className="absolute left-3 right-3 bottom-0 h-[2px] rounded-full bg-red-500" />
+            )}
           </Link>
         )
       })}
-    </div>
+    </nav>
   )
 }
 
@@ -420,236 +393,146 @@ export function Navbar() {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-3">
+    <header className="fixed top-0 left-0 right-0 z-50">
+      <div className={cn(
+        'transition-[background,border] duration-300',
+        isScrolled
+          ? 'bg-[#08080a]/92 backdrop-blur-md border-b border-white/[0.06]'
+          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b border-transparent',
+      )}>
+      <div className="relative flex items-center h-16 max-w-[1600px] mx-auto px-4 md:px-8 gap-4">
 
-      {/* Dégradé de lisibilité derrière la navbar */}
-      <div className="absolute top-0 left-0 right-0 h-[110px] pointer-events-none -z-10"
-        style={{ background: 'linear-gradient(to bottom, rgba(6,6,8,0.75) 0%, rgba(6,6,8,0.35) 55%, transparent 100%)' }} />
+        <Link href="/" className="shrink-0">
+          <Image
+            src="/logo.png"
+            alt="StreamSelf" width={36} height={36} className="h-8 w-auto"
+          />
+        </Link>
 
-      <div className="relative flex items-center h-[64px] pl-0 pr-3 md:px-6">
+        <NavLinks pathname={pathname} />
 
-        {/* Logo */}
-        <div className="pointer-events-auto flex-shrink-0 ml-4">
-          <Link href="/">
-            <Image
-              src="/logo.png"
-              alt="StreamSelf" width={40} height={40} className="h-9 md:h-10 w-auto"
-            />
-          </Link>
-        </div>
+        <div className="flex-1" />
 
-        {/* Pill desktop (déplacée à gauche, juste après le logo) */}
-        <div className="pointer-events-auto hidden md:flex ml-4">
-          <div
-            className="flex items-center h-[44px] px-1.5 gap-0.5 rounded-full transition-all duration-300"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
-            }}
-          >
-            <NavPill pathname={pathname} navLinks={navLinks} />
+        {rouletteParticles.length > 0 && typeof document !== 'undefined' && createPortal(
+          <div className="fixed inset-0 pointer-events-none z-[9999]">
+            {rouletteParticles.map(p => (
+              <div key={p.id} style={{
+                position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
+                width: p.size, height: p.size, background: p.color, borderRadius: '2px',
+                animation: `confettiFall ${2 + p.speed}s ease-in forwards`,
+                transform: `rotate(${p.angle}deg)`,
+              }} />
+            ))}
+            <style>{`@keyframes confettiFall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`}</style>
+          </div>,
+          document.body
+        )}
 
-            <div className="w-px h-4 bg-white/10 mx-1" />
+        <div className="hidden md:flex items-center gap-1">
+          <div ref={searchRef} className="relative flex items-center">
+            <AnimatePresence mode="wait">
+              {isSearchOpen ? (
+                <motion.div
+                  key="open"
+                  initial={{ width: 0, opacity: 0 }} animate={{ width: 220, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                  className="flex items-center px-3 gap-2 h-9 overflow-hidden rounded-lg bg-white/[0.06] border border-white/10"
+                >
+                  <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                  <input
+                    value={searchQuery}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
+                    placeholder="Rechercher..."
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                      <X className="w-3 h-3 text-white/30 hover:text-white/60" />
+                    </button>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="closed"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <Search className="w-4 h-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
 
-            {/* Confettis roulette */}
-            {rouletteParticles.length > 0 && typeof document !== 'undefined' && createPortal(
-              <div className="fixed inset-0 pointer-events-none z-[9999]">
-                {rouletteParticles.map(p => (
-                  <div key={p.id} style={{
-                    position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
-                    width: p.size, height: p.size, background: p.color, borderRadius: '2px',
-                    animation: `confettiFall ${2 + p.speed}s ease-in forwards`,
-                    transform: `rotate(${p.angle}deg)`,
-                  }} />
-                ))}
-                <style>{`@keyframes confettiFall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`}</style>
-              </div>,
-              document.body
-            )}
-
-            {/* Roulette */}
-            <button onClick={handleRoulette} title="Roulette" className="select-none">
-              <style>{`@keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 40% { transform: rotate(200deg) scale(1.2); } 70% { transform: rotate(320deg) scale(0.95); } 100% { transform: rotate(360deg) scale(1); } }`}</style>
-              <div className={cn(
-                'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150',
-                pathname === '/roulette' ? 'bg-white/15' : 'hover:bg-white/10'
-              )}>
-                <svg
-  width="22"
-  height="22"
-  viewBox="0 0 24 24"
-  fill="none"
-  xmlns="http://www.w3.org/2000/svg"
-  id="navbar-dice"
-  onMouseDown={(e) => {
-    const el = e.currentTarget
-    el.style.animation = 'none'
-    void el.offsetWidth
-    el.style.animation = 'diceSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards'
-  }}
->
-  <rect width="12" height="12" x="2" y="10" rx="2" ry="2" stroke="white" strokeWidth="2" />
-  <path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6" stroke="white" strokeWidth="2" />
-  <path d="M6 18h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
-  <path d="M10 14h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
-  <path d="M15 6h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
-  <path d="M18 9h.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
-</svg>
-              </div>
-            </button>
-
-          </div>
-        </div>
-
-        {/* Recherche — toujours visible, connecté ou non (collée au cluster de droite) */}
-        <div className="pointer-events-auto hidden md:flex items-center ml-auto mr-2">
-          <div className="flex items-center rounded-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
-            {/* Search */}
-            <div ref={searchRef} className="relative flex items-center">
-              <AnimatePresence mode="wait">
-                {isSearchOpen ? (
-                  <motion.div
-                    key="open"
-                    initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                    className="flex items-center px-3 gap-2 h-9 overflow-hidden"
-                  >
-                    <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
-                    <input
-                      value={searchQuery}
-                      onChange={e => handleSearchChange(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
-                      placeholder="Rechercher..."
-                      className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
-                      autoFocus
-                    />
-                    {searchQuery && (
-                      <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                        <X className="w-3 h-3 text-white/30 hover:text-white/60" />
+            <AnimatePresence>
+              {isSearchOpen && searchResults.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                  className="absolute top-11 right-0 w-80 rounded-xl shadow-2xl overflow-hidden z-50 border border-white/10 bg-[#0c0c0e]"
+                >
+                  {searchResults.map(result => {
+                    const title = result.title || result.name || ''
+                    const date = result.release_date || result.first_air_date || ''
+                    const year = date ? new Date(date).getFullYear() : ''
+                    const isMovieResult = result.media_type === 'movie'
+                    const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
+                    return (
+                      <button key={`${result.media_type}-${result.id}`}
+                        onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none"
+                      >
+                        <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                          {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-sm truncate">{title}</p>
+                          <p className="text-white/35 text-xs mt-0.5">{isMovieResult ? 'Film' : 'Série'}{year ? ` · ${year}` : ''}</p>
+                        </div>
                       </button>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    key="closed"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="w-9 h-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
-                  >
-                    <Search className="w-4 h-4" />
-                  </motion.button>
-                )}
-              </AnimatePresence>
-
-              {/* Dropdown résultats */}
-              <AnimatePresence>
-                {isSearchOpen && searchResults.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    className="absolute top-12 right-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50"
-                    style={{ background: 'rgba(12,6,8,0.96)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.12)' }}
-                  >
-                    {searchResults.map(result => {
-                      const title = result.title || result.name || ''
-                      const date = result.release_date || result.first_air_date || ''
-                      const year = date ? new Date(date).getFullYear() : ''
-                      const isMovieResult = result.media_type === 'movie'
-                      const poster = result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : null
-                      return (
-                        <button key={`${result.media_type}-${result.id}`}
-                          onClick={() => { setIsSearchOpen(false); setSearchResults([]); setSearchQuery(''); openDrawer(isMovieResult ? 'movie' : 'series', result.id) }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left bg-transparent outline-none cursor-pointer"
-                        >
-                          <div className="relative w-9 h-[52px] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                            {poster ? <Image src={poster} alt={title} fill className="object-cover" sizes="36px" /> : <div className="w-full h-full bg-zinc-700" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white font-semibold text-sm truncate">{title}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md font-medium">{isMovieResult ? 'FILM' : 'SÉRIE'}</span>
-                              {year && <span className="text-white/30 text-xs">{year}</span>}
-                            </div>
-                          </div>
-                          <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                        </button>
-                      )
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Séparateur + Cloche : uniquement si connecté */}
-            {user && (
-              <>
-                <div className="w-px h-4 bg-white/10" />
-                <div ref={notifRef} className="relative">
-                  <button
-                    onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
-                    className="relative w-9 h-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+                    )
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
 
-        {/* Bell + Avatar desktop — connecté seulement */}
-        {user && (
-          <div className="pointer-events-auto hidden md:flex items-center gap-2">
-            <button
-              onClick={openProfile}
-              className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-white/10"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
-            >
-              <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
-                {activeProfile?.avatar_url ? (
-                  <Image src={activeProfile.avatar_url} alt={activeProfile.name} width={28} height={28} className="rounded-full object-cover" />
-                ) : avatarUrl ? (
-                  <Image src={avatarUrl} alt={user.username} width={28} height={28} className="rounded-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-red-600 flex items-center justify-center">
-                    <User className="w-3 h-3 text-white" />
-                  </div>
-                )}
-              </div>
-              <div className="text-left">
-                <p className="text-white text-[12px] font-bold leading-tight">{activeProfile?.name || user.username}</p>
-                <p className="text-white/40 text-[10px] leading-tight">@{user.username}</p>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-white/30 ml-1" />
-            </button>
-          </div>
-        )}
+          <button onClick={handleRoulette} title="Roulette" className="w-9 h-9 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/10 transition-colors">
+            <style>{`@keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 40% { transform: rotate(200deg) scale(1.2); } 70% { transform: rotate(320deg) scale(0.95); } 100% { transform: rotate(360deg) scale(1); } }`}</style>
+            <Shuffle className="w-4 h-4" />
+          </button>
 
-        {/* Connexion desktop — placée juste après la recherche */}
-        {!user && (
-          <div className="pointer-events-auto hidden md:flex" style={{ marginRight: '1rem' }}>
-            <Link href="/login">
-              <div
-                className="flex items-center gap-2 pl-5 pr-4 py-2.5 rounded-full text-white text-[13px] font-bold tracking-wide transition-all duration-200 active:scale-95 hover:brightness-110"
-                style={{
-                  background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-                  border: '1px solid rgba(239,68,68,0.5)',
-                  boxShadow: '0 4px 18px rgba(220,38,38,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
-                  letterSpacing: '0.02em',
-                }}
+          {user && (
+            <div className="relative">
+              <button
+                onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
+                className="relative w-9 h-9 flex items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
               >
-                Connexion
-                <LogIn className="w-3.5 h-3.5" />
-              </div>
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
+                )}
+              </button>
+            </div>
+          )}
+
+          {user ? (
+            <button onClick={openProfile} className="ml-1 w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all">
+              {activeProfile?.avatar_url ? (
+                <Image src={activeProfile.avatar_url} alt="" width={32} height={32} className="w-full h-full object-cover" />
+              ) : avatarUrl ? (
+                <Image src={avatarUrl} alt="" width={32} height={32} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+            </button>
+          ) : (
+            <Link href="/login" className="ml-2 px-4 h-9 inline-flex items-center rounded-lg bg-red-600 hover:bg-red-500 text-white text-[13px] font-semibold transition-colors">
+              Connexion
             </Link>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Logout modal */}
         {mounted && createPortal(
@@ -719,34 +602,28 @@ export function Navbar() {
           document.body
         )}
 
-        {/* Mobile — Search toujours visible + Bell si connecté */}
-        <div className="pointer-events-auto ml-auto md:hidden flex items-center gap-2">
-          {/* Search button — toujours visible */}
+        <div className="ml-auto md:hidden flex items-center gap-1">
           <button
             onClick={() => setIsMobileSearchOpen(true)}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/10"
           >
-            <Search className="w-[17px] h-[17px]" />
+            <Search className="w-4 h-4" />
           </button>
-          {/* Bell — uniquement si connecté */}
           {user && (
             <button
               ref={mobileBellRef}
               onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
-              className="relative w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/10"
             >
-              <Bell className="w-[17px] h-[17px]" />
+              <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
               )}
             </button>
           )}
         </div>
 
+      </div>
       </div>
 
       {/* Panel notifications — portal desktop + mobile */}
@@ -1114,63 +991,35 @@ export function Navbar() {
     </header>
 
     {/* Mobile Bottom Navbar */}
-    <nav className="md:hidden fixed z-[90] pointer-events-auto"
-      style={{
-        bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 32px)',
-        maxWidth: '440px',
-      }}>
-      <div className="flex items-center h-[68px] px-1.5 rounded-[26px]"
-        style={{
-          background: 'rgba(13,13,15,0.98)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          backdropFilter: 'blur(32px)',
-          WebkitBackdropFilter: 'blur(32px)',
-          boxShadow: '0 8px 48px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}>
-
-        {/* Accueil */}
-        <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Home className={`w-[22px] h-[22px] relative z-10 ${pathname === '/' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/' ? 'text-white/80' : 'text-white/28'}`}>Accueil</span>
-        </Link>
-
-        {/* Films */}
-        <Link href="/movies" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/movies' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Film className={`w-[22px] h-[22px] relative z-10 ${pathname === '/movies' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/movies' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/movies' ? 'text-white/80' : 'text-white/28'}`}>Films</span>
-        </Link>
-
-        {/* Séries */}
-        <Link href="/series" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/series' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Tv className={`w-[22px] h-[22px] relative z-10 ${pathname === '/series' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/series' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/series' ? 'text-white/80' : 'text-white/28'}`}>Séries</span>
-        </Link>
-
-        {/* Souhaits */}
-        <Link href="/request" className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {pathname === '/request' && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          <Plus className={`w-[22px] h-[22px] relative z-10 ${pathname === '/request' ? 'text-red-400' : 'text-white/35'}`} strokeWidth={pathname === '/request' ? 2.3 : 1.7} />
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${pathname === '/request' ? 'text-white/80' : 'text-white/28'}`}>Souhaits</span>
-        </Link>
-
-        {/* Profil */}
-        <button onClick={user ? (showProfile ? closeProfile : openProfile) : () => { window.location.href = '/login' }}
-          className="flex-1 flex flex-col items-center justify-center gap-[3px] relative py-2"
-          style={{ WebkitTapHighlightColor: 'transparent' }}>
-          {showProfile && <motion.div layoutId="mobileNavPill" className="absolute inset-1 rounded-[20px]" style={{ background: 'rgba(220,38,38,0.13)' }} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-          {user && (activeProfile?.avatar_url || avatarUrl)
-            ? <Image src={activeProfile?.avatar_url || avatarUrl!} alt={activeProfile?.name || user.username} width={22} height={22} className={`w-[22px] h-[22px] rounded-full object-cover relative z-10 ${showProfile ? 'ring-2 ring-red-400' : 'ring-1 ring-white/20'}`} />
-            : <User className={`w-[22px] h-[22px] relative z-10 ${showProfile ? 'text-red-400' : 'text-white/35'}`} strokeWidth={showProfile ? 2.3 : 1.7} />
-          }
-          <span className={`text-[9px] font-bold tracking-widest uppercase relative z-10 ${showProfile ? 'text-white/80' : 'text-white/28'}`}>Profil</span>
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[90] border-t border-white/[0.08] bg-[#08080a]/95 backdrop-blur-md"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="flex items-stretch h-14">
+        {[
+          { href: '/', label: 'Accueil', icon: Home, match: pathname === '/' },
+          { href: '/movies', label: 'Films', icon: Film, match: pathname.startsWith('/movies') },
+          { href: '/series', label: 'Séries', icon: Tv, match: pathname.startsWith('/series') },
+          { href: '/request', label: 'Souhaits', icon: Plus, match: pathname.startsWith('/request') },
+        ].map(item => {
+          const Icon = item.icon
+          return (
+            <Link key={item.href} href={item.href} className="flex-1 flex flex-col items-center justify-center gap-0.5" style={{ WebkitTapHighlightColor: 'transparent' }}>
+              <Icon className={cn('w-5 h-5', item.match ? 'text-red-500' : 'text-white/35')} strokeWidth={item.match ? 2.2 : 1.7} />
+              <span className={cn('text-[10px] font-medium', item.match ? 'text-white' : 'text-white/35')}>{item.label}</span>
+            </Link>
+          )
+        })}
+        <button
+          onClick={user ? (showProfile ? closeProfile : openProfile) : () => { window.location.href = '/login' }}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          {user && (activeProfile?.avatar_url || avatarUrl) ? (
+            <Image src={activeProfile?.avatar_url || avatarUrl!} alt="" width={20} height={20} className={cn('w-5 h-5 rounded-full object-cover', showProfile ? 'ring-2 ring-red-500' : 'ring-1 ring-white/20')} />
+          ) : (
+            <User className={cn('w-5 h-5', showProfile ? 'text-red-500' : 'text-white/35')} strokeWidth={showProfile ? 2.2 : 1.7} />
+          )}
+          <span className={cn('text-[10px] font-medium', showProfile ? 'text-white' : 'text-white/35')}>Profil</span>
         </button>
-
       </div>
     </nav>
 
