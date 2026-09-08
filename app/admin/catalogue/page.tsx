@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import {
   Film, Tv, Zap, Search, Plus, Trash2, Star, Loader2, X,
-  Check, Library, Link as LinkIcon, ChevronDown, ChevronUp, AlertTriangle,
+  Check, Library, Link as LinkIcon, ChevronDown, ChevronUp, AlertTriangle, Sparkles,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -775,11 +775,61 @@ function ApiTab() {
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [addError, setAddError] = useState('')
 
+  const [scanType, setScanType] = useState<'movie' | 'series' | 'both'>('both')
+  const [scanExtended, setScanExtended] = useState(true)
+  const [scanning, setScanning] = useState(false)
+  const [scanLog, setScanLog] = useState('')
+  const [scanStats, setScanStats] = useState({ total: 0, checked: 0, added: 0, skipped: 0, missing: 0 })
+
   // ── Purge par préfixe ────────────────────────────────────────────────────────
   const [purgePrefix, setPurgePrefix] = useState('')
   const [purging, setPurging] = useState(false)
   const [purgeResult, setPurgeResult] = useState<{ success: boolean; message: string } | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const runScan = async () => {
+    if (scanning) return
+    setScanning(true)
+    setScanLog('Récupération des listes TMDB (tendances, top, actu, archives)…')
+    setScanStats({ total: 0, checked: 0, added: 0, skipped: 0, missing: 0 })
+    const types: ('movie' | 'series')[] = scanType === 'both' ? ['movie', 'series'] : [scanType]
+    let added = 0, skipped = 0, missing = 0, checked = 0
+    try {
+      const queues: { type: 'movie' | 'series'; tmdb_id: number; title: string }[] = []
+      for (const type of types) {
+        const r = await fetch(`/api/auth/admin/purstream-check?type=${type}&extended=${scanExtended ? 'true' : 'false'}`)
+        const d = await r.json()
+        const items = Array.isArray(d.items) ? d.items : []
+        for (const it of items) {
+          if (it?.tmdb_id && it?.title) queues.push({ type, tmdb_id: it.tmdb_id, title: it.title })
+        }
+      }
+      setScanStats(s => ({ ...s, total: queues.length }))
+      setScanLog(`${queues.length} titres à vérifier sur l’API…`)
+
+      for (const item of queues) {
+        const res = await fetch('/api/auth/admin/purstream-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tmdb_id: item.tmdb_id, title: item.title, type: item.type }),
+        })
+        const d = await res.json().catch(() => ({}))
+        checked++
+        if (d.status === 'added') added++
+        else if (d.status === 'already_in_catalogue' || d.status === 'already_checked') skipped++
+        else missing++
+        setScanStats({ total: queues.length, checked, added, skipped, missing })
+        if (d.status === 'added') setScanLog(`Ajouté : ${item.title}`)
+        else if (checked % 8 === 0) setScanLog(`Vérification… ${checked}/${queues.length}`)
+        await new Promise(r => setTimeout(r, 350))
+      }
+      setScanLog(`Terminé — ${added} ajouté(s), ${missing} indisponible(s), ${skipped} déjà vu(s). Liens laissés vides.`)
+    } catch {
+      setScanLog('Erreur pendant le scan')
+    } finally {
+      setScanning(false)
+    }
+  }
 
   const handlePurge = async () => {
     if (!purgePrefix.trim() || purging) return
@@ -830,6 +880,53 @@ function ApiTab() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="w-3.5 h-3.5 text-red-400" />
+          <p className="text-sm font-semibold text-white">Scan auto (actu / top / à la une)</p>
+        </div>
+        <p className="text-xs text-white/30 mb-4">
+          Parcourt TMDB (tendances, populaires, mieux notés, en ce moment, et listes plus anciennes),
+          vérifie la dispo sur l’API, et ajoute au catalogue <span className="text-white/50">sans lien vidéo</span> (reste NULL).
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {([
+            ['both', 'Films + séries'],
+            ['movie', 'Films'],
+            ['series', 'Séries'],
+          ] as const).map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setScanType(id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${scanType === id ? 'bg-red-600 text-white' : 'bg-white/[0.06] text-white/45 hover:text-white'}`}>
+              {label}
+            </button>
+          ))}
+          <label className="flex items-center gap-2 text-xs text-white/45 ml-1 cursor-pointer">
+            <input type="checkbox" checked={scanExtended} onChange={e => setScanExtended(e.target.checked)} className="accent-red-600" />
+            Inclure archives / genres
+          </label>
+          <button type="button" onClick={runScan} disabled={scanning}
+            className="ml-auto px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-sm font-semibold inline-flex items-center gap-2">
+            {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {scanning ? 'Scan en cours…' : 'Lancer le scan'}
+          </button>
+        </div>
+        {(scanning || scanStats.total > 0 || scanLog) && (
+          <div className="mt-4 space-y-2">
+            {scanStats.total > 0 && (
+              <>
+                <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full bg-red-600 transition-all" style={{ width: `${Math.round((scanStats.checked / Math.max(1, scanStats.total)) * 100)}%` }} />
+                </div>
+                <p className="text-[11px] text-white/40">
+                  {scanStats.checked}/{scanStats.total} vérifiés · {scanStats.added} ajoutés · {scanStats.missing} absents API · {scanStats.skipped} déjà traités
+                </p>
+              </>
+            )}
+            {scanLog && <p className="text-xs text-white/55">{scanLog}</p>}
+          </div>
+        )}
+      </div>
+
       {/* ── Purge par préfixe URL ────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
         <div className="flex items-center gap-2 mb-1">
