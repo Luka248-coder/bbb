@@ -30,10 +30,13 @@ export function ContinueWatching() {
   const [logos, setLogos] = useState<Record<number, string | null>>({})
 
   const fetchHistory = () => {
-    if (!user) { setLoading(false); return }
-    const profileId = document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
-    const param = profileId ? `profile_id=${profileId}` : `user_id=${user.id}`
-    fetch(`/api/watch-history?${param}&limit=10`)
+    const profileId = typeof document !== 'undefined'
+      ? document.cookie.split('; ').find(r => r.startsWith('active_profile_id='))?.split('=')[1] || null
+      : null
+    const qs = new URLSearchParams({ limit: '10' })
+    if (profileId) qs.set('profile_id', profileId)
+    else if (user?.id) qs.set('user_id', user.id)
+    fetch(`/api/watch-history?${qs}`)
       .then(r => r.json())
       .then(data => {
         const raw = Array.isArray(data) ? data : []
@@ -87,7 +90,7 @@ export function ContinueWatching() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [user])
 
-  if (!user || loading || items.length === 0) return null
+  if (loading || items.length === 0) return null
 
   return (
     <section className="relative py-6">

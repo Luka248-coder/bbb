@@ -10,7 +10,8 @@ interface Ticket {
   status: 'open' | 'answered' | 'closed'
   created_at: string
   updated_at: string
-  users: { username: string; avatar: string | null; discord_id: string }
+  ip?: string | null
+  users: { username: string; avatar: string | null; discord_id: string } | null
 }
 
 interface Message {
@@ -161,7 +162,9 @@ export default function AdminSupportPage() {
                       <p className="text-sm font-semibold truncate">{ticket.subject}</p>
                       <span className="text-[11px] text-white/30 shrink-0">{timeAgo(ticket.updated_at)}</span>
                     </div>
-                    <p className="text-xs text-white/35 mt-0.5">@{ticket.users?.username}</p>
+                    <p className="text-xs text-white/35 mt-0.5">
+                      {ticket.users?.username ? `@${ticket.users.username}` : ticket.ip || 'Invité'}
+                    </p>
                     <span className={`inline-block mt-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       ticket.status === 'open' ? 'bg-red-600/20 text-red-400'
                         : ticket.status === 'answered' ? 'bg-white/10 text-white/60'
@@ -190,7 +193,9 @@ export default function AdminSupportPage() {
             <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{selectedTicket.subject}</p>
-                <p className="text-sm text-white/40">@{selectedTicket.users?.username}</p>
+                <p className="text-sm text-white/40">
+                  {selectedTicket.users?.username ? `@${selectedTicket.users.username}` : selectedTicket.ip || 'Invité'}
+                </p>
               </div>
               <div className="flex gap-1">
                 {(['open', 'answered', 'closed'] as const).map(s => (

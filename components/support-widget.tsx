@@ -71,7 +71,7 @@ export function SupportWidget() {
   }
 
   useEffect(() => {
-    if (user) loadTickets()
+    loadTickets()
   }, [user, open])
 
   useEffect(() => {
@@ -136,7 +136,7 @@ export function SupportWidget() {
     setSendingReply(false)
   }
 
-  if (!user || hidden) return null
+  if (hidden) return null
 
   const openTickets = tickets.filter(t => t.status !== 'closed')
 
