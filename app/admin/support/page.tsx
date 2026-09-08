@@ -88,7 +88,8 @@ export default function AdminSupportPage() {
         body: JSON.stringify({ ticket_id: selectedTicket.id, message: reply }),
       })
       if (res.ok) {
-        setMessages(prev => [...prev, await res.json()])
+        const data = await res.json()
+        setMessages(prev => [...prev, data])
         setReply('')
         setTickets(prev => prev.map(t =>
           t.id === selectedTicket.id ? { ...t, status: 'answered', updated_at: new Date().toISOString() } : t
