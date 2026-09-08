@@ -7,7 +7,6 @@ import { ContentRow } from '@/components/content-row'
 import { Footer } from '@/components/footer'
 import { HeroSkeleton, RowSkeleton } from '@/components/loading'
 import { GenreExplorer } from '@/components/genre-explorer'
-import { DiscordBanner } from '@/components/discord-banner'
 import { ContinueWatching } from '@/components/continue-watching'
 import { FeaturedBanner } from '@/components/featured-banner'
 import { createClient } from '@/lib/supabase/server'
@@ -75,7 +74,6 @@ async function HomeContent() {
         <ContentRow title="Films populaires" content={popularMovies} type="movie" />
         <ContentRow title="Séries populaires" content={popularSeries} type="series" />
         <GenreExplorer movies={movies} series={series} />
-        <DiscordBanner />
       </main>
     </>
   )
