@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   const table = type === 'series' ? 'series' : 'movies'
   const columns = table === 'movies'
     ? 'id, tmdb_id, title, original_title, poster_path, vote_average, release_date, video_url'
-    : 'id, tmdb_id, name, original_name, poster_path, vote_average, first_air_date, video_url, number_of_seasons'
+    : 'id, tmdb_id, name, original_name, poster_path, vote_average, first_air_date, number_of_seasons'
 
   let query = supabase.from(table).select(columns, { count: 'exact' }).order('id', { ascending: false })
   if (q) {
