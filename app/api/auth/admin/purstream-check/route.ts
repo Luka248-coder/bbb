@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetch-all'
 
 const TMDB_KEY = process.env.TMDB_API_KEY || '1a6aed55d15f2da7f2f0ff0586c52174'
 const TMDB = 'https://api.themoviedb.org/3'
@@ -135,13 +136,13 @@ export async function GET(req: NextRequest) {
   const extended = req.nextUrl.searchParams.get('extended') === 'true'
   const table = type === 'movie' ? 'movies' : 'series'
 
-  const [{ data: catalogueItems }, { data: checked }] = await Promise.all([
-    supabase.from(table).select('tmdb_id'),
-    supabase.from('purstream_verified').select('tmdb_id').eq('content_type', type),
+  const [catalogueItems, checked] = await Promise.all([
+    fetchAllRows<{ tmdb_id: number }>(() => supabase.from(table).select('tmdb_id') as any),
+    fetchAllRows<{ tmdb_id: number }>(() => supabase.from('purstream_verified').select('tmdb_id').eq('content_type', type) as any),
   ])
 
-  const catalogueIds = new Set((catalogueItems || []).map((i: any) => i.tmdb_id))
-  const checkedIds = new Set((checked || []).map((i: any) => i.tmdb_id))
+  const catalogueIds = new Set(catalogueItems.map((i) => i.tmdb_id))
+  const checkedIds = new Set(checked.map((i) => i.tmdb_id))
 
   const tmdbItems = await fetchTmdbItems(type, extended)
   const pending = tmdbItems.filter(i => !catalogueIds.has(i.tmdb_id) && !checkedIds.has(i.tmdb_id))

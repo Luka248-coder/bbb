@@ -19,11 +19,13 @@ interface TMDBResult {
 }
 interface MovieItem {
   id: number; tmdb_id: number; title: string
+  original_title?: string
   poster_path: string | null; vote_average: number
   release_date?: string; video_url?: string | null
 }
 interface SeriesItem {
   id: number; tmdb_id: number; name: string
+  original_name?: string
   poster_path: string | null; vote_average: number
   first_air_date?: string; video_url?: string | null
   number_of_seasons?: number
@@ -78,7 +80,7 @@ function PosterCard({
       {/* Info + lien */}
       <div className="p-2 space-y-1.5">
         <div>
-          <p className="text-white text-[11px] font-medium truncate">{title}</p>
+          <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight" title={title}>{title}</p>
           {year && <p className="text-white/30 text-[10px]">{year}</p>}
         </div>
 
@@ -137,18 +139,30 @@ function SearchCard({ title, year, posterPath, isAdded, isAdding, onAdd, isType 
         </div>
       </div>
       <div className="p-2">
-        <p className="text-white text-[11px] font-medium truncate">{title}</p>
+        <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight" title={title}>{title}</p>
         {year && <p className="text-white/30 text-[10px]">{year}</p>}
       </div>
     </div>
   )
 }
 
+const PAGE_SIZE = 48
+
+function displayMovieTitle(item: { title?: string; original_title?: string }) {
+  return (item.title || item.original_title || '').trim()
+}
+function displaySeriesName(item: { name?: string; original_name?: string }) {
+  return (item.name || item.original_name || '').trim()
+}
+
 // ─── Films Tab ────────────────────────────────────────────────────────────────
 function FilmsTab() {
   const [items, setItems] = useState<MovieItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [debouncedFilter, setDebouncedFilter] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TMDBResult[]>([])
@@ -160,20 +174,39 @@ function FilmsTab() {
   const [editUrl, setEditUrl] = useState('')
   const [savingId, setSavingId] = useState<number | null>(null)
   const [clearingLinks, setClearingLinks] = useState(false)
+  const [addError, setAddError] = useState('')
 
   useEffect(() => {
-    fetch('/api/content/movies')
-      .then(r => r.json())
-      .then(d => setItems(Array.isArray(d) ? d : []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    const t = setTimeout(() => setDebouncedFilter(filter), 300)
+    return () => clearTimeout(t)
+  }, [filter])
+
+  useEffect(() => { setPage(0) }, [debouncedFilter])
+
+  const loadMovies = async (p = page, q = debouncedFilter) => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ type: 'movie', page: String(p), pageSize: String(PAGE_SIZE) })
+      if (q.trim()) params.set('q', q.trim())
+      const r = await fetch(`/api/auth/admin/content?${params}`)
+      const d = await r.json()
+      setItems(Array.isArray(d.items) ? d.items : [])
+      setTotal(typeof d.total === 'number' ? d.total : 0)
+    } catch {
+      setItems([])
+    } finally { setLoading(false) }
+  }
+
+  useEffect(() => {
+    loadMovies(page, debouncedFilter)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedFilter])
 
   const searchTMDB = async () => {
     if (!query.trim()) return
     setSearching(true)
     try {
-      const r = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`)
+      const r = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=fr-FR&include_adult=false`)
       const d = await r.json()
       setResults(d.results || [])
     } catch {} finally { setSearching(false) }
@@ -181,17 +214,28 @@ function FilmsTab() {
 
   const addMovie = async (result: TMDBResult) => {
     setAddingId(result.id)
+    setAddError('')
     try {
+      const payload = {
+        ...result,
+        title: result.title || result.original_title,
+        original_title: result.original_title || result.title,
+      }
       const r = await fetch('/api/auth/admin/content', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'movie', tmdbData: result }),
+        body: JSON.stringify({ type: 'movie', tmdbData: payload }),
       })
+      const data = await r.json().catch(() => ({}))
       if (r.ok) {
-        const data = await r.json()
-        setItems(prev => prev.find(i => i.tmdb_id === result.id) ? prev : [data, ...prev])
         setAddedIds(prev => new Set([...prev, result.id]))
+        await loadMovies(0, debouncedFilter)
+        setPage(0)
+      } else {
+        setAddError(data.error || 'Impossible d’ajouter ce titre')
       }
-    } catch {} finally { setAddingId(null) }
+    } catch {
+      setAddError('Erreur réseau — réessaie')
+    } finally { setAddingId(null) }
   }
 
   const saveUrl = async (item: MovieItem) => {
@@ -209,11 +253,11 @@ function FilmsTab() {
   }
 
   const deleteMovie = async (item: MovieItem) => {
-    if (!confirm(`Supprimer "${item.title}" ?`)) return
+    if (!confirm(`Supprimer "${displayMovieTitle(item)}" ?`)) return
     setDeletingId(item.id)
     try {
       await fetch(`/api/auth/admin/content?type=movie&tmdbId=${item.tmdb_id}`, { method: 'DELETE' })
-      setItems(prev => prev.filter(i => i.id !== item.id))
+      await loadMovies(page, debouncedFilter)
     } catch {} finally { setDeletingId(null) }
   }
 
@@ -230,14 +274,14 @@ function FilmsTab() {
     } catch {} finally { setClearingLinks(false) }
   }
 
-  const filtered = items.filter(i => !filter || i.title?.toLowerCase().includes(filter.toLowerCase()))
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="space-y-5">
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-          <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filtrer les films…"
+          <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Rechercher un titre exact (français ou original)…"
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-primary/40 transition-colors" />
         </div>
         <button onClick={clearAllLinks} disabled={clearingLinks}
@@ -266,10 +310,11 @@ function FilmsTab() {
                 {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Chercher'}
               </button>
             </div>
+            {addError && <p className="mt-2 text-xs text-red-400">{addError}</p>}
             {results.length > 0 && (
               <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {results.map(r => (
-                  <SearchCard key={r.id} title={r.title || ''} year={r.release_date?.slice(0, 4)}
+                  <SearchCard key={r.id} title={r.title || r.original_title || ''} year={r.release_date?.slice(0, 4)}
                     posterPath={r.poster_path} isAdded={addedIds.has(r.id) || items.some(i => i.tmdb_id === r.id)}
                     isAdding={addingId === r.id} onAdd={() => addMovie(r)} isType="movie" />
                 ))}
@@ -285,12 +330,12 @@ function FilmsTab() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-white/25">{filtered.length} film{filtered.length > 1 ? 's' : ''} au catalogue</p>
+          <p className="text-xs text-white/25">{total} film{total > 1 ? 's' : ''} au catalogue{debouncedFilter ? ` — résultats pour « ${debouncedFilter} »` : ''}</p>
           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {filtered.map(item => (
+            {items.map(item => (
               <PosterCard
                 key={item.id}
-                title={item.title} year={item.release_date?.slice(0, 4)}
+                title={displayMovieTitle(item)} year={item.release_date?.slice(0, 4)}
                 posterPath={item.poster_path} rating={item.vote_average}
                 hasUrl={!!item.video_url}
                 isEditing={editId === item.id} editUrl={editUrl}
@@ -304,6 +349,19 @@ function FilmsTab() {
               />
             ))}
           </div>
+          {total > PAGE_SIZE && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button disabled={page <= 0} onClick={() => setPage(p => Math.max(0, p - 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/[0.06] border border-white/[0.08] text-white/70 disabled:opacity-30">
+                Précédent
+              </button>
+              <span className="text-xs text-white/40">Page {page + 1} / {pageCount}</span>
+              <button disabled={page + 1 >= pageCount} onClick={() => setPage(p => p + 1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/[0.06] border border-white/[0.08] text-white/70 disabled:opacity-30">
+                Suivant
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -313,8 +371,11 @@ function FilmsTab() {
 // ─── Séries Tab ───────────────────────────────────────────────────────────────
 function SeriesTab() {
   const [items, setItems] = useState<SeriesItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [debouncedFilter, setDebouncedFilter] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TMDBResult[]>([])
@@ -323,6 +384,7 @@ function SeriesTab() {
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [clearingLinks, setClearingLinks] = useState(false)
+  const [addError, setAddError] = useState('')
 
   // Episodes
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -337,18 +399,36 @@ function SeriesTab() {
   const [speedSaving, setSpeedSaving] = useState(false)
 
   useEffect(() => {
-    fetch('/api/content/series')
-      .then(r => r.json())
-      .then(d => setItems(Array.isArray(d) ? d : []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    const t = setTimeout(() => setDebouncedFilter(filter), 300)
+    return () => clearTimeout(t)
+  }, [filter])
+
+  useEffect(() => { setPage(0) }, [debouncedFilter])
+
+  const loadSeries = async (p = page, q = debouncedFilter) => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ type: 'series', page: String(p), pageSize: String(PAGE_SIZE) })
+      if (q.trim()) params.set('q', q.trim())
+      const r = await fetch(`/api/auth/admin/content?${params}`)
+      const d = await r.json()
+      setItems(Array.isArray(d.items) ? d.items : [])
+      setTotal(typeof d.total === 'number' ? d.total : 0)
+    } catch {
+      setItems([])
+    } finally { setLoading(false) }
+  }
+
+  useEffect(() => {
+    loadSeries(page, debouncedFilter)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedFilter])
 
   const searchTMDB = async () => {
     if (!query.trim()) return
     setSearching(true)
     try {
-      const r = await fetch(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`)
+      const r = await fetch(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=fr-FR&include_adult=false`)
       const d = await r.json()
       setResults(d.results || [])
     } catch {} finally { setSearching(false) }
@@ -356,6 +436,7 @@ function SeriesTab() {
 
   const addSeries = async (result: TMDBResult) => {
     setAddingId(result.id)
+    setAddError('')
     try {
       const r = await fetch('/api/auth/admin/episodes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -363,11 +444,16 @@ function SeriesTab() {
       })
       const data = await r.json()
       if (data.success) {
-        setItems(prev => prev.find(i => i.tmdb_id === result.id) ? prev : [data.series, ...prev])
         setAddedIds(prev => new Set([...prev, result.id]))
         setShowAdd(false); setResults([]); setQuery('')
+        await loadSeries(0, debouncedFilter)
+        setPage(0)
+      } else {
+        setAddError(data.error || 'Impossible d’ajouter cette série')
       }
-    } catch {} finally { setAddingId(null) }
+    } catch {
+      setAddError('Erreur réseau — réessaie')
+    } finally { setAddingId(null) }
   }
 
   const loadEpisodes = async (seriesDbId: number) => {
@@ -422,11 +508,11 @@ function SeriesTab() {
   }
 
   const deleteSeries = async (item: SeriesItem) => {
-    if (!confirm(`Supprimer "${item.name}" ?`)) return
+    if (!confirm(`Supprimer "${displaySeriesName(item)}" ?`)) return
     setDeletingId(item.id)
     try {
       await fetch(`/api/auth/admin/content?type=series&tmdbId=${item.tmdb_id}`, { method: 'DELETE' })
-      setItems(prev => prev.filter(i => i.id !== item.id))
+      await loadSeries(page, debouncedFilter)
       if (expandedId === item.id) setExpandedId(null)
     } catch {} finally { setDeletingId(null) }
   }
@@ -444,7 +530,7 @@ function SeriesTab() {
     } catch {} finally { setClearingLinks(false) }
   }
 
-  const filtered = items.filter(i => !filter || i.name?.toLowerCase().includes(filter.toLowerCase()))
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const seasons = [...new Set(episodes.map(e => e.season_number))].sort((a, b) => a - b)
   const filteredEps = episodes.filter(e => e.season_number === seasonFilter)
   const epsWithUrl = episodes.filter(e => e.video_url).length
@@ -455,7 +541,7 @@ function SeriesTab() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-          <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filtrer les séries…"
+          <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Rechercher un titre exact (français ou original)…"
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-primary/40 transition-colors" />
         </div>
         <button onClick={clearAllLinks} disabled={clearingLinks}
@@ -486,10 +572,11 @@ function SeriesTab() {
                 {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Chercher'}
               </button>
             </div>
+            {addError && <p className="mt-2 text-xs text-red-400">{addError}</p>}
             {results.length > 0 && (
               <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {results.map(r => (
-                  <SearchCard key={r.id} title={r.name || ''} year={r.first_air_date?.slice(0, 4)}
+                  <SearchCard key={r.id} title={r.name || r.original_name || ''} year={r.first_air_date?.slice(0, 4)}
                     posterPath={r.poster_path} isAdded={addedIds.has(r.id) || items.some(i => i.tmdb_id === r.id)}
                     isAdding={addingId === r.id} onAdd={() => addSeries(r)} isType="series" />
                 ))}
@@ -508,26 +595,26 @@ function SeriesTab() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-white/25">{filtered.length} série{filtered.length > 1 ? 's' : ''} au catalogue</p>
+          <p className="text-xs text-white/25">{total} série{total > 1 ? 's' : ''} au catalogue{debouncedFilter ? ` — résultats pour « ${debouncedFilter} »` : ''}</p>
           <div className="space-y-3">
-            {filtered.map((item, index) => {
+            {items.map((item) => {
               const isExpanded = expandedId === item.id
+              const seriesTitle = displaySeriesName(item)
               const posterUrl = item.poster_path
                 ? `https://image.tmdb.org/t/p/w185${item.poster_path}`
                 : '/images/placeholder-poster.jpg'
 
               return (
-                <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.02 }}>
+                <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                   <div className={`rounded-2xl border overflow-hidden transition-colors ${isExpanded ? 'border-primary/40 bg-primary/[0.03]' : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12]'}`}>
 
                     {/* Header row */}
                     <div className="flex items-center gap-3 p-3">
                       <div className="relative w-10 h-14 flex-shrink-0 rounded-lg overflow-hidden">
-                        <Image src={posterUrl} alt={item.name} fill className="object-cover" sizes="40px" />
+                        <Image src={posterUrl} alt={seriesTitle} fill className="object-cover" sizes="40px" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{item.name}</p>
+                        <p className="text-sm font-semibold text-white truncate" title={seriesTitle}>{seriesTitle}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {item.first_air_date && (
                             <span className="text-xs text-white/30">{item.first_air_date.slice(0, 4)}</span>
@@ -659,6 +746,19 @@ function SeriesTab() {
               )
             })}
           </div>
+          {total > PAGE_SIZE && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button disabled={page <= 0} onClick={() => setPage(p => Math.max(0, p - 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/[0.06] border border-white/[0.08] text-white/70 disabled:opacity-30">
+                Précédent
+              </button>
+              <span className="text-xs text-white/40">Page {page + 1} / {pageCount}</span>
+              <button disabled={page + 1 >= pageCount} onClick={() => setPage(p => p + 1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/[0.06] border border-white/[0.08] text-white/70 disabled:opacity-30">
+                Suivant
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -673,6 +773,7 @@ function ApiTab() {
   const [searching, setSearching] = useState(false)
   const [addingId, setAddingId] = useState<number | null>(null)
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
+  const [addError, setAddError] = useState('')
 
   // ── Purge par préfixe ────────────────────────────────────────────────────────
   const [purgePrefix, setPurgePrefix] = useState('')
@@ -705,7 +806,7 @@ function ApiTab() {
     setSearching(true)
     try {
       const endpoint = searchType === 'movie' ? 'movie' : 'tv'
-      const r = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`)
+      const r = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=fr-FR&include_adult=false`)
       const d = await r.json()
       setResults(d.results || [])
     } catch {} finally { setSearching(false) }
@@ -713,13 +814,18 @@ function ApiTab() {
 
   const addContent = async (result: TMDBResult) => {
     setAddingId(result.id)
+    setAddError('')
     try {
       const r = await fetch('/api/auth/admin/api-catalogue', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: searchType === 'movie' ? 'movie' : 'series', tmdbId: result.id }),
       })
+      const data = await r.json().catch(() => ({}))
       if (r.ok) setAddedIds(prev => new Set([...prev, result.id]))
-    } catch {} finally { setAddingId(null) }
+      else setAddError(data.error || 'Impossible d’ajouter ce titre')
+    } catch {
+      setAddError('Erreur réseau — réessaie')
+    } finally { setAddingId(null) }
   }
 
   return (
@@ -825,10 +931,12 @@ function ApiTab() {
           </button>
         </div>
 
+        {addError && <p className="mt-3 text-xs text-red-400">{addError}</p>}
+
         {results.length > 0 && (
           <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {results.map(r => {
-              const title = r.title || r.name || ''
+              const title = r.title || r.original_title || r.name || r.original_name || ''
               const year = (r.release_date || r.first_air_date || '').slice(0, 4)
               return (
                 <SearchCard key={r.id} title={title} year={year} posterPath={r.poster_path}

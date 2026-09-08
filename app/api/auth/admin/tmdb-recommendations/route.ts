@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetch-all'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY || '1a6aed55d15f2da7f2f0ff0586c52174'
 const TMDB_BASE = 'https://api.themoviedb.org/3'
@@ -11,13 +12,13 @@ export async function GET(request: NextRequest) {
   if (catalog === '1') {
     try {
       const supabase = await createClient()
-      const [{ data: movies }, { data: series }] = await Promise.all([
-        supabase.from('movies').select('tmdb_id'),
-        supabase.from('series').select('tmdb_id'),
+      const [movies, series] = await Promise.all([
+        fetchAllRows<{ tmdb_id: number }>(() => supabase.from('movies').select('tmdb_id') as any),
+        fetchAllRows<{ tmdb_id: number }>(() => supabase.from('series').select('tmdb_id') as any),
       ])
       return NextResponse.json({
-        movieIds: (movies || []).map(m => m.tmdb_id),
-        seriesIds: (series || []).map(s => s.tmdb_id),
+        movieIds: movies.map(m => m.tmdb_id),
+        seriesIds: series.map(s => s.tmdb_id),
       })
     } catch {
       return NextResponse.json({ movieIds: [], seriesIds: [] })
