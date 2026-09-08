@@ -97,7 +97,7 @@ import { usePresence } from '@/hooks/use-presence'
 
 function NavLinks({ pathname }: { pathname: string }) {
   return (
-    <nav className="hidden md:flex items-center gap-0.5">
+    <nav className="hidden md:flex items-center gap-1">
       {navLinks.map(link => {
         const active = link.href === '/'
           ? pathname === '/'
@@ -107,13 +107,13 @@ function NavLinks({ pathname }: { pathname: string }) {
             key={link.href}
             href={link.href}
             className={cn(
-              'relative px-3 py-2 text-[13px] font-medium transition-colors',
-              active ? 'text-white' : 'text-white/45 hover:text-white',
+              'relative px-4 py-2.5 text-[15px] font-semibold tracking-wide transition-colors',
+              active ? 'text-white' : 'text-white/50 hover:text-white',
             )}
           >
             {link.label}
             {active && (
-              <span className="absolute left-3 right-3 bottom-0 h-[2px] rounded-full bg-red-500" />
+              <span className="absolute left-4 right-4 bottom-0.5 h-[2px] rounded-full bg-red-500" />
             )}
           </Link>
         )
@@ -177,7 +177,7 @@ export function Navbar() {
 
   const router = useRouter()
   const pathname = usePathname()
-  const [isScrolled, setIsScrolled] = useState(false)
+  const [scrollT, setScrollT] = useState(0)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -241,10 +241,12 @@ export function Navbar() {
 
   useEffect(() => {
     let ticking = false
+    const update = () => setScrollT(Math.min(window.scrollY / 140, 1))
+    update()
     const fn = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > 20)
+          update()
           ticking = false
         })
         ticking = true
@@ -393,19 +395,22 @@ export function Navbar() {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50">
-      <div className={cn(
-        'transition-[background,border] duration-300',
-        isScrolled
-          ? 'bg-[#08080a]/92 backdrop-blur-md border-b border-white/[0.06]'
-          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b border-transparent',
-      )}>
-      <div className="relative flex items-center h-16 max-w-[1600px] mx-auto px-4 md:px-8 gap-4">
+    <header className="fixed top-0 left-0 right-0 z-50 font-[family-name:var(--font-montserrat)]">
+      <div
+        className="border-b transition-[border-color] duration-200"
+        style={{
+          backgroundColor: `rgba(8, 8, 10, ${scrollT * 0.38})`,
+          backdropFilter: scrollT > 0.04 ? `blur(${(8 + scrollT * 20).toFixed(1)}px) saturate(1.35)` : 'none',
+          WebkitBackdropFilter: scrollT > 0.04 ? `blur(${(8 + scrollT * 20).toFixed(1)}px) saturate(1.35)` : 'none',
+          borderBottomColor: `rgba(255,255,255,${scrollT * 0.08})`,
+        }}
+      >
+      <div className="relative flex items-center h-[72px] max-w-[1600px] mx-auto px-4 md:px-8 gap-5">
 
         <Link href="/" className="shrink-0">
           <Image
             src="/logo.png"
-            alt="StreamSelf" width={36} height={36} className="h-8 w-auto"
+            alt="StreamSelf" width={44} height={44} className="h-10 w-auto"
           />
         </Link>
 
@@ -428,28 +433,28 @@ export function Navbar() {
           document.body
         )}
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-1.5">
           <div ref={searchRef} className="relative flex items-center">
             <AnimatePresence mode="wait">
               {isSearchOpen ? (
                 <motion.div
                   key="open"
-                  initial={{ width: 0, opacity: 0 }} animate={{ width: 220, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+                  initial={{ width: 0, opacity: 0 }} animate={{ width: 240, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                  className="flex items-center px-3 gap-2 h-9 overflow-hidden rounded-lg bg-white/[0.06] border border-white/10"
+                  className="flex items-center px-3.5 gap-2 h-11 overflow-hidden rounded-xl bg-white/[0.08] border border-white/10"
                 >
-                  <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                  <Search className="w-4 h-4 text-white/40 shrink-0" />
                   <input
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
                     placeholder="Rechercher..."
-                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30 w-full"
+                    className="bg-transparent text-white text-[15px] outline-none flex-1 placeholder-white/30 w-full"
                     autoFocus
                   />
                   {searchQuery && (
                     <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
-                      <X className="w-3 h-3 text-white/30 hover:text-white/60" />
+                      <X className="w-4 h-4 text-white/30 hover:text-white/60" />
                     </button>
                   )}
                 </motion.div>
@@ -457,9 +462,9 @@ export function Navbar() {
                 <motion.button
                   key="closed"
                   onClick={() => setIsSearchOpen(true)}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                  className="w-11 h-11 flex items-center justify-center rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <Search className="w-4 h-4" />
+                  <Search className="w-5 h-5" />
                 </motion.button>
               )}
             </AnimatePresence>
@@ -496,18 +501,17 @@ export function Navbar() {
             </AnimatePresence>
           </div>
 
-          <button onClick={handleRoulette} title="Roulette" className="w-9 h-9 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/10 transition-colors">
-            <style>{`@keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 40% { transform: rotate(200deg) scale(1.2); } 70% { transform: rotate(320deg) scale(0.95); } 100% { transform: rotate(360deg) scale(1); } }`}</style>
-            <Shuffle className="w-4 h-4" />
+          <button onClick={handleRoulette} title="Roulette" className="w-11 h-11 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+            <Shuffle className="w-5 h-5" />
           </button>
 
           {user && (
             <div className="relative">
               <button
                 onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowNotifPrefsBell(false); if (!showNotifications) fetchNotifications() }}
-                className="relative w-9 h-9 flex items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                className="relative w-11 h-11 flex items-center justify-center rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
                 )}
@@ -516,19 +520,19 @@ export function Navbar() {
           )}
 
           {user ? (
-            <button onClick={openProfile} className="ml-1 w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all">
+            <button onClick={openProfile} className="ml-1 w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/15 hover:ring-white/40 transition-all">
               {activeProfile?.avatar_url ? (
-                <Image src={activeProfile.avatar_url} alt="" width={32} height={32} className="w-full h-full object-cover" />
+                <Image src={activeProfile.avatar_url} alt="" width={36} height={36} className="w-full h-full object-cover" />
               ) : avatarUrl ? (
-                <Image src={avatarUrl} alt="" width={32} height={32} className="w-full h-full object-cover" />
+                <Image src={avatarUrl} alt="" width={36} height={36} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-red-600 flex items-center justify-center">
-                  <User className="w-3.5 h-3.5 text-white" />
+                  <User className="w-4 h-4 text-white" />
                 </div>
               )}
             </button>
           ) : (
-            <Link href="/login" className="ml-2 px-4 h-9 inline-flex items-center rounded-lg bg-red-600 hover:bg-red-500 text-white text-[13px] font-semibold transition-colors">
+            <Link href="/login" className="ml-2 px-5 h-11 inline-flex items-center rounded-xl bg-red-600 hover:bg-red-500 text-white text-[15px] font-semibold transition-colors">
               Connexion
             </Link>
           )}
@@ -605,17 +609,17 @@ export function Navbar() {
         <div className="ml-auto md:hidden flex items-center gap-1">
           <button
             onClick={() => setIsMobileSearchOpen(true)}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/10"
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-5 h-5" />
           </button>
           {user && (
             <button
               ref={mobileBellRef}
               onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); if (!showNotifications) fetchNotifications() }}
-              className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/10"
+              className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
               )}
@@ -991,9 +995,9 @@ export function Navbar() {
     </header>
 
     {/* Mobile Bottom Navbar */}
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[90] border-t border-white/[0.08] bg-[#08080a]/95 backdrop-blur-md"
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[90] font-[family-name:var(--font-montserrat)] border-t border-white/[0.08] bg-[#08080a]/80 backdrop-blur-xl"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <div className="flex items-stretch h-14">
+      <div className="flex items-stretch h-16">
         {[
           { href: '/', label: 'Accueil', icon: Home, match: pathname === '/' },
           { href: '/movies', label: 'Films', icon: Film, match: pathname.startsWith('/movies') },
@@ -1002,23 +1006,23 @@ export function Navbar() {
         ].map(item => {
           const Icon = item.icon
           return (
-            <Link key={item.href} href={item.href} className="flex-1 flex flex-col items-center justify-center gap-0.5" style={{ WebkitTapHighlightColor: 'transparent' }}>
-              <Icon className={cn('w-5 h-5', item.match ? 'text-red-500' : 'text-white/35')} strokeWidth={item.match ? 2.2 : 1.7} />
-              <span className={cn('text-[10px] font-medium', item.match ? 'text-white' : 'text-white/35')}>{item.label}</span>
+            <Link key={item.href} href={item.href} className="flex-1 flex flex-col items-center justify-center gap-1" style={{ WebkitTapHighlightColor: 'transparent' }}>
+              <Icon className={cn('w-6 h-6', item.match ? 'text-red-500' : 'text-white/35')} strokeWidth={item.match ? 2.2 : 1.7} />
+              <span className={cn('text-[11px] font-semibold', item.match ? 'text-white' : 'text-white/35')}>{item.label}</span>
             </Link>
           )
         })}
         <button
           onClick={user ? (showProfile ? closeProfile : openProfile) : () => { window.location.href = '/login' }}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5"
+          className="flex-1 flex flex-col items-center justify-center gap-1"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           {user && (activeProfile?.avatar_url || avatarUrl) ? (
-            <Image src={activeProfile?.avatar_url || avatarUrl!} alt="" width={20} height={20} className={cn('w-5 h-5 rounded-full object-cover', showProfile ? 'ring-2 ring-red-500' : 'ring-1 ring-white/20')} />
+            <Image src={activeProfile?.avatar_url || avatarUrl!} alt="" width={24} height={24} className={cn('w-6 h-6 rounded-full object-cover', showProfile ? 'ring-2 ring-red-500' : 'ring-1 ring-white/20')} />
           ) : (
-            <User className={cn('w-5 h-5', showProfile ? 'text-red-500' : 'text-white/35')} strokeWidth={showProfile ? 2.2 : 1.7} />
+            <User className={cn('w-6 h-6', showProfile ? 'text-red-500' : 'text-white/35')} strokeWidth={showProfile ? 2.2 : 1.7} />
           )}
-          <span className={cn('text-[10px] font-medium', showProfile ? 'text-white' : 'text-white/35')}>Profil</span>
+          <span className={cn('text-[11px] font-semibold', showProfile ? 'text-white' : 'text-white/35')}>Profil</span>
         </button>
       </div>
     </nav>
