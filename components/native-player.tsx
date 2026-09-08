@@ -364,7 +364,7 @@ export function NativePlayer({
   const gainNodeRef = useRef<GainNode | null>(null)
   const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
-  // ─── Save watch progress ───────────────────────────────────────────────────�������─
+  // ─── Save watch progress ───────────────────────────────────────────────────���������─
   const currentTimeRef = useRef(0)
   const durationRef = useRef(0)
   const currentSeasonRef = useRef(initialSeason)
@@ -1436,7 +1436,7 @@ export function NativePlayer({
             initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
-            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.9), rgba(153,27,27,0.85))', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(6px)', boxShadow: '0 0 40px rgba(220,38,38,0.5), inset 0 1px 0 rgba(255,255,255,0.25)' }}>
+            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)' }}>
               <Play className="w-11 h-11 text-white fill-white ml-1.5" />
             </div>
           </motion.div>
@@ -1512,8 +1512,8 @@ export function NativePlayer({
               >
                 <div className="absolute inset-0 bg-white/15 rounded-full" />
                 <div className="absolute inset-y-0 left-0 bg-white/25 rounded-full" style={{ width: `${buffered}%` }} />
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #b91c1c, #ef4444)', boxShadow: '0 0 10px rgba(239,68,68,0.7)' }}>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" style={{ boxShadow: '0 0 0 4px rgba(239,68,68,0.35), 0 2px 8px rgba(0,0,0,0.5)' }} />
+                <div className="absolute inset-y-0 left-0 bg-white rounded-full" style={{ width: `${progress}%` }}>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }} />
                 </div>
                 {hoverTime !== null && (
                   <div className="absolute -top-8 bg-black/80 text-white text-xs px-2 py-1 rounded-lg pointer-events-none -translate-x-1/2 whitespace-nowrap" style={{ left: hoverX }}>
