@@ -5,7 +5,7 @@ import { useDrawer } from '@/components/movie-drawer'
 import { Search, X, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
+import { getPosterUrl, getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 
 interface ContentGridProps {
   title: string
@@ -158,15 +158,35 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
     return () => observer.disconnect()
   }, [hasMore, loadMore])
 
+  const cover = useMemo(() => {
+    return [...content]
+      .filter(i => i.backdrop_path)
+      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0]
+  }, [content])
+
   const sortLabel = SORT_OPTIONS.find(o => o.id === sort)?.label || 'Populaires'
 
   return (
-    <div className="pt-24 md:pt-28 pb-28 md:pb-16">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{title}</h1>
-          <p className="text-white/40 text-sm mt-1">{filtered.length} titre{filtered.length > 1 ? 's' : ''}</p>
+    <div className="pb-28 md:pb-16">
+      <div className="relative h-[240px] md:h-[320px] overflow-hidden">
+        {cover?.backdrop_path && (
+          <Image
+            src={getBackdropUrl(cover.backdrop_path)}
+            alt=""
+            fill
+            priority
+            className="object-cover object-top"
+            sizes="100vw"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#08080a] via-[#08080a]/50 to-black/40" />
+        <div className="relative h-full max-w-[1400px] mx-auto px-4 md:px-8 flex flex-col justify-end pb-6 pt-24">
+          <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">{title}</h1>
+          <p className="text-white/50 text-sm mt-1">{filtered.length} titre{filtered.length > 1 ? 's' : ''}</p>
         </div>
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1 flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-white/[0.05] border border-white/10">
