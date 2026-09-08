@@ -159,13 +159,15 @@ function LoginContent() {
   const displayError = localError || (error ? errorMessages[error] : '') || ''
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-black px-4 py-6">
+    <div
+      className="login-page min-h-screen w-full flex items-center justify-center bg-black px-4 py-6"
+    >
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[860px] grid lg:grid-cols-2 rounded-3xl overflow-hidden"
-        style={{ background: '#0a0a0b', border: '1px solid rgba(255,255,255,0.07)' }}
+        className="relative w-full max-w-5xl grid lg:grid-cols-2 rounded-[32px] overflow-hidden"
+        style={{ background: '#0a0a0b', border: '1px solid rgba(255,255,255,0.07)', minHeight: '560px' }}
       >
 
         {/* ── Panneau gauche : mur de posters ── */}
@@ -193,7 +195,7 @@ function LoginContent() {
             </p>
 
             <div>
-              <h2 className="text-white font-black tracking-tight leading-[0.95] text-balance" style={{ fontSize: 'clamp(2rem, 3.6vw, 2.75rem)' }}>
+              <h2 className="text-white font-black tracking-tight leading-[0.95] text-balance" style={{ fontSize: 'clamp(2.5rem, 4.5vw, 3.5rem)' }}>
                 Entrez<br />dans<br />l&apos;image.
               </h2>
               <p className="text-white/55 text-[15px] leading-relaxed mt-6 max-w-xs">
