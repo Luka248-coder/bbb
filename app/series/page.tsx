@@ -16,8 +16,8 @@ async function SeriesContent() {
 
 export default function SeriesPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <main className="pt-24">
+    <div className="min-h-screen bg-[#08080a]">
+      <main>
         <Suspense fallback={<Loading />}>
           <SeriesContent />
         </Suspense>
