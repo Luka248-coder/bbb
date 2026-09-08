@@ -16,8 +16,8 @@ async function MoviesContent() {
 
 export default function MoviesPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <main className="pt-24">
+    <div className="min-h-screen bg-[#08080a]">
+      <main>
         <Suspense fallback={<Loading />}>
           <MoviesContent />
         </Suspense>
