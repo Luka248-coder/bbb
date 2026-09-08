@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SessionProvider } from '@/components/session-provider'
 import { MovieDrawerProvider } from '@/components/movie-drawer'
 import { NavbarWrapper } from '@/components/navbar-wrapper'
+import { SupportWidget } from '@/components/support-widget'
 import { GridBackground } from '@/components/grid-background'
 import { PresenceTracker } from '@/components/presence-tracker'
 import { ProfileProvider } from '@/contexts/ProfileContext'
@@ -48,6 +49,7 @@ export default function RootLayout({
             <ProfileGate>
               <MovieDrawerProvider>
                 <NavbarWrapper />
+                <SupportWidget />
                 <div className="relative" style={{ zIndex: 1 }}>
                   {children}
                 </div>

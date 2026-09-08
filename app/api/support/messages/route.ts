@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getSession } from '@/lib/auth'
+import { getSession, isStaff } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const user = await getSession()
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     .single()
 
   if (!ticket) return NextResponse.json({ error: 'Ticket introuvable' }, { status: 404 })
-  if (!user.is_admin && ticket.user_id !== user.id) {
+  if (!isStaff(user) && ticket.user_id !== user.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
   }
 
@@ -52,20 +52,21 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (!ticket) return NextResponse.json({ error: 'Ticket introuvable' }, { status: 404 })
-  if (!user.is_admin && ticket.user_id !== user.id) {
+  if (!isStaff(user) && ticket.user_id !== user.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
   }
 
+  const staffReply = isStaff(user) && ticket.user_id !== user.id
   const { data, error } = await supabase
     .from('support_messages')
-    .insert({ ticket_id, user_id: user.id, is_admin: user.is_admin, message })
+    .insert({ ticket_id, user_id: user.id, is_admin: staffReply, message })
     .select(`*, users(username, avatar, discord_id)`)
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Update ticket updated_at + status
-  const newStatus = user.is_admin ? 'answered' : 'open'
+  const newStatus = staffReply ? 'answered' : 'open'
   await supabase
     .from('support_tickets')
     .update({ updated_at: new Date().toISOString(), status: newStatus })

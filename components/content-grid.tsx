@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useDrawer } from '@/components/movie-drawer'
-import { Search, X } from 'lucide-react'
+import { Search, X, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { getPosterUrl, getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
+import { getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 
 interface ContentGridProps {
   title: string
@@ -13,9 +13,9 @@ interface ContentGridProps {
   type: 'movie' | 'series'
 }
 
-type SortType = 'popular' | 'rating' | 'newest' | 'recent' | 'alpha'
+type SortType = 'popular' | 'rating' | 'newest' | 'alpha'
 
-const PAGE_SIZE = 35
+const PAGE_SIZE = 42
 
 const SORT_ALIASES: Record<string, SortType> = {
   popular: 'popular',
@@ -24,9 +24,16 @@ const SORT_ALIASES: Record<string, SortType> = {
   top: 'rating',
   newest: 'newest',
   new: 'newest',
-  recent: 'recent',
+  recent: 'newest',
   alpha: 'alpha',
 }
+
+const SORT_OPTIONS: { id: SortType; label: string }[] = [
+  { id: 'popular', label: 'Populaires' },
+  { id: 'rating', label: 'Mieux notés' },
+  { id: 'newest', label: 'Plus récents' },
+  { id: 'alpha', label: 'A → Z' },
+]
 
 function isMovie(item: Movie | Series): item is Movie {
   return 'title' in item
@@ -46,6 +53,13 @@ function itemDate(item: Movie | Series) {
   return isMovie(item) ? item.release_date : item.first_air_date
 }
 
+function itemYear(item: Movie | Series) {
+  const d = itemDate(item)
+  if (!d) return ''
+  const y = new Date(d).getFullYear()
+  return Number.isFinite(y) ? String(y) : ''
+}
+
 export function ContentGrid({ title, content, type }: ContentGridProps) {
   const { openDrawer } = useDrawer()
   const router = useRouter()
@@ -54,30 +68,37 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
 
   const sort = SORT_ALIASES[searchParams.get('sort') || ''] || 'popular'
   const selectedGenre = searchParams.get('genre') ? Number(searchParams.get('genre')) : null
-  const urlQuery = searchParams.get('q') || ''
 
-  const [search, setSearch] = useState(urlQuery)
+  const [search, setSearch] = useState('')
+  const [sortOpen, setSortOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const loaderRef = useRef<HTMLDivElement>(null)
+  const sortRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setSearch(urlQuery) }, [urlQuery])
-
-  const setParams = useCallback((patch: Record<string, string | null>) => {
+  const setSort = useCallback((next: SortType) => {
     const p = new URLSearchParams(searchParams.toString())
-    for (const [k, v] of Object.entries(patch)) {
-      if (!v) p.delete(k)
-      else p.set(k, v)
-    }
+    if (next === 'popular') p.delete('sort')
+    else p.set('sort', next)
+    const qs = p.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    setSortOpen(false)
+  }, [pathname, router, searchParams])
+
+  const setGenre = useCallback((id: number | null) => {
+    const p = new URLSearchParams(searchParams.toString())
+    if (!id) p.delete('genre')
+    else p.set('genre', String(id))
     const qs = p.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [pathname, router, searchParams])
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (search !== urlQuery) setParams({ q: search.trim() || null })
-    }, 350)
-    return () => clearTimeout(t)
-  }, [search, urlQuery, setParams])
+    const onClick = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
 
   const allGenres = useMemo(() => {
     const genreMap: Record<number, string> = {}
@@ -89,11 +110,6 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
     })
     return Object.entries(genreMap).sort((a, b) => a[1].localeCompare(b[1], 'fr'))
   }, [content])
-
-  const cover = useMemo(() => (
-    [...content].find(i => i.backdrop_path)
-    || [...content].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0]
-  ), [content])
 
   const filtered = useMemo(() => {
     let items = [...content]
@@ -112,9 +128,6 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
         break
       case 'newest':
         items.sort((a, b) => new Date(itemDate(b) || 0).getTime() - new Date(itemDate(a) || 0).getTime())
-        break
-      case 'recent':
-        items.sort((a, b) => (b.id || 0) - (a.id || 0))
         break
       case 'alpha':
         items.sort((a, b) => itemTitle(a).localeCompare(itemTitle(b), 'fr'))
@@ -139,74 +152,83 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
     if (!el) return
     const observer = new IntersectionObserver(
       entries => { if (entries[0].isIntersecting && hasMore) loadMore() },
-      { rootMargin: '280px' },
+      { rootMargin: '400px' },
     )
     observer.observe(el)
     return () => observer.disconnect()
   }, [hasMore, loadMore])
 
-  const openItem = (item: Movie | Series) => openDrawer(type, item.tmdb_id || item.id)
+  const sortLabel = SORT_OPTIONS.find(o => o.id === sort)?.label || 'Populaires'
 
   return (
-    <div className="pb-20">
-      <div className="relative h-[280px] md:h-[320px] overflow-hidden">
-        {cover?.backdrop_path && (
-          <Image
-            src={getBackdropUrl(cover.backdrop_path)}
-            alt=""
-            fill
-            priority
-            className="object-cover object-top opacity-40"
-            sizes="100vw"
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#08080a] via-[#08080a]/55 to-black/50" />
-        <div className="relative h-full max-w-[1400px] mx-auto px-5 md:px-8 flex flex-col justify-end pb-8 pt-24">
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">{title}</h1>
+    <div className="pt-24 md:pt-28 pb-28 md:pb-16">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+        <div className="mb-6">
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{title}</h1>
+          <p className="text-white/40 text-sm mt-1">{filtered.length} titre{filtered.length > 1 ? 's' : ''}</p>
         </div>
-      </div>
 
-      <div className="max-w-[1400px] mx-auto px-5 md:px-8">
-        <div className="flex items-center gap-3 mb-5 -mt-2">
-          <div className="flex-1 flex items-center gap-3 h-11 px-4 rounded-xl border border-white/10 bg-white/[0.04]">
-            <Search className="w-4 h-4 text-white/30 shrink-0" />
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex-1 flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-white/[0.05] border border-white/10">
+            <Search className="w-4 h-4 text-white/35 shrink-0" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher…"
-              className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/25"
+              placeholder={`Rechercher un ${type === 'movie' ? 'film' : 'série'}…`}
+              className="flex-1 min-w-0 bg-transparent text-white text-sm outline-none placeholder-white/30"
             />
             {search && (
-              <button onClick={() => { setSearch(''); setParams({ q: null }) }}>
-                <X className="w-4 h-4 text-white/30 hover:text-white" />
+              <button type="button" onClick={() => setSearch('')} className="text-white/35 hover:text-white">
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
-          <select
-            value={sort}
-            onChange={e => setParams({ sort: e.target.value === 'popular' ? null : e.target.value })}
-            className="h-11 px-3 rounded-xl border border-white/10 bg-[#121214] text-white text-sm outline-none"
-          >
-            <option value="popular">Populaires</option>
-            <option value="rating">Notes</option>
-            <option value="newest">Récents</option>
-            <option value="alpha">A → Z</option>
-          </select>
+
+          <div ref={sortRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setSortOpen(o => !o)}
+              className="h-11 px-3.5 rounded-xl bg-white/[0.05] border border-white/10 text-white text-sm font-medium inline-flex items-center gap-2"
+            >
+              {sortLabel}
+              <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {sortOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] z-20 min-w-[180px] rounded-xl border border-white/10 bg-[#121214] py-1 shadow-xl">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSort(opt.id)}
+                    className={`w-full text-left px-3.5 py-2 text-sm ${
+                      sort === opt.id ? 'text-white bg-red-600/20' : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-4 hide-scrollbar">
+        <div className="flex gap-2 overflow-x-auto pb-5 hide-scrollbar">
           <button
-            onClick={() => setParams({ genre: null })}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium ${!selectedGenre ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}
+            type="button"
+            onClick={() => setGenre(null)}
+            className={`shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold ${
+              !selectedGenre ? 'bg-red-600 text-white' : 'bg-white/[0.06] text-white/55 hover:text-white'
+            }`}
           >
             Tous
           </button>
           {allGenres.map(([id, name]) => (
             <button
               key={id}
-              onClick={() => setParams({ genre: selectedGenre === +id ? null : id })}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium ${
-                selectedGenre === +id ? 'bg-white text-black' : 'text-white/50 hover:text-white'
+              type="button"
+              onClick={() => setGenre(selectedGenre === +id ? null : +id)}
+              className={`shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold ${
+                selectedGenre === +id ? 'bg-red-600 text-white' : 'bg-white/[0.06] text-white/55 hover:text-white'
               }`}
             >
               {name}
@@ -215,32 +237,38 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
         </div>
 
         {filtered.length === 0 ? (
-          <p className="text-center text-white/35 py-20">Aucun résultat</p>
+          <p className="text-center text-white/35 py-24">Aucun résultat</p>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-3 gap-y-6">
             {visible.map(item => {
               const t = itemTitle(item)
+              const year = itemYear(item)
+              const key = `${type}-${item.tmdb_id || item.id}`
               return (
-                <button key={item.id} className="group text-left" onClick={() => openItem(item)}>
-                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-zinc-800">
+                <button
+                  key={key}
+                  type="button"
+                  className="group text-left"
+                  onClick={() => openDrawer(type, item.tmdb_id || item.id)}
+                >
+                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-zinc-900">
                     <Image
                       src={getPosterUrl(item.poster_path)}
                       alt={t}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="14vw"
+                      className="object-cover group-hover:scale-[1.04] transition-transform duration-300"
+                      sizes="(max-width: 640px) 50vw, 14vw"
                     />
-                    <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                      <p className="text-white text-[11px] font-medium line-clamp-2">{t}</p>
-                    </div>
                   </div>
+                  <p className="mt-2 text-white text-[13px] font-medium leading-snug line-clamp-2">{t}</p>
+                  {year && <p className="text-white/35 text-xs mt-0.5">{year}</p>}
                 </button>
               )
             })}
           </div>
         )}
 
-        <div ref={loaderRef} className="h-16" />
+        <div ref={loaderRef} className="h-12" />
       </div>
     </div>
   )

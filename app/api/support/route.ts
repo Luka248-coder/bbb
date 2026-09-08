@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getSession } from '@/lib/auth'
+import { getSession, isStaff } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const user = await getSession()
   if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
   const supabase = await createClient()
-  const isAdmin = user.is_admin
+  const staff = isStaff(user)
+  const mine = request.nextUrl.searchParams.get('mine') === '1'
   const userId = request.nextUrl.searchParams.get('user_id')
 
   let query = supabase
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     .select(`*, users(username, avatar, discord_id), support_messages(count)`)
     .order('updated_at', { ascending: false })
 
-  if (!isAdmin) {
+  if (!staff || mine) {
     query = query.eq('user_id', user.id)
   } else if (userId) {
     query = query.eq('user_id', userId)
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const user = await getSession()
-  if (!user || !user.is_admin) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  if (!user || !isStaff(user)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
   const supabase = await createClient()
   const body = await request.json()

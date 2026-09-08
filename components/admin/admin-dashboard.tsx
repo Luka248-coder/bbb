@@ -115,7 +115,7 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
     { href: '/admin/api-catalogue', icon: Zap, label: 'API Catalogue', color: '#f59e0b' },
     { href: '/admin/hero', icon: ImageIcon, label: 'Hero / Mise en avant', color: '#e50914' },
     { href: '/admin/notifications', icon: Bell, label: 'Notifications', color: '#10b981' },
-    { href: '/admin/support', icon: Headphones, label: 'Support', color: '#06b6d4' },
+    { href: '/admin/support', icon: Headphones, label: 'Support', color: '#dc2626' },
   ]
 
   return (
