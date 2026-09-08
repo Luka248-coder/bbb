@@ -433,7 +433,7 @@ export function Navbar() {
           <Link href="/">
             <Image
               src="/logo.png"
-              alt="StreamSelf" width={64} height={64} className="h-14 md:h-14 w-auto"
+              alt="StreamSelf" width={40} height={40} className="h-9 md:h-10 w-auto"
             />
           </Link>
         </div>
