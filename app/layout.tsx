@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Barlow_Condensed } from 'next/font/google'
+import { Inter, Barlow_Condensed, Montserrat } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SessionProvider } from '@/components/session-provider'
 import { MovieDrawerProvider } from '@/components/movie-drawer'
@@ -17,6 +17,11 @@ const barlowCondensed = Barlow_Condensed({
   weight: ['600', '700'],
   variable: '--font-barlow-condensed',
 })
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-montserrat',
+})
 
 export const metadata: Metadata = {
   title: 'StreamSelf',
@@ -33,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={`${inter.variable} ${barlowCondensed.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${barlowCondensed.variable} ${montserrat.variable} font-sans antialiased`}>
         <LaunchIntro />
         <GridBackground />
         <PresenceTracker />
