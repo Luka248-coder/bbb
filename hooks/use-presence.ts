@@ -13,29 +13,41 @@ function getSessionId() {
   return sid
 }
 
-export function usePresence(userId?: string | null) {
+function watchInfo(pathname: string) {
+  const m = pathname.match(/^\/watch\/(movie|series)\/(\d+)/)
+  if (!m) return { page: pathname.startsWith('/admin') ? 'admin' : 'home' as const }
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  return {
+    page: m[1] === 'movie' ? 'watch_movie' : 'watch_series',
+    content_type: m[1] as 'movie' | 'series',
+    tmdb_id: Number(m[2]),
+    season: params?.get('season') ? Number(params.get('season')) : undefined,
+    episode: params?.get('episode') ? Number(params.get('episode')) : undefined,
+  }
+}
+
+export function usePresence(userId?: string | null, username?: string | null) {
   const pathname = usePathname()
 
   useEffect(() => {
     const sid = getSessionId()
     if (!sid) return
 
-    const getPage = (path: string) => {
-      if (path.startsWith('/watch/movie')) return 'watch_movie'
-      if (path.startsWith('/watch/series')) return 'watch_series'
-      return 'home'
-    }
-
     const ping = () => {
+      const info = watchInfo(pathname)
       fetch('/api/presence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId || sid, page: getPage(pathname) }),
+        body: JSON.stringify({
+          user_id: userId || sid,
+          username: username || null,
+          ...info,
+        }),
       }).catch(() => {})
     }
 
     ping()
-    const interval = setInterval(ping, 30 * 1000)
+    const interval = setInterval(ping, 25 * 1000)
     return () => clearInterval(interval)
-  }, [userId, pathname])
+  }, [userId, username, pathname])
 }

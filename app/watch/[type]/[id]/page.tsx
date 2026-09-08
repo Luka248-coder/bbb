@@ -139,27 +139,50 @@ async function WatchContent({
 
   if (play) {
     return (
-      <NativePlayer
-        videoUrl={playerUrl}
-        title={title}
-        backUrl={backUrl}
-        type={type}
-        tmdbId={tmdbId}
-        seriesDbId={seriesDbId}
-        currentSeason={season}
-        currentEpisode={episode}
-        userId={user?.id || null}
-        profileId={profileId}
-        poster={poster}
-        seriesName={seriesName}
-        year={contentYear}
-      />
+      <>
+        <PresenceTracker
+          page={type === 'movie' ? 'watch_movie' : 'watch_series'}
+          title={title}
+          tmdbId={tmdbId}
+          contentType={type as 'movie' | 'series'}
+          poster={poster}
+          season={type === 'series' ? season : undefined}
+          episode={type === 'series' ? episode : undefined}
+          userId={user?.id || null}
+          username={user?.username || null}
+        />
+        <NativePlayer
+          videoUrl={playerUrl}
+          title={title}
+          backUrl={backUrl}
+          type={type}
+          tmdbId={tmdbId}
+          seriesDbId={seriesDbId}
+          currentSeason={season}
+          currentEpisode={episode}
+          userId={user?.id || null}
+          profileId={profileId}
+          poster={poster}
+          seriesName={seriesName}
+          year={contentYear}
+        />
+      </>
     )
   }
 
   return (
     <>
-      <PresenceTracker page={type === 'movie' ? 'watch_movie' : 'watch_series'} />
+      <PresenceTracker
+        page={type === 'movie' ? 'watch_movie' : 'watch_series'}
+        title={title}
+        tmdbId={tmdbId}
+        contentType={type as 'movie' | 'series'}
+        poster={poster}
+        season={type === 'series' ? season : undefined}
+        episode={type === 'series' ? episode : undefined}
+        userId={user?.id || null}
+        username={user?.username || null}
+      />
       <PlayerPage
         type={type}
         tmdbId={tmdbId}

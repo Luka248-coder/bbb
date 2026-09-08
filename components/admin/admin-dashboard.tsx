@@ -10,7 +10,7 @@ import {
   AlertTriangle, RefreshCw, TrendingUp, Play, Library,
   Bell, Zap, ImageIcon,
 } from 'lucide-react'
-import type { ContentRequest } from '@/lib/types'
+import { AdminLivePresence } from '@/components/admin/admin-live'
 
 interface Stats {
   movies: number; series: number; users: number; requests: number
@@ -141,6 +141,10 @@ export function AdminDashboard({ stats, recentRequests, recentUsers, recentTicke
             {refreshMsg && <span className="text-[11px] text-white/40">{refreshMsg}</span>}
             <span className="text-[10px] text-white/20">Met à jour populaires, hero &amp; top 10</span>
           </div>
+        </motion.div>
+
+        <motion.div {...fade(0.02)}>
+          <AdminLivePresence />
         </motion.div>
 
         {/* KPI row */}
