@@ -2,6 +2,13 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
 
 :root {
   /* Streamself Dark Theme - Black/Gray base, Red accent */
@@ -160,7 +167,11 @@
 }
 
 /* Grid background — keep visible */
-html { background: #0a0a0c; }
+html { background: #0a0a0c; -webkit-tap-highlight-color: transparent; }
+
+a, button, [role='button'], summary, label {
+  touch-action: manipulation;
+}
 @media (min-width: 768px) {
   .page-scaled {
     transform: scale(0.92);

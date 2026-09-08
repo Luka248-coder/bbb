@@ -34,35 +34,24 @@ export function ContentCard({
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const [glare, setGlare] = useState({ x: 50, y: 50 })
   const cardRef = useRef<HTMLDivElement>(null)
-  const isTouchRef = useRef(false)
+  const [isTouch, setIsTouch] = useState(false)
 
   useEffect(() => {
-    isTouchRef.current = window.matchMedia('(hover: none)').matches
+    setIsTouch(window.matchMedia('(hover: none)').matches)
   }, [])
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || isTouchRef.current) return
+    if (!cardRef.current || isTouch) return
     const rect = cardRef.current.getBoundingClientRect()
     const dx = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)
     const dy = (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)
     setTilt({ x: -dy * 12, y: dx * 12 })
     setGlare({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 })
-  }, [])
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault()
-    if (!hovered) {
-      setHovered(true)
-    } else {
-      setHovered(false)
-      openDrawer(type, tmdbId)
-    }
-  }
+  }, [isTouch])
 
   const overview = (content as any).overview || ''
   const shortOverview = overview.length > 80 ? overview.slice(0, 80) + '...' : overview
   const typeLabel = type === 'movie' ? 'FILM' : 'SÉRIE'
-  const isTouch = isTouchRef.current
 
   return (
     <motion.div
@@ -77,7 +66,7 @@ export function ContentCard({
         onMouseEnter={() => !isTouch && setHovered(true)}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => { if (!isTouch) { setHovered(false); setTilt({ x: 0, y: 0 }) } }}
-        onTouchEnd={handleTouchEnd}
+        onClick={() => openDrawer(type, tmdbId)}
         style={isTouch ? {} : {
           transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transition: hovered ? 'transform 0.1s ease-out' : 'transform 0.4s ease-out',
@@ -104,7 +93,7 @@ export function ContentCard({
           <div
             className="relative overflow-hidden cursor-pointer w-full h-full"
             style={{ borderRadius: '1rem', background: '#111' }}
-            onClick={() => !isTouch && openDrawer(type, tmdbId)}
+            onClick={(e) => { e.stopPropagation(); openDrawer(type, tmdbId) }}
           >
             {/* Glare desktop uniquement */}
             {!isTouch && (

@@ -7,7 +7,7 @@ import {
   Play, Pause, Volume2, VolumeX,
   Maximize, Minimize, SkipBack, SkipForward, Cast,
   Film, Loader2, List, X, ChevronDown, ChevronUp, Settings,
-  ChevronLeft, ChevronRight, Download
+  ChevronLeft, ChevronRight, Download, ArrowLeft
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -366,9 +366,9 @@ export function EmbedPlayer({
 
   return (
     <div ref={containerRef} className="w-screen bg-black relative overflow-hidden" style={{ height: '100dvh' }}
-      onMouseMove={resetTimer} onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
-      onTouchStart={resetTimer}>
-      <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" playsInline onClick={handleSurfaceTap} />
+      onMouseMove={resetTimer} onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}>
+      <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" playsInline />
+      <div className="absolute inset-0 z-[15]" onClick={handleSurfaceTap} />
 
       {/* STREAMSELF cinematic loading overlay */}
       <AnimatePresence>
@@ -487,7 +487,7 @@ export function EmbedPlayer({
         <AnimatePresence>
           {showControls && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
+              className="absolute inset-0 z-20 flex items-center justify-between px-8 pointer-events-none">
               {/* Prev episode */}
               <button
                 onClick={() => prevEp && goToEpisode(prevEp)}
@@ -516,10 +516,22 @@ export function EmbedPlayer({
       <AnimatePresence>
         {showControls && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            className="absolute inset-0 z-20 flex flex-col justify-between pointer-events-none">
 
-            {/* Top bar — Logo + title + episodes button (NO back button) */}
-            <div className="pointer-events-auto px-6 pt-5 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-4">
+            {/* Top bar */}
+            <div
+              className="pointer-events-auto px-4 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-3"
+              style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}
+              onClick={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => { if (window.history.length > 1) router.back(); else router.push('/') }}
+                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center bg-black/70 border border-white/15 text-white"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
 
               {/* Episodes button */}
@@ -544,7 +556,7 @@ export function EmbedPlayer({
             </div>
 
             {/* Bottom controls — identical to NativePlayer */}
-            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
               <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
               <div ref={progressRef} className="relative w-full cursor-pointer group/bar mb-4" style={{ height: '4px' }} onClick={seek}
                 onMouseMove={onProgressHover} onMouseLeave={() => setHoverTime(null)}
