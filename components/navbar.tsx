@@ -125,7 +125,7 @@ function NavLinks({ pathname }: { pathname: string }) {
 export function Navbar() {
   const { user } = useSession()
   const { activeProfile, clearProfile } = useProfile()
-  usePresence(user?.id)
+  usePresence(user?.id, user?.username)
   const { openDrawer } = useDrawer()
 
   const [rouletteParticles, setRouletteParticles] = useState<{id:number,x:number,y:number,color:string,angle:number,speed:number,size:number}[]>([])

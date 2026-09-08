@@ -13,7 +13,27 @@ function getSessionId() {
   return sid
 }
 
-export function PresenceTracker({ page }: { page?: string }) {
+export function PresenceTracker({
+  page,
+  title,
+  tmdbId,
+  contentType,
+  poster,
+  season,
+  episode,
+  username,
+  userId,
+}: {
+  page?: string
+  title?: string
+  tmdbId?: number
+  contentType?: 'movie' | 'series'
+  poster?: string | null
+  season?: number
+  episode?: number
+  username?: string | null
+  userId?: string | null
+}) {
   const pathname = usePathname()
 
   useEffect(() => {
@@ -30,14 +50,24 @@ export function PresenceTracker({ page }: { page?: string }) {
       fetch('/api/presence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: sid, page: currentPage }),
+        body: JSON.stringify({
+          user_id: userId || sid,
+          username: username || null,
+          page: currentPage,
+          content_type: contentType || (currentPage === 'watch_movie' ? 'movie' : currentPage === 'watch_series' ? 'series' : null),
+          tmdb_id: tmdbId || null,
+          title: title || null,
+          poster: poster || null,
+          season: season || null,
+          episode: episode || null,
+        }),
       }).catch(() => {})
     }
 
     ping()
-    const interval = setInterval(ping, 30 * 1000)
+    const interval = setInterval(ping, 25 * 1000)
     return () => clearInterval(interval)
-  }, [pathname, page])
+  }, [pathname, page, title, tmdbId, contentType, poster, season, episode, username, userId])
 
   return null
 }
