@@ -63,7 +63,7 @@ function ensureCinflixSw(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
   return (async () => {
     try {
-      await navigator.serviceWorker.register('/sw-cinflix.js', { scope: '/', updateViaCache: 'none' })
+      await navigator.serviceWorker.register('/sw-cinflix.js?v=7', { scope: '/', updateViaCache: 'none' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
       await Promise.race([
@@ -79,25 +79,62 @@ function ensureCinflixSw(): Promise<boolean> {
   })()
 }
 
+async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
+  const known = blinkMp4From(url)
+  if (known) return withCinflixReferer(known)
+
+  let raw = url
+  if (raw.includes('/api/proxy-download')) {
+    try {
+      const inner = new URL(raw, window.location.origin).searchParams.get('url')
+      if (inner) raw = inner
+    } catch {}
+  }
+  const innerBlink = blinkMp4From(raw)
+  if (innerBlink) return withCinflixReferer(innerBlink)
+  if (!isCinflixApiUrl(raw)) return null
+
+  const ready = await ensureCinflixSw()
+  if (!ready) return null
+
+  const ctrl = new AbortController()
+  const blinkUrl = await new Promise<string | null>(resolve => {
+    let done = false
+    const finish = (found: string | null) => {
+      if (done) return
+      done = true
+      navigator.serviceWorker.removeEventListener('message', onMsg)
+      window.clearTimeout(timer)
+      try { ctrl.abort() } catch {}
+      resolve(found)
+    }
+    const onMsg = (event: MessageEvent) => {
+      const found = blinkMp4From(typeof event.data?.url === 'string' ? event.data.url : '')
+      if (found) finish(found)
+    }
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    const api = new URL(raw)
+    api.searchParams.set('_', String(Date.now()))
+    fetch(api.toString(), {
+      mode: 'no-cors',
+      redirect: 'follow',
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      signal: ctrl.signal,
+    }).catch(() => {}).finally(() => {
+      window.setTimeout(() => finish(blinkFromPerformance()), 500)
+    })
+    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 8000)
+  })
+
+  return blinkUrl ? withCinflixReferer(blinkUrl) : null
+}
+
 function playbackUrl(url: string): string {
   if (url.includes('/api/hls/')) return url
-  if (url.includes('/api/proxy-download')) {
-    try {
-      const inner = new URL(url, 'https://www.streamself.dev').searchParams.get('url')
-      if (inner && isCinflixApiUrl(inner)) url = inner
-      else return url
-    } catch {
-      return url
-    }
-  }
   const blink = blinkMp4From(url)
   if (blink) return withCinflixReferer(blink)
-  // Cinflix 302 must happen on the phone. Vercel hangs forever on cinflix.xyz.
-  if (isCinflixApiUrl(url)) {
-    const u = new URL(url)
-    u.searchParams.set('_', String(Date.now()))
-    return u.toString()
-  }
   return url
 }
 
@@ -674,11 +711,19 @@ export function NativePlayer({
     }
 
     void (async () => {
-      if (isCinflixApiUrl(url) || blinkMp4From(url)) {
-        await ensureCinflixSw()
+      let playUrl = playbackUrl(safariMediaUrl(url))
+      if (isCinflixApiUrl(url) || isCinflixApiUrl(playUrl) || blinkMp4From(url) || (url.includes('/api/proxy-download') && url.includes('cinflix.xyz'))) {
+        const resolved = await resolveCinflixPlayUrl(url)
+        if (gen !== loadGenRef.current) return
+        if (!resolved) {
+          setBuffering(false)
+          setPlaying(false)
+          setShowError(true)
+          return
+        }
+        playUrl = resolved
       }
       if (gen !== loadGenRef.current) return
-      const playUrl = playbackUrl(safariMediaUrl(url))
       if (playUrl.includes('/api/proxy-download')) proxyTriedRef.current = true
       v.removeAttribute('src')
       while (v.firstChild) v.removeChild(v.firstChild)
