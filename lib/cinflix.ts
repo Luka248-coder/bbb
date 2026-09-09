@@ -83,7 +83,6 @@ function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
           method: 'GET',
           headers: HEADERS,
           timeout: TIMEOUT_MS,
-          family: 4,
         },
         res => {
           const location = headerLocation(res.headers.location, urlStr)
@@ -161,10 +160,10 @@ export async function getCinflixStreamUrl(
       console.log(`[Cinflix] ✅ ${kind} ${tmdbId} → ${media.slice(0, 80)}`)
       return media
     }
-    console.warn(`[Cinflix] ${kind} ${tmdbId} unresolved — API URL for proxy`)
+    console.warn(`[Cinflix] ${kind} ${tmdbId} unresolved`)
   } catch (err) {
     console.error('[Cinflix]', err)
   }
 
-  return apiUrl
+  return null
 }
