@@ -144,8 +144,8 @@ export async function getCinflixStreamUrl(
     }
 
     if (res.contentType.includes('text/html') || !res.status) {
-      console.warn(`[Cinflix] ${kind} ${tmdbId} blocked (Cloudflare) — player will hit the API from the browser`)
-      return apiUrl
+      console.warn(`[Cinflix] ${kind} ${tmdbId} blocked (Cloudflare)`)
+      return null
     }
 
     console.warn(`[Cinflix] ${kind} ${tmdbId} → ${res.status}`)
@@ -153,5 +153,5 @@ export async function getCinflixStreamUrl(
     console.error('[Cinflix]', err)
   }
 
-  return apiUrl
+  return null
 }
