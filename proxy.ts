@@ -1,7 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
-import { cinflixStreamApiUrl } from '@/lib/cinflix-url'
-import { resolveCinflixApiUrl } from '@/lib/cinflix'
 
 const BYPASS_PATHS = [
   '/maintenance',
@@ -12,49 +10,12 @@ const BYPASS_PATHS = [
   '/api/auth/discord',
   '/api/auth/register',
   '/api/auth/admin',
-  '/api/cinflix-resolve',
-  '/api/cinflix-play',
-  '/api/proxy-download',
-  '/sw-cinflix.js',
 ]
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   console.log('[PROXY] pathname:', pathname)
-
-  if (pathname === '/api/cinflix-resolve' || pathname === '/api/cinflix-play') {
-    const { searchParams } = request.nextUrl
-    const type = searchParams.get('type') === 'tv' || searchParams.get('type') === 'series' ? 'tv' : 'movie'
-    const id = Number(searchParams.get('id') || 0)
-    const season = Number(searchParams.get('s') || 1)
-    const episode = Number(searchParams.get('e') || 1)
-    if (!id) {
-      if (pathname === '/api/cinflix-play') {
-        return new NextResponse('id manquant', { status: 400 })
-      }
-      return NextResponse.json({ url: null }, { status: 400 })
-    }
-    const apiUrl = cinflixStreamApiUrl(type, id, season, episode)
-    const media = await Promise.race([
-      resolveCinflixApiUrl(apiUrl),
-      new Promise<string | null>(resolve => setTimeout(() => resolve(null), 3000)),
-    ])
-    if (pathname === '/api/cinflix-play') {
-      if (!media) {
-        return new NextResponse('Cinflix n\'a pas renvoyé de flux', {
-          status: 502,
-          headers: { 'Cache-Control': 'no-store' },
-        })
-      }
-      const dest = new URL('/api/proxy-download', request.url)
-      dest.searchParams.set('url', media)
-      const redirect = NextResponse.redirect(dest, 307)
-      redirect.headers.set('Cache-Control', 'no-store')
-      return redirect
-    }
-    return NextResponse.json({ url: media }, { headers: { 'Cache-Control': 'no-store' } })
-  }
 
   // Toujours autoriser les chemins bypass
   if (BYPASS_PATHS.some((p) => pathname.startsWith(p))) {
