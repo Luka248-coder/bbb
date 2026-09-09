@@ -1446,7 +1446,7 @@ export function NativePlayer({
         {!playing && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-0 z-[25] flex flex-col items-center justify-center gap-3"
+            className="absolute inset-0 z-[17] flex flex-col items-center justify-center gap-3 pointer-events-none"
           >
             <button
               type="button"
@@ -1456,12 +1456,12 @@ export function NativePlayer({
                 if (!v) return
                 v.play()?.catch(() => {})
               }}
-              className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+              className="pointer-events-auto w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
               aria-label="Lecture"
             >
               <Play className="w-8 h-8 text-black fill-black ml-1" />
             </button>
-            <p className="text-white/55 text-xs font-medium">Appuie pour lire</p>
+            <p className="text-white/55 text-xs font-medium pointer-events-none">Appuie pour lire</p>
           </motion.div>
         )}
       </AnimatePresence>
