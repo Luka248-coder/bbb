@@ -5,6 +5,7 @@ import { NativePlayer } from '@/components/native-player'
 import { Loading } from '@/components/loading'
 import { PresenceTracker } from '@/components/presence-tracker'
 import { getEpisodeVideoUrl, getMovieById, getSeriesById, getPosterUrl, getMovieVideoUrl } from '@/lib/fastflux'
+import { isCinflixMediaUrl } from '@/lib/cinflix'
 import { getMovieDetails, getSeriesDetails } from '@/lib/tmdb'
 import { getSession } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
@@ -73,7 +74,7 @@ async function WatchContent({
       playerUrl = await getMovieVideoUrl(tmdbId, titleForPurstream || undefined)
       console.log('[Watch] Purstream result:', playerUrl)
       // Sauvegarder l'URL en DB pour éviter de re-chercher
-      if (playerUrl) {
+      if (playerUrl && !isCinflixMediaUrl(playerUrl)) {
         await saveVideoUrl('movie', tmdbId, playerUrl)
         console.log('[Watch] ✅ URL saved to DB for movie', tmdbId)
       }
@@ -122,7 +123,7 @@ async function WatchContent({
       playerUrl = await getEpisodeVideoUrl(tmdbId, season, episode, titleForPurstream || undefined)
       console.log('[Watch] Purstream result:', playerUrl)
       // Sauvegarder l'URL en DB
-      if (playerUrl) {
+      if (playerUrl && !isCinflixMediaUrl(playerUrl)) {
         await saveVideoUrl('series', tmdbId, playerUrl, season, episode)
         console.log('[Watch] ✅ URL saved to DB for episode S'+season+'E'+episode)
       }

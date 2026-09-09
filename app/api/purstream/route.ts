@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCinflixStreamUrl } from '@/lib/cinflix'
 
 const PURSTREAM_BASE = 'https://api.purstream.ad/api/v1'
 
@@ -106,7 +107,8 @@ export async function GET(request: NextRequest) {
       { headers: HEADERS, cache: 'no-store' }
     )
     if (!searchRes.ok) {
-      return NextResponse.json({ videoUrl: null, error: `Search failed: ${searchRes.status}` })
+      const fallback = tmdbId ? await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode) : null
+      return NextResponse.json({ videoUrl: fallback, error: fallback ? undefined : `Search failed: ${searchRes.status}` })
     }
 
     const searchJson = await searchRes.json()
@@ -121,13 +123,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (results.length === 0) {
-      return NextResponse.json({ videoUrl: null, error: 'Not found on Purstream' })
+      const fallback = tmdbId ? await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode) : null
+      return NextResponse.json({ videoUrl: fallback, error: fallback ? undefined : 'Not found on Purstream' })
     }
 
     // Sélection stricte : tmdbId exact > titre+année > titre exact
     const match = pickMatch(results, title, tmdbId, year)
     if (!match?.id) {
-      return NextResponse.json({ videoUrl: null, error: 'No exact match found' })
+      const fallback = tmdbId ? await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode) : null
+      return NextResponse.json({ videoUrl: fallback, error: fallback ? undefined : 'No exact match found' })
     }
 
     // ── 2. Sheet ──────────────────────────────────────────────────────────────
@@ -136,7 +140,8 @@ export async function GET(request: NextRequest) {
       { headers: HEADERS, cache: 'no-store' }
     )
     if (!sheetRes.ok) {
-      return NextResponse.json({ videoUrl: null, error: `Sheet fetch failed: ${sheetRes.status}` })
+      const fallback = tmdbId ? await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode) : null
+      return NextResponse.json({ videoUrl: fallback, error: fallback ? undefined : `Sheet fetch failed: ${sheetRes.status}` })
     }
 
     const sheetRaw = await sheetRes.json()
@@ -196,10 +201,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (!videoUrl && tmdbId) {
+      videoUrl = await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode)
+    }
+
     return NextResponse.json({ videoUrl, purstreamId: match.id })
 
   } catch (error) {
     console.error('[Purstream API] Error:', error)
+    try {
+      const fallback = tmdbId ? await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode) : null
+      if (fallback) return NextResponse.json({ videoUrl: fallback })
+    } catch {}
     return NextResponse.json({ videoUrl: null, error: 'Internal error' }, { status: 500 })
   }
 }

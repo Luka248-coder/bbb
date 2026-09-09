@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetch-all'
 import type { Movie, Series, Episode } from '@/lib/content-types'
+import { getCinflixStreamUrl } from '@/lib/cinflix'
 
 export type { Movie, Series, Episode } from '@/lib/content-types'
 export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/content-types'
@@ -357,9 +358,12 @@ export async function getMovieVideoUrl(tmdbId: number, titleOverride?: string): 
   const title = titleOverride || movie?.title || movie?.original_title || ''
   const year = movie?.release_date ? parseInt(movie.release_date.slice(0, 4)) : undefined
   const purstreamId = await purstream_searchId(title, 'movie', tmdbId, year)
-  if (!purstreamId) return null
+  if (purstreamId) {
+    const url = await extractVideoUrl(purstreamId, 'movie')
+    if (url) return url
+  }
 
-  return extractVideoUrl(purstreamId, 'movie')
+  return getCinflixStreamUrl('movie', tmdbId)
 }
 
 export async function getEpisodeVideoUrl(
@@ -373,7 +377,10 @@ export async function getEpisodeVideoUrl(
   const year = series?.first_air_date ? parseInt(series.first_air_date.slice(0, 4)) : undefined
 
   const purstreamId = await purstream_searchId(title, 'series', tmdbId, year)
-  if (!purstreamId) return null
+  if (purstreamId) {
+    const url = await extractVideoUrl(purstreamId, 'series', season, episode)
+    if (url) return url
+  }
 
-  return extractVideoUrl(purstreamId, 'series', season, episode)
+  return getCinflixStreamUrl('tv', tmdbId, season, episode)
 }
