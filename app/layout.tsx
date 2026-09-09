@@ -9,7 +9,7 @@ import { GridBackground } from '@/components/grid-background'
 import { PresenceTracker } from '@/components/presence-tracker'
 import { ProfileProvider } from '@/contexts/ProfileContext'
 import { ProfileGate } from '@/components/profile-gate'
-import './globals.css'
+import { CinflixSwRegister } from '@/components/cinflix-sw-register'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const barlowCondensed = Barlow_Condensed({
@@ -56,6 +56,7 @@ export default function RootLayout({
           </ProfileProvider>
         </SessionProvider>
 
+        <CinflixSwRegister />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
