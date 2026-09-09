@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Hls from 'hls.js'
-import { isCinflixApiUrl } from '@/lib/cinflix-url'
+import { cinflixStreamApiUrl, isCinflixApiUrl } from '@/lib/cinflix-url'
 
 function isWebKitSafari() {
   if (typeof navigator === 'undefined') return false
@@ -88,7 +88,7 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
     }
   } catch {}
 
-  return null
+  return withCinflixReferer(url)
 }
 
 interface Episode {
@@ -673,11 +673,6 @@ export function NativePlayer({
       if (cinflixSrc) {
         playUrl = cinflixSrc
         proxyTriedRef.current = true
-      } else if (isCinflixApiUrl(url)) {
-        setBuffering(false)
-        setPlaying(false)
-        setShowError(true)
-        return
       }
 
       if (gen !== loadGenRef.current) return
@@ -854,8 +849,30 @@ export function NativePlayer({
           setVideoUrl(data.videoUrl)
           return
         }
+        const cinflix = cinflixStreamApiUrl(
+          type === 'movie' ? 'movie' : 'tv',
+          tmdbId,
+          initialSeason,
+          initialEpisode,
+        )
+        if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
+        setEpisodeNotFound(false)
+        setFetchingEpisode(false)
+        setVideoUrl(cinflix)
+        return
       } catch (err) {
         console.error('[Purstream]', err)
+        const cinflix = cinflixStreamApiUrl(
+          type === 'movie' ? 'movie' : 'tv',
+          tmdbId,
+          initialSeason,
+          initialEpisode,
+        )
+        if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
+        setEpisodeNotFound(false)
+        setFetchingEpisode(false)
+        setVideoUrl(cinflix)
+        return
       }
       setFetchingEpisode(false)
       if (type === 'series') setEpisodeNotFound(true)
