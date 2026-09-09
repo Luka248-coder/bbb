@@ -17,15 +17,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const host = new URL(url).hostname
+    if (!url || url.length > 2000 || /[<>]|DOCTYPE|Just a moment/i.test(url)) {
+      return new NextResponse('URL invalide', { status: 400 })
+    }
+
+    const parsed = new URL(url)
+    if (!/^https?:$/i.test(parsed.protocol)) {
+      return new NextResponse('URL invalide', { status: 400 })
+    }
+
+    const host = parsed.hostname.toLowerCase()
+    if (host.includes('cinflix.xyz')) {
+      return new NextResponse('Ce flux doit être lu directement, pas via le proxy', { status: 400 })
+    }
+
     const isTopstream = host.includes('topstream.cloud')
-    const isCinflix = host.includes('cinflix') || host.includes('blink-n3')
+    const isCinflixCdn = host.includes('blink-n3')
     const range = request.headers.get('range')
     const referer = isTopstream
       ? 'https://purstream.ad/'
-      : isCinflix
+      : isCinflixCdn
         ? 'https://cinflix.xyz/'
-        : new URL(url).origin + '/'
+        : parsed.origin + '/'
 
     const upstream = await fetch(url, {
       headers: {
@@ -34,7 +47,7 @@ export async function GET(request: NextRequest) {
         'Accept-Language': 'fr-FR,fr;q=0.9',
         'Referer': referer,
         ...(isTopstream && { 'Origin': 'https://purstream.ad' }),
-        ...(isCinflix && { 'Origin': 'https://cinflix.xyz' }),
+        ...(isCinflixCdn && { 'Origin': 'https://cinflix.xyz' }),
         // On relaie la requête Range du navigateur pour permettre le seek/streaming
         ...(range && { 'Range': range }),
       },

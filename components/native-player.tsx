@@ -518,7 +518,7 @@ export function NativePlayer({
     v.setAttribute('webkit-playsinline', 'true')
     resumeAppliedRef.current = false
     sourceUrlRef.current = url
-    proxyTriedRef.current = /blink-n3|cinflix\.xyz/i.test(url)
+    proxyTriedRef.current = /blink-n3/i.test(url) && url.includes('.mp4')
 
     setBuffering(true)
     setPlaying(false)
@@ -528,8 +528,8 @@ export function NativePlayer({
     setMuted(false)
 
     const isHls = url.includes('.m3u8')
-    const cinflixMp4 = /blink-n3|cinflix\.xyz/i.test(url) && !url.includes('/api/proxy-download')
-    const playUrl = cinflixMp4
+    const blinkMp4 = /blink-n3/i.test(url) && url.includes('.mp4') && !url.includes('/api/proxy-download')
+    const playUrl = blinkMp4
       ? `/api/proxy-download?url=${encodeURIComponent(url)}`
       : safariRef.current ? safariMediaUrl(url) : url
 
