@@ -1,5 +1,8 @@
 import https from 'node:https'
 import { URL } from 'node:url'
+import { cinflixStreamApiUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
+
+export { cinflixStreamApiUrl, isCinflixApiUrl, isCinflixMediaUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
 
 const CINFLIX_ORIGIN = 'https://cinflix.xyz'
 const CINFLIX_REFERER = `${CINFLIX_ORIGIN}/`
@@ -14,27 +17,11 @@ const HEADERS: Record<string, string> = {
   Origin: CINFLIX_ORIGIN,
 }
 
-export function isCinflixMediaUrl(url: string): boolean {
-  try {
-    const host = new URL(url).hostname.toLowerCase()
-    return host.includes('cinflix') || host.includes('blink-n3')
-  } catch {
-    return false
-  }
-}
-
-function pickUrl(value: unknown, base?: string): string | null {
+function pickUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
-  if (!trimmed) return null
-  try {
-    const absolute = new URL(trimmed, base || CINFLIX_ORIGIN).toString()
-    if (!/^https?:\/\//i.test(absolute)) return null
-    if (absolute.includes('cinflix.xyz/api/')) return null
-    return absolute
-  } catch {
-    return null
-  }
+  if (!/^https?:\/\//i.test(trimmed)) return null
+  return isPlayableMediaUrl(trimmed) ? trimmed : null
 }
 
 function urlFromPayload(data: any): string | null {
@@ -82,13 +69,19 @@ function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
           timeout: TIMEOUT_MS,
         },
         res => {
-          const location = pickUrl(res.headers.location || '', urlStr)
+          const location = pickUrl(res.headers.location || '')
           const contentType = String(res.headers['content-type'] || '')
           const status = res.statusCode || 0
 
           if (status >= 300 && status < 400) {
             res.resume()
             done({ status, location, contentType, text: '' })
+            return
+          }
+
+          if (contentType.includes('text/html')) {
+            res.resume()
+            done({ status, location: null, contentType, text: '' })
             return
           }
 
@@ -132,13 +125,7 @@ export async function getCinflixStreamUrl(
   if (!tmdbId) return null
 
   const kind = type === 'movie' ? 'movie' : 'tv'
-  const params = new URLSearchParams({ type: kind, id: String(tmdbId) })
-  if (kind === 'tv') {
-    params.set('s', String(season || 1))
-    params.set('e', String(episode || 1))
-  }
-
-  const apiUrl = `${CINFLIX_ORIGIN}/api/media/stream?${params}`
+  const apiUrl = cinflixStreamApiUrl(kind, tmdbId, season, episode)
 
   try {
     const res = await requestNoRedirect(apiUrl)
@@ -156,14 +143,15 @@ export async function getCinflixStreamUrl(
       }
     }
 
-    const fromText = pickUrl(res.text)
-    if (fromText) return fromText
+    if (res.contentType.includes('text/html') || !res.status) {
+      console.warn(`[Cinflix] ${kind} ${tmdbId} blocked (Cloudflare) — player will hit the API from the browser`)
+      return apiUrl
+    }
 
-    if (!res.status) console.warn(`[Cinflix] ${kind} ${tmdbId} timeout/error`)
-    else console.warn(`[Cinflix] ${kind} ${tmdbId} → ${res.status}`)
+    console.warn(`[Cinflix] ${kind} ${tmdbId} → ${res.status}`)
   } catch (err) {
     console.error('[Cinflix]', err)
   }
 
-  return null
+  return apiUrl
 }
