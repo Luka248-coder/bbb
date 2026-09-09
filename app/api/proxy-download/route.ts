@@ -17,16 +17,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const isTopstream = new URL(url).hostname.includes('topstream.cloud')
+    const host = new URL(url).hostname
+    const isTopstream = host.includes('topstream.cloud')
+    const isCinflix = host.includes('cinflix') || host.includes('blink-n3')
     const range = request.headers.get('range')
+    const referer = isTopstream
+      ? 'https://purstream.ad/'
+      : isCinflix
+        ? 'https://cinflix.xyz/'
+        : new URL(url).origin + '/'
 
     const upstream = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
         'Accept-Language': 'fr-FR,fr;q=0.9',
-        'Referer': isTopstream ? 'https://purstream.ad/' : new URL(url).origin + '/',
+        'Referer': referer,
         ...(isTopstream && { 'Origin': 'https://purstream.ad' }),
+        ...(isCinflix && { 'Origin': 'https://cinflix.xyz' }),
         // On relaie la requête Range du navigateur pour permettre le seek/streaming
         ...(range && { 'Range': range }),
       },

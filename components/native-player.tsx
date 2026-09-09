@@ -727,18 +727,17 @@ export function NativePlayer({
     setEpisodeNotFound(true)
   }, [])
 
-  // ─── Purstream : délègue à l'API route + timeout 4s si rien ne joue ─────────
+  // ─── Purstream : délègue à l'API route + timeout si rien ne joue ─────────
   useEffect(() => {
     if (initialVideoUrl || !tmdbId) return
     const contentTitle = seriesName || initialTitle
 
-    // Lancer le timer 4s dès le départ
     setEpisodeNotFound(false)
     if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current)
     fetchTimeoutRef.current = setTimeout(() => {
       setFetchingEpisode(false)
       setEpisodeNotFound(true)
-    }, 4000)
+    }, 12000)
 
     ;(async () => {
       try {
@@ -1203,7 +1202,7 @@ export function NativePlayer({
     fetchTimeoutRef.current = setTimeout(() => {
       setFetchingEpisode(false)
       setEpisodeNotFound(true)
-    }, 4000)
+    }, 12000)
     setShowEpisodes(false)
     window.location.assign(getEpisodePlayUrl(season, episode))
   }
