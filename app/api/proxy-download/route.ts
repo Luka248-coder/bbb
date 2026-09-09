@@ -48,20 +48,26 @@ function mediaHeaders(target: URL, range: string): Record<string, string> {
 }
 
 async function fetchMedia(target: URL, range: string): Promise<Response> {
-  let url = target.toString()
-  let headers = mediaHeaders(new URL(url), range)
-  let res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store' })
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 12000)
+  try {
+    let url = target.toString()
+    let headers = mediaHeaders(new URL(url), range)
+    let res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store', signal: ctrl.signal })
 
-  for (let i = 0; i < 4 && res.status >= 300 && res.status < 400; i++) {
-    const loc = res.headers.get('location')
-    try { await res.body?.cancel() } catch {}
-    if (!loc) break
-    url = new URL(loc, url).toString()
-    headers = mediaHeaders(new URL(url), range)
-    res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store' })
+    for (let i = 0; i < 4 && res.status >= 300 && res.status < 400; i++) {
+      const loc = res.headers.get('location')
+      try { await res.body?.cancel() } catch {}
+      if (!loc) break
+      url = new URL(loc, url).toString()
+      headers = mediaHeaders(new URL(url), range)
+      res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store', signal: ctrl.signal })
+    }
+
+    return res
+  } finally {
+    clearTimeout(timer)
   }
-
-  return res
 }
 
 function parseTotal(res: Response): number | null {
@@ -127,7 +133,8 @@ async function proxy(request: NextRequest, withBody: boolean) {
 
     const target = parsed
     const { start, end: clientEnd } = parseRange(request.headers.get('range'))
-    const total = await probeTotal(target)
+    const skipProbe = target.hostname.toLowerCase().includes('cinflix.xyz')
+    const total = skipProbe ? null : await probeTotal(target)
     const bounded = boundRange(start, clientEnd, total)
     const upstream = await fetchMedia(target, `bytes=${bounded.start}-${bounded.end}`)
 
