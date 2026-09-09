@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 300 // 5 min max pour Vercel
+export const runtime = 'edge'
+export const maxDuration = 300
 
 /**
  * Proxy de lecture MP4 : stream le fichier en supportant les requêtes Range
@@ -46,8 +47,8 @@ export async function GET(request: NextRequest) {
     const headers = new Headers()
     headers.set('Content-Type', contentType.includes('video') ? contentType : 'video/mp4')
     headers.set('Cache-Control', 'no-store')
-    // Indique au navigateur qu'il peut demander des plages d'octets
     headers.set('Accept-Ranges', 'bytes')
+    headers.set('Access-Control-Allow-Origin', '*')
 
     // On recopie les en-têtes de plage renvoyés par l'upstream
     const contentRange = upstream.headers.get('content-range')
