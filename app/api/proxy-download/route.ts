@@ -3,53 +3,79 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'edge'
 export const maxDuration = 300
 
-/**
- * Proxy de lecture MP4 : stream le fichier en supportant les requêtes Range
- * (byte-range) afin que la lecture et le seek fonctionnent dans le <video>.
- * Le vrai lien CDN est passé en ?url= et le Referer purstream.ad est spoofé
- * pour topstream.
- */
-export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url')
+const CINFLIX_ORIGIN = 'https://cinflix.xyz'
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-  if (!url) {
+async function resolveCinflixApi(apiUrl: string): Promise<string | null> {
+  const res = await fetch(apiUrl, {
+    method: 'GET',
+    redirect: 'manual',
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json, text/plain, */*',
+      'Accept-Language': 'fr-FR,fr;q=0.9',
+      'User-Agent': BROWSER_UA,
+      Referer: `${CINFLIX_ORIGIN}/`,
+      Origin: CINFLIX_ORIGIN,
+    },
+  })
+  const loc = res.headers.get('location')
+  try { await res.body?.cancel() } catch {}
+  if (!loc) return null
+  try {
+    return new URL(loc, apiUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const rawUrl = request.nextUrl.searchParams.get('url')
+
+  if (!rawUrl) {
     return new NextResponse('URL manquante', { status: 400 })
   }
 
   try {
-    if (!url || url.length > 2000 || /[<>]|DOCTYPE|Just a moment/i.test(url)) {
+    if (rawUrl.length > 2000 || /[<>]|DOCTYPE|Just a moment/i.test(rawUrl)) {
       return new NextResponse('URL invalide', { status: 400 })
     }
 
-    const parsed = new URL(url)
+    let target = rawUrl
+    let parsed = new URL(target)
     if (!/^https?:$/i.test(parsed.protocol)) {
       return new NextResponse('URL invalide', { status: 400 })
     }
 
-    const host = parsed.hostname.toLowerCase()
-    if (host.includes('cinflix.xyz')) {
-      return new NextResponse('Ce flux doit être lu directement, pas via le proxy', { status: 400 })
+    if (parsed.hostname.toLowerCase().includes('cinflix.xyz')) {
+      const resolved = await resolveCinflixApi(target)
+      if (!resolved) {
+        return new NextResponse('Cinflix n\'a pas renvoyé de flux', { status: 502 })
+      }
+      target = resolved
+      parsed = new URL(target)
     }
 
+    const host = parsed.hostname.toLowerCase()
     const isTopstream = host.includes('topstream.cloud')
     const isCinflixCdn = host.includes('blink-n3')
     const range = request.headers.get('range')
     const referer = isTopstream
       ? 'https://purstream.ad/'
       : isCinflixCdn
-        ? 'https://cinflix.xyz/'
+        ? `${CINFLIX_ORIGIN}/`
         : parsed.origin + '/'
 
-    const upstream = await fetch(url, {
+    const upstream = await fetch(target, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
+        'User-Agent': BROWSER_UA,
+        Accept: 'video/mp4,video/*;q=0.9,*/*;q=0.8',
         'Accept-Language': 'fr-FR,fr;q=0.9',
-        'Referer': referer,
-        ...(isTopstream && { 'Origin': 'https://purstream.ad' }),
-        ...(isCinflixCdn && { 'Origin': 'https://cinflix.xyz' }),
-        // On relaie la requête Range du navigateur pour permettre le seek/streaming
-        ...(range && { 'Range': range }),
+        Referer: referer,
+        ...(isTopstream && { Origin: 'https://purstream.ad' }),
+        ...(isCinflixCdn && { Origin: CINFLIX_ORIGIN }),
+        ...(range && { Range: range }),
       },
       redirect: 'follow',
     })
@@ -60,7 +86,6 @@ export async function GET(request: NextRequest) {
 
     const contentType = upstream.headers.get('content-type') || 'video/mp4'
 
-    // Si on reçoit du HTML, le lien n'est pas encore résolu
     if (contentType.includes('text/html')) {
       return new NextResponse('Le lien fourni est une page HTML, pas un fichier MP4 direct. Résolvez le lien d\'abord.', { status: 400 })
     }
@@ -71,17 +96,14 @@ export async function GET(request: NextRequest) {
     headers.set('Accept-Ranges', 'bytes')
     headers.set('Access-Control-Allow-Origin', '*')
 
-    // On recopie les en-têtes de plage renvoyés par l'upstream
     const contentRange = upstream.headers.get('content-range')
     if (contentRange) headers.set('Content-Range', contentRange)
     const contentLength = upstream.headers.get('content-length')
     if (contentLength) headers.set('Content-Length', contentLength)
 
-    // 206 si l'upstream a répondu à une requête Range, sinon 200
     const status = upstream.status === 206 ? 206 : 200
 
     return new NextResponse(upstream.body, { status, headers })
-
   } catch (err: any) {
     console.error('[proxy-download]', err)
     return new NextResponse(err.message || 'Erreur réseau', { status: 502 })

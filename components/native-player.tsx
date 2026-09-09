@@ -88,7 +88,7 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
     }
   } catch {}
 
-  return null
+  return withCinflixReferer(url)
 }
 
 interface Episode {
