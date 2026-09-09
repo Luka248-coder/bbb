@@ -62,38 +62,19 @@ function blinkFromPerformance(): string | null {
 function probeCinflixNetwork(apiUrl: string) {
   const probe = new URL(apiUrl)
   probe.searchParams.set('_', String(Date.now()))
-  const probeUrl = probe.toString()
   const img = document.createElement('img')
   img.referrerPolicy = 'no-referrer'
-  img.src = probeUrl
-  const ctrl = new AbortController()
-  fetch(probeUrl, {
-    mode: 'no-cors',
-    redirect: 'follow',
-    cache: 'no-store',
-    credentials: 'omit',
-    referrerPolicy: 'no-referrer',
-    signal: ctrl.signal,
-  }).catch(() => {})
+  img.src = probe.toString()
   window.setTimeout(() => {
     img.src = ''
-    try { ctrl.abort() } catch {}
-  }, 3000)
-}
-
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', event => {
-    if (event.data?.type === 'CINFLIX_PROBE' && typeof event.data.url === 'string') {
-      probeCinflixNetwork(event.data.url)
-    }
-  })
+  }, 8000)
 }
 
 function ensureCinflixSw(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
   return (async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=12', { scope: '/', updateViaCache: 'none' })
+      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=13', { scope: '/', updateViaCache: 'none' })
       if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
@@ -101,9 +82,15 @@ function ensureCinflixSw(): Promise<boolean> {
         new Promise<void>(resolve => {
           navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
         }),
-        new Promise<void>(resolve => window.setTimeout(resolve, 2000)),
+        new Promise<void>(resolve => window.setTimeout(resolve, 1500)),
       ])
-      return !!navigator.serviceWorker.controller
+      if (navigator.serviceWorker.controller) return true
+      if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('cinflix-sw-v13')) {
+        sessionStorage.setItem('cinflix-sw-v13', '1')
+        window.location.reload()
+        return false
+      }
+      return false
     } catch {
       return false
     }
@@ -111,16 +98,13 @@ function ensureCinflixSw(): Promise<boolean> {
 }
 
 async function resolveCinflixFromPhone(apiUrl: string): Promise<string | null> {
-  await ensureCinflixSw()
-  const probe = new URL(apiUrl)
-  probe.searchParams.set('_', String(Date.now()))
-  const probeUrl = probe.toString()
+  const controlled = await ensureCinflixSw()
+  if (!controlled) return null
+  probeCinflixNetwork(apiUrl)
 
   return new Promise(resolve => {
     let done = false
     let channel: BroadcastChannel | null = null
-    const img = document.createElement('img')
-    const fetchCtrl = new AbortController()
 
     const finish = (found: string | null) => {
       if (done) return
@@ -128,11 +112,6 @@ async function resolveCinflixFromPhone(apiUrl: string): Promise<string | null> {
       navigator.serviceWorker.removeEventListener('message', onMsg)
       try { channel?.close() } catch {}
       window.clearTimeout(timer)
-      window.clearTimeout(fetchCut)
-      img.onload = null
-      img.onerror = null
-      img.src = ''
-      try { fetchCtrl.abort() } catch {}
       resolve(found)
     }
 
@@ -147,31 +126,7 @@ async function resolveCinflixFromPhone(apiUrl: string): Promise<string | null> {
       channel.onmessage = onMsg
     } catch {}
 
-    img.referrerPolicy = 'no-referrer'
-    img.onload = () => {
-      const found = blinkFromPerformance()
-      if (found) finish(found)
-    }
-    img.onerror = () => {
-      const found = blinkFromPerformance()
-      if (found) finish(found)
-    }
-    img.src = probeUrl
-
-    fetch(probeUrl, {
-      mode: 'no-cors',
-      redirect: 'follow',
-      cache: 'no-store',
-      credentials: 'omit',
-      referrerPolicy: 'no-referrer',
-      signal: fetchCtrl.signal,
-    }).catch(() => {})
-
-    const fetchCut = window.setTimeout(() => {
-      try { fetchCtrl.abort() } catch {}
-    }, 2500)
-
-    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 7000)
+    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 8000)
   })
 }
 
