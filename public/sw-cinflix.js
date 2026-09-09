@@ -6,53 +6,20 @@ self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim())
 })
 
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()
-})
-
-function isBlink(requestUrl) {
-  try {
-    return new URL(requestUrl).hostname.toLowerCase().includes('blink-n3')
-  } catch {
-    return false
-  }
-}
-
-async function tellClients(blinkUrl) {
-  try {
-    const ch = new BroadcastChannel('cinflix-blink')
-    ch.postMessage({ type: 'cinflix-blink', url: blinkUrl })
-    ch.close()
-  } catch {}
-  const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-  for (const client of list) {
-    client.postMessage({ type: 'cinflix-blink', url: blinkUrl })
-  }
-}
-
 self.addEventListener('fetch', event => {
-  if (!isBlink(event.request.url)) return
-
-  event.waitUntil(tellClients(event.request.url))
-
-  const dest = event.request.destination
-  if (dest === 'video' || dest === 'audio' || dest === 'media') {
-    const proxy = new URL('/api/proxy-download', self.location.origin)
-    proxy.searchParams.set('url', event.request.url)
-    const headers = new Headers()
-    const range = event.request.headers.get('Range')
-    if (range) headers.set('Range', range)
-    event.respondWith(fetch(proxy.toString(), { headers, redirect: 'follow' }))
+  let url
+  try {
+    url = new URL(event.request.url)
+  } catch {
     return
   }
+  if (!url.hostname.includes('blink-n3')) return
 
-  if (dest === 'iframe' || dest === 'document' || event.request.mode === 'navigate') {
-    event.respondWith(new Response('<!doctype html><title>ok</title>', {
-      status: 200,
-      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
-    }))
-    return
-  }
+  const proxy = new URL('/api/proxy-download', self.location.origin)
+  proxy.searchParams.set('url', event.request.url)
+  const headers = new Headers()
+  const range = event.request.headers.get('Range')
+  if (range) headers.set('Range', range)
 
-  event.respondWith(new Response('', { status: 204 }))
+  event.respondWith(fetch(proxy.toString(), { headers }))
 })
