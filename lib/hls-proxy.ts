@@ -44,22 +44,33 @@ function resolveUrl(href: string, base: URL): string | null {
   }
 }
 
-function rewriteM3u8(body: string, baseUrl: string, origin: string): string {
+function rewriteM3u8(body: string, baseUrl: string, origin: string, direct: boolean): string {
   const base = new URL(baseUrl)
   return body
     .split('\n')
     .map(line => {
       const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) {
+      if (!trimmed) return ''
+
+      // Safari refuse souvent un master HLS dont les sous-titres pointent vers un .vtt brut.
+      if (trimmed.startsWith('#EXT-X-MEDIA:') && /TYPE=SUBTITLES/i.test(trimmed)) return ''
+      if (trimmed.startsWith('#EXT-X-STREAM-INF:')) {
+        return trimmed.replace(/,?SUBTITLES="[^"]*"/gi, '')
+      }
+
+      if (trimmed.startsWith('#')) {
         return trimmed.replace(/URI="([^"]+)"/g, (_match, uri) => {
           const absolute = resolveUrl(uri, base)
           if (!absolute) return _match
+          if (direct) return `URI="${absolute}"`
           const path = absolute.includes('.m3u8') ? '/api/hls/master.m3u8' : '/api/hls/seg.ts'
           return `URI="${origin}${path}?url=${encodeURIComponent(absolute)}"`
         })
       }
+
       const absolute = resolveUrl(trimmed, base)
       if (!absolute) return line
+      if (direct) return absolute
       const path = absolute.includes('.m3u8') ? '/api/hls/master.m3u8' : '/api/hls/seg.ts'
       return `${origin}${path}?url=${encodeURIComponent(absolute)}`
     })
@@ -68,6 +79,7 @@ function rewriteM3u8(body: string, baseUrl: string, origin: string): string {
 
 export async function proxyTopstreamMedia(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url')
+  const direct = request.nextUrl.searchParams.get('direct') === '1'
 
   if (!url) {
     return new NextResponse('URL manquante', { status: 400 })
@@ -103,7 +115,7 @@ export async function proxyTopstreamMedia(request: NextRequest) {
       contentType.includes('x-mpegurl')
     ) {
       const body = await upstream.text()
-      const rewritten = rewriteM3u8(body, url, request.nextUrl.origin)
+      const rewritten = rewriteM3u8(body, url, request.nextUrl.origin, direct)
 
       return new NextResponse(rewritten, {
         status: 200,
