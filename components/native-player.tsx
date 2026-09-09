@@ -599,25 +599,28 @@ export function NativePlayer({
     const onTimeUpdate = () => {
       syncVideoState(v)
     }
+    const kickPlayback = () => {
+      if (v.paused) v.play()?.catch(() => {})
+    }
+    const applyResume = () => {
+      if (resumeAppliedRef.current || !(v.duration > 0)) return
+      resumeAppliedRef.current = true
+      const saved = resumeTimeRef.current
+      resumeTimeRef.current = 0
+      if (saved > 0 && saved < 98) {
+        v.currentTime = (saved / 100) * v.duration
+      } else {
+        v.currentTime = Math.min(0.35, v.duration * 0.002)
+      }
+      syncVideoState(v)
+      kickPlayback()
+    }
     const onMeta = () => {
       syncVideoState(v)
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
       }
-    }
-    const applyResume = () => {
-      // Sur iPhone, seek avant la 1re image bloque le MP4 à 0:00 avec spinner.
-      const coarse = window.matchMedia('(pointer: coarse)').matches
-      if (coarse) {
-        resumeTimeRef.current = 0
-        resumeAppliedRef.current = true
-        return
-      }
-      if (resumeAppliedRef.current || resumeTimeRef.current <= 0 || !(v.duration > 0)) return
-      resumeAppliedRef.current = true
-      v.currentTime = (resumeTimeRef.current / 100) * v.duration
-      resumeTimeRef.current = 0
-      syncVideoState(v)
+      applyResume()
     }
     const onPlay = () => { syncVideoState(v); resetTimer() }
     const onPlaying = () => {

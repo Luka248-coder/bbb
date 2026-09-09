@@ -79,9 +79,10 @@ function pickBestUrl(
     return se && se.season === season && se.episode === episode
   })
   if (matches.length === 0) return null
-  // Préférer 1080p, sinon prendre le premier premium trouvé
+  const mp4 = matches.find(u => u.url.includes('.mp4') && (u.name || '').includes('1080p'))
+    || matches.find(u => u.url.includes('.mp4'))
   const hd = matches.find(u => (u.name || '').includes('1080p'))
-  return (hd || matches[0]).url
+  return (mp4 || hd || matches[0]).url
 }
 
 export async function GET(request: NextRequest) {
