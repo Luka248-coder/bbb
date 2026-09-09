@@ -4,6 +4,7 @@ import { isCinflixApiUrl } from '@/lib/cinflix-url'
 
 export const runtime = 'nodejs'
 export const maxDuration = 15
+export const preferredRegion = ['cdg1', 'fra1']
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
