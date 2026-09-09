@@ -13,6 +13,31 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import Hls from 'hls.js'
 
+function isWebKitSafari() {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  const iOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const safari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Android/i.test(ua)
+  return iOS || safari
+}
+
+function isTopstreamUrl(url: string) {
+  try {
+    const h = new URL(url).hostname.toLowerCase()
+    return h === 'topstream.cloud' || h.endsWith('.topstream.cloud')
+  } catch {
+    return url.includes('topstream.cloud')
+  }
+}
+
+function hlsProxyUrl(url: string) {
+  return `/api/hls/master.m3u8?url=${encodeURIComponent(url)}`
+}
+
+function mp4ProxyUrl(url: string) {
+  return `/api/proxy-download?url=${encodeURIComponent(url)}&filename=video.mp4`
+}
+
 interface Episode {
   id: number
   season_number: number
@@ -487,6 +512,10 @@ export function NativePlayer({
     setHlsAudioTracks([])
 
     v.pause()
+    v.playsInline = true
+    v.setAttribute('playsinline', 'true')
+    v.setAttribute('webkit-playsinline', 'true')
+    v.muted = true
     resumeAppliedRef.current = false
     sourceUrlRef.current = url
     proxyTriedRef.current = false
@@ -495,23 +524,35 @@ export function NativePlayer({
     setPlaying(false)
     setShowError(false)
 
-    // ── Proxy topstream → purstream referer ──────────────────────────────────
-    const isTopstream =
-      url.includes('free.topstream.cloud') || url.includes('topstream.cloud')
-    const effectiveUrl =
-      isTopstream && url.includes('.m3u8')
-        ? `/api/stream-proxy?url=${encodeURIComponent(url)}`
-        : url
-
+    const safari = isWebKitSafari()
     const isHls = url.includes('.m3u8')
+    const topstream = isTopstreamUrl(url)
+    const nativeHls = isHls && (safari || !Hls.isSupported()) && !!v.canPlayType('application/vnd.apple.mpegurl')
 
-    if (isHls && Hls.isSupported()) {
+    const playSrc = () => {
+      v.muted = true
+      startErrorTimer()
+      v.play()?.catch(() => {
+        cancelErrorTimer()
+        setBuffering(false)
+        setPlaying(false)
+      })
+    }
+
+    // Safari / iOS : jamais hls.js (écran noir avec durée). Playlist en .m3u8 same-origin.
+    if (isHls && nativeHls) {
+      v.src = topstream ? hlsProxyUrl(url) : url
+      playSrc()
+      return
+    }
+
+    if (isHls && Hls.isSupported() && !safari) {
       const hls = new Hls({ enableWorker: true })
       hlsRef.current = hls
-      hls.loadSource(effectiveUrl)
+      hls.loadSource(topstream ? hlsProxyUrl(url) : url)
       hls.attachMedia(v)
 
-      hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
         const tracks = hls.audioTracks.map(t => ({
           id: t.id,
           name: t.name ?? t.lang ?? `Track ${t.id}`,
@@ -525,14 +566,7 @@ export function NativePlayer({
           t.name?.toLowerCase().includes('french')
         )
         if (frIdx !== -1) hls.audioTrack = frIdx
-
-        v.muted = true
-        startErrorTimer()
-        v.play()?.catch(() => {
-          cancelErrorTimer()
-          setBuffering(false)
-          setPlaying(false)
-        })
+        playSrc()
       })
 
       hls.on(Hls.Events.LEVEL_LOADED, () => {
@@ -549,8 +583,6 @@ export function NativePlayer({
           durationRef.current = v.duration
         }
         setBuffering(false)
-        // Ne PAS appeler resetTimer ici : FRAG_CHANGED fire toutes les ~6-10s
-        // ce qui ferait réapparaître les contrôles sans action utilisateur
         clearErrorTimer()
       })
 
@@ -568,25 +600,13 @@ export function NativePlayer({
           }
         }
       })
-    } else if (isHls && v.canPlayType('application/vnd.apple.mpegurl')) {
-      v.src = effectiveUrl
-      v.muted = true
-      startErrorTimer()
-      v.play()?.catch(() => {
-        cancelErrorTimer()
-        setBuffering(false)
-        setPlaying(false)
-      })
-    } else {
-      v.src = url
-      v.muted = true
-      startErrorTimer()
-      v.play()?.catch(() => {
-        cancelErrorTimer()
-        setBuffering(false)
-        setPlaying(false)
-      })
+      return
     }
+
+    // MP4 : sur Safari on passe par le proxy (UA Chrome + Referer), Chrome peut lire en direct.
+    v.src = safari || topstream ? mp4ProxyUrl(url) : url
+    if (safari || topstream) proxyTriedRef.current = true
+    playSrc()
   }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
 
   // ─── Mount & video events ───────────────────────────────────────────────────
@@ -604,12 +624,15 @@ export function NativePlayer({
     }
     const applyResume = () => {
       if (resumeAppliedRef.current || !(v.duration > 0)) return
+      const hls = (sourceUrlRef.current || '').includes('.m3u8')
+      // HLS Safari : ne pas seek avant d'avoir des frames, sinon ça recale à 0:00.
+      if (hls && isWebKitSafari() && v.readyState < 3) return
       resumeAppliedRef.current = true
       const saved = resumeTimeRef.current
       resumeTimeRef.current = 0
       if (saved > 0 && saved < 98) {
         v.currentTime = (saved / 100) * v.duration
-      } else {
+      } else if (!hls) {
         v.currentTime = Math.min(0.35, v.duration * 0.002)
       }
       syncVideoState(v)
@@ -629,6 +652,7 @@ export function NativePlayer({
       setShowError(false)
       clearErrorTimer()
       if (v.muted) v.muted = false
+      applyResume()
     }
     const onPause = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
     const onEnded = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
@@ -961,7 +985,8 @@ export function NativePlayer({
 
   // ─── Son amplifié (Web Audio API) ───────────────────────────────────────────
   const initAudioBoost = () => {
-    if (audioCtxRef.current) return // déjà initialisé
+    if (audioCtxRef.current) return
+    if (isWebKitSafari()) return
     const video = videoRef.current
     if (!video) return
     try {
@@ -1216,8 +1241,10 @@ export function NativePlayer({
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         playsInline
+        muted
         preload="auto"
         controls={false}
+        x-webkit-airplay="allow"
       />
       <button
         type="button"
