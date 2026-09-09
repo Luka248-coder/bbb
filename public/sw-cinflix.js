@@ -6,6 +6,10 @@ self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim())
 })
 
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()
+})
+
 function isBlink(requestUrl) {
   try {
     return new URL(requestUrl).hostname.toLowerCase().includes('blink-n3')
@@ -15,6 +19,11 @@ function isBlink(requestUrl) {
 }
 
 async function tellClients(blinkUrl) {
+  try {
+    const ch = new BroadcastChannel('cinflix-blink')
+    ch.postMessage({ type: 'cinflix-blink', url: blinkUrl })
+    ch.close()
+  } catch {}
   const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
   for (const client of list) {
     client.postMessage({ type: 'cinflix-blink', url: blinkUrl })
@@ -37,6 +46,5 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // JS probe: capture the redirected URL, do not let Chrome hit blink with Referer streamself.
   event.respondWith(new Response('', { status: 204 }))
 })
