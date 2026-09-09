@@ -209,22 +209,6 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
       return media.includes('/api/proxy-download') ? media : withCinflixReferer(media)
     }
   } catch {}
-    const u = new URL(raw)
-    const params = new URLSearchParams({
-      type: u.searchParams.get('type') || 'movie',
-      id: u.searchParams.get('id') || '',
-    })
-    const season = u.searchParams.get('s')
-    const episode = u.searchParams.get('e')
-    if (season) params.set('s', season)
-    if (episode) params.set('e', episode)
-    const res = await fetch(`/api/cinflix-resolve?${params}`)
-    const data = await res.json().catch(() => null)
-    const media = typeof data?.url === 'string' ? data.url : null
-    if (media && !isCinflixApiUrl(media)) {
-      return media.includes('/api/proxy-download') ? media : withCinflixReferer(media)
-    }
-  } catch {}
 
   const fromPhone = await resolveCinflixFromPhone(raw)
   return fromPhone ? withCinflixReferer(fromPhone) : null
