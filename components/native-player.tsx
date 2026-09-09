@@ -298,7 +298,7 @@ export function NativePlayer({
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
   const [buffering, setBuffering] = useState(true)
-  const [fetchingEpisode, setFetchingEpisode] = useState(false)
+  const [fetchingEpisode, setFetchingEpisode] = useState(() => !initialVideoUrl && !!tmdbId)
   const [episodeNotFound, setEpisodeNotFound] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showError, setShowError] = useState(false)
@@ -733,6 +733,7 @@ export function NativePlayer({
     const contentTitle = seriesName || initialTitle
 
     setEpisodeNotFound(false)
+    setFetchingEpisode(true)
     if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current)
     fetchTimeoutRef.current = setTimeout(() => {
       setFetchingEpisode(false)
@@ -749,17 +750,19 @@ export function NativePlayer({
           ...(type === 'series' && { season: String(initialSeason || 1), episode: String(initialEpisode || 1) }),
         })
         const res = await fetch(`/api/purstream?${params}`)
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.videoUrl) {
-          // URL trouvée — annuler le timer et charger
+        const data = await res.json().catch(() => null)
+        if (data?.videoUrl) {
           if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
           setEpisodeNotFound(false)
+          setFetchingEpisode(false)
           setVideoUrl(data.videoUrl)
+          return
         }
       } catch (err) {
         console.error('[Purstream]', err)
       }
+      setFetchingEpisode(false)
+      if (type === 'series') setEpisodeNotFound(true)
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tmdbId])

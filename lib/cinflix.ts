@@ -42,6 +42,23 @@ function urlFromPayload(data: any): string | null {
   )
 }
 
+function looksLikeMedia(url: string, contentType = ''): boolean {
+  const c = contentType.toLowerCase()
+  const u = url.toLowerCase()
+  return (
+    c.includes('video') ||
+    c.includes('mpegurl') ||
+    u.includes('.mp4') ||
+    u.includes('.m3u8')
+  )
+}
+
+async function cancelBody(res: Response) {
+  try {
+    await res.body?.cancel()
+  } catch {}
+}
+
 export async function getCinflixStreamUrl(
   type: 'movie' | 'series' | 'tv',
   tmdbId: number,
@@ -57,25 +74,36 @@ export async function getCinflixStreamUrl(
     params.set('e', String(episode || 1))
   }
 
+  const apiUrl = `${CINFLIX_ORIGIN}/api/media/stream?${params}`
+
   try {
-    const res = await fetch(`${CINFLIX_ORIGIN}/api/media/stream?${params}`, {
+    const res = await fetch(apiUrl, {
       headers: HEADERS,
-      redirect: 'manual',
+      redirect: 'follow',
       cache: 'no-store',
     })
 
-    const location = pickUrl(res.headers.get('location') || '')
-    if (location) {
-      console.log(`[Cinflix] ✅ ${kind} ${tmdbId} → ${location.slice(0, 80)}`)
-      return location
+    const redirected = pickUrl(res.headers.get('location') || '')
+    if (redirected) {
+      await cancelBody(res)
+      console.log(`[Cinflix] ✅ ${kind} ${tmdbId} location → ${redirected.slice(0, 80)}`)
+      return redirected
+    }
+
+    const finalUrl = pickUrl(res.url)
+    const contentType = res.headers.get('content-type') || ''
+    if (finalUrl && looksLikeMedia(finalUrl, contentType)) {
+      await cancelBody(res)
+      console.log(`[Cinflix] ✅ ${kind} ${tmdbId} → ${finalUrl.slice(0, 80)}`)
+      return finalUrl
     }
 
     if (!res.ok) {
+      await cancelBody(res)
       console.warn(`[Cinflix] ${kind} ${tmdbId} → ${res.status}`)
       return null
     }
 
-    const contentType = res.headers.get('content-type') || ''
     if (contentType.includes('json')) {
       const json = await res.json().catch(() => null)
       const fromJson = urlFromPayload(json)
@@ -83,10 +111,12 @@ export async function getCinflixStreamUrl(
         console.log(`[Cinflix] ✅ ${kind} ${tmdbId} json → ${fromJson.slice(0, 80)}`)
         return fromJson
       }
-    } else {
+    } else if (!contentType.includes('video') && !contentType.includes('mpegurl')) {
       const text = (await res.text()).trim()
       const fromText = pickUrl(text)
       if (fromText) return fromText
+    } else {
+      await cancelBody(res)
     }
   } catch (err) {
     console.error('[Cinflix]', err)

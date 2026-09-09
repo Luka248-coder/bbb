@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCinflixStreamUrl } from '@/lib/cinflix'
 
+export const maxDuration = 60
+
 const PURSTREAM_BASE = 'https://api.purstream.ad/api/v1'
 
 const HEADERS = {
