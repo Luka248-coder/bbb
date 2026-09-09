@@ -882,7 +882,7 @@ export function NativePlayer({
     const t = window.setTimeout(() => {
       const v = videoRef.current
       const raw = sourceUrlRef.current
-      if (!v || !raw || proxyTriedRef.current) return
+      if (!v || !raw || proxyTriedRef.current || v.seeking) return
       if (raw.includes('.m3u8')) return
       if (!(v.duration > 0) || v.currentTime > 0.2) return
       proxyTriedRef.current = true
@@ -1082,7 +1082,11 @@ export function NativePlayer({
 
   const skip = (s: number) => {
     const v = videoRef.current
-    if (v) { v.currentTime = Math.max(0, Math.min(duration, v.currentTime + s)); resetTimer() }
+    if (v) {
+      const dur = Number.isFinite(v.duration) && v.duration > 0 ? v.duration : duration
+      v.currentTime = Math.max(0, Math.min(dur, v.currentTime + s))
+      resetTimer()
+    }
   }
 
   const toggleMute = () => {
@@ -1222,8 +1226,13 @@ export function NativePlayer({
     const v = videoRef.current
     const bar = progressRef.current
     if (!v || !bar) return
+    const dur = Number.isFinite(v.duration) && v.duration > 0 ? v.duration : duration
+    if (!(dur > 0) || !Number.isFinite(dur)) return
     const pct = Math.max(0, Math.min(1, (clientX - bar.getBoundingClientRect().left) / bar.offsetWidth))
-    v.currentTime = pct * duration
+    const next = pct * dur
+    v.currentTime = next
+    setCurrentTime(next)
+    currentTimeRef.current = next
     resetTimer()
   }
 
@@ -1367,7 +1376,7 @@ export function NativePlayer({
         playsInline
         webkit-playsinline="true"
         x-webkit-airplay="allow"
-        preload="metadata"
+        preload="auto"
         controlsList="nodownload"
       />
       <button

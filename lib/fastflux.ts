@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetch-all'
 import type { Movie, Series, Episode } from '@/lib/content-types'
+import { mediaUrlMatchesTmdb } from '@/lib/tmdb-media-url'
 
 export type { Movie, Series, Episode } from '@/lib/content-types'
 export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/content-types'
@@ -185,8 +186,12 @@ async function purstream_searchId(
       return titleMatches[0].id
     }
 
-    // Priorité 5 : aucun titre exact → premier résultat (compat)
-    if (results[0]?.id) { console.log(`[Purstream] ✅ first result → ${results[0].id}`); return results[0].id }
+    // Pas de "premier résultat" quand on a un tmdbId : ça mélange les homonymes
+    // (Marsupilami 2026 vs Sur la piste du Marsupilami 2012).
+    if (!tmdbId && results[0]?.id) {
+      console.log(`[Purstream] ✅ first result → ${results[0].id}`)
+      return results[0].id
+    }
   } catch (err) {
     console.error('[Purstream search error]', err)
   }
@@ -352,14 +357,15 @@ export async function searchContent(query: string): Promise<{ movies: Movie[]; s
 
 export async function getMovieVideoUrl(tmdbId: number, titleOverride?: string): Promise<string | null> {
   const movie = await getMovieById(tmdbId)
-  if (movie?.video_url) return movie.video_url
+  if (movie?.video_url && mediaUrlMatchesTmdb(movie.video_url, tmdbId)) return movie.video_url
 
   const title = titleOverride || movie?.title || movie?.original_title || ''
   const year = movie?.release_date ? parseInt(movie.release_date.slice(0, 4)) : undefined
   const purstreamId = await purstream_searchId(title, 'movie', tmdbId, year)
   if (purstreamId) {
     const url = await extractVideoUrl(purstreamId, 'movie')
-    if (url) return url
+    if (url && mediaUrlMatchesTmdb(url, tmdbId)) return url
+    if (url) console.warn(`[Purstream] ❌ URL TMDB mismatch for ${tmdbId}: ${url.slice(0, 80)}`)
   }
 
   // Cinflix is resolved client-side via /api/purstream so the watch page
@@ -380,7 +386,8 @@ export async function getEpisodeVideoUrl(
   const purstreamId = await purstream_searchId(title, 'series', tmdbId, year)
   if (purstreamId) {
     const url = await extractVideoUrl(purstreamId, 'series', season, episode)
-    if (url) return url
+    if (url && mediaUrlMatchesTmdb(url, tmdbId)) return url
+    if (url) console.warn(`[Purstream] ❌ episode URL TMDB mismatch for ${tmdbId}: ${url.slice(0, 80)}`)
   }
 
   return null
