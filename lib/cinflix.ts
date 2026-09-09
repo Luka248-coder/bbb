@@ -1,3 +1,5 @@
+import https from 'node:https'
+import { URL } from 'node:url'
 import { cinflixStreamApiUrl, isCinflixApiUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
 
 export { cinflixStreamApiUrl, isCinflixApiUrl, isCinflixMediaUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
@@ -22,12 +24,13 @@ function pickUrl(value: unknown): string | null {
   return isPlayableMediaUrl(trimmed) ? trimmed : null
 }
 
-function absHttpUrl(value: string | null, base: string): string | null {
+function headerLocation(raw: string | string[] | undefined, base: string): string | null {
+  const value = Array.isArray(raw) ? raw[0] : raw
   if (!value) return null
   try {
-    const u = new URL(value.trim(), base)
+    const u = new URL(String(value).trim(), base)
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
-    if (/[<>]|DOCTYPE|Just a moment|challenge-platform/i.test(u.toString())) return null
+    if (isCinflixApiUrl(u.toString())) return null
     return u.toString()
   } catch {
     return null
@@ -56,44 +59,85 @@ type CinflixResponse = {
   text: string
 }
 
-async function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
-  const empty: CinflixResponse = { status: 0, location: null, contentType: '', text: '' }
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
-
-  try {
-    const res = await fetch(urlStr, {
-      method: 'GET',
-      redirect: 'manual',
-      cache: 'no-store',
-      signal: ctrl.signal,
-      headers: HEADERS,
-    })
-
-    const location = absHttpUrl(res.headers.get('location'), urlStr)
-    const contentType = String(res.headers.get('content-type') || '')
-
-    if (location || res.status >= 300) {
-      try { await res.body?.cancel() } catch {}
-      return { status: res.status, location, contentType, text: '' }
+function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
+  return new Promise(resolve => {
+    const empty: CinflixResponse = { status: 0, location: null, contentType: '', text: '' }
+    let settled = false
+    const done = (value: CinflixResponse) => {
+      if (settled) return
+      settled = true
+      resolve(value)
     }
 
-    if (contentType.includes('text/html')) {
-      try { await res.body?.cancel() } catch {}
-      return { status: res.status, location: null, contentType, text: '' }
-    }
+    try {
+      const u = new URL(urlStr)
+      const req = https.request(
+        {
+          protocol: u.protocol,
+          hostname: u.hostname,
+          port: u.port || 443,
+          path: `${u.pathname}${u.search}`,
+          method: 'GET',
+          headers: HEADERS,
+          timeout: TIMEOUT_MS,
+        },
+        res => {
+          const location = headerLocation(res.headers.location, urlStr)
+          const contentType = String(res.headers['content-type'] || '')
+          const status = res.statusCode || 0
 
-    const text = contentType.includes('json') ? await res.text() : ''
-    if (!text) {
-      try { await res.body?.cancel() } catch {}
-    }
+          if (status >= 300 && status < 400) {
+            res.resume()
+            done({ status, location, contentType, text: '' })
+            return
+          }
 
-    return { status: res.status, location, contentType, text }
-  } catch {
-    return empty
-  } finally {
-    clearTimeout(timer)
+          if (contentType.includes('text/html') || contentType.includes('video/')) {
+            res.resume()
+            done({ status, location, contentType, text: '' })
+            return
+          }
+
+          const chunks: Buffer[] = []
+          let size = 0
+          res.on('data', chunk => {
+            size += chunk.length
+            if (size <= 64 * 1024) chunks.push(chunk)
+            else res.destroy()
+          })
+          res.on('end', () => {
+            done({
+              status,
+              location,
+              contentType,
+              text: Buffer.concat(chunks).toString('utf8'),
+            })
+          })
+          res.on('error', () => done({ status, location, contentType, text: '' }))
+        },
+      )
+
+      req.on('timeout', () => {
+        req.destroy()
+        done(empty)
+      })
+      req.on('error', () => done(empty))
+      req.end()
+    } catch {
+      done(empty)
+    }
+  })
+}
+
+export async function resolveCinflixApiUrl(apiUrl: string): Promise<string | null> {
+  const res = await requestNoRedirect(apiUrl)
+  if (res.location) return res.location
+  if (res.contentType.includes('json') && res.text) {
+    try {
+      return urlFromPayload(JSON.parse(res.text))
+    } catch {}
   }
+  return null
 }
 
 export async function getCinflixStreamUrl(
@@ -108,30 +152,15 @@ export async function getCinflixStreamUrl(
   const apiUrl = cinflixStreamApiUrl(kind, tmdbId, season, episode)
 
   try {
-    const res = await requestNoRedirect(apiUrl)
-    if (res.location && !isCinflixApiUrl(res.location)) {
-      console.log(`[Cinflix] ✅ ${kind} ${tmdbId} → ${res.location.slice(0, 80)}`)
-      return res.location
+    const media = await resolveCinflixApiUrl(apiUrl)
+    if (media) {
+      console.log(`[Cinflix] ✅ ${kind} ${tmdbId} → ${media.slice(0, 80)}`)
+      return media
     }
-
-    if (res.contentType.includes('json') && res.text) {
-      const json = JSON.parse(res.text)
-      const fromJson = urlFromPayload(json)
-      if (fromJson) {
-        console.log(`[Cinflix] ✅ ${kind} ${tmdbId} json → ${fromJson.slice(0, 80)}`)
-        return fromJson
-      }
-    }
-
-    if (res.contentType.includes('text/html') || !res.status) {
-      console.warn(`[Cinflix] ${kind} ${tmdbId} blocked — returning API URL for proxy resolve`)
-      return apiUrl
-    }
-
-    console.warn(`[Cinflix] ${kind} ${tmdbId} → ${res.status}`)
+    console.warn(`[Cinflix] ${kind} ${tmdbId} unresolved`)
   } catch (err) {
     console.error('[Cinflix]', err)
   }
 
-  return apiUrl
+  return null
 }
