@@ -292,7 +292,7 @@ export function NativePlayer({
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
-  const [muted, setMuted] = useState(false)
+  const [muted, setMuted] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
@@ -620,30 +620,30 @@ export function NativePlayer({
       syncVideoState(v)
     }
     const kickPlayback = () => {
-      if (v.paused) v.play()?.catch(() => {})
+      if (v.paused) {
+        v.muted = true
+        v.play()?.catch(() => {})
+      }
     }
     const applyResume = () => {
       if (resumeAppliedRef.current || !(v.duration > 0)) return
-      const hls = (sourceUrlRef.current || '').includes('.m3u8')
-      // HLS Safari : ne pas seek avant d'avoir des frames, sinon ça recale à 0:00.
-      if (hls && isWebKitSafari() && v.readyState < 3) return
-      resumeAppliedRef.current = true
       const saved = resumeTimeRef.current
-      resumeTimeRef.current = 0
-      if (saved > 0 && saved < 98) {
-        v.currentTime = (saved / 100) * v.duration
-      } else if (!hls) {
-        v.currentTime = Math.min(0.35, v.duration * 0.002)
+      if (!(saved > 2 && saved < 98)) {
+        resumeAppliedRef.current = true
+        resumeTimeRef.current = 0
+        return
       }
+      resumeAppliedRef.current = true
+      resumeTimeRef.current = 0
+      v.currentTime = (saved / 100) * v.duration
       syncVideoState(v)
-      kickPlayback()
     }
     const onMeta = () => {
       syncVideoState(v)
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
       }
-      applyResume()
+      kickPlayback()
     }
     const onPlay = () => { syncVideoState(v); resetTimer() }
     const onPlaying = () => {
@@ -651,7 +651,6 @@ export function NativePlayer({
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
-      if (v.muted) v.muted = false
       applyResume()
     }
     const onPause = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
@@ -661,7 +660,8 @@ export function NativePlayer({
     }
     const onCanPlay = () => {
       syncVideoState(v)
-      applyResume()
+      setBuffering(false)
+      kickPlayback()
     }
     const onError = () => {
       const raw = sourceUrlRef.current
@@ -944,10 +944,7 @@ export function NativePlayer({
     if (!v) return
     if (v.paused) {
       setShowError(false)
-      startErrorTimer()
-      v.muted = true
       v.play()?.catch(() => {
-        cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
       })
@@ -1241,7 +1238,7 @@ export function NativePlayer({
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         playsInline
-        muted
+        muted={muted}
         preload="auto"
         controls={false}
         x-webkit-airplay="allow"
@@ -1446,14 +1443,25 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {!playing && !buffering && !fetchingEpisode && (
+        {!playing && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-0 z-[17] flex items-center justify-center pointer-events-none"
+            className="absolute inset-0 z-[25] flex flex-col items-center justify-center gap-3"
           >
-            <div className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation()
+                const v = videoRef.current
+                if (!v) return
+                v.play()?.catch(() => {})
+              }}
+              className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+              aria-label="Lecture"
+            >
               <Play className="w-8 h-8 text-black fill-black ml-1" />
-            </div>
+            </button>
+            <p className="text-white/55 text-xs font-medium">Appuie pour lire</p>
           </motion.div>
         )}
       </AnimatePresence>
