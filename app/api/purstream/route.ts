@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCinflixStreamUrl } from '@/lib/cinflix'
+import { mediaUrlMatchesTmdb, sheetTmdbMatches } from '@/lib/tmdb-media-url'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -149,6 +150,12 @@ export async function GET(request: NextRequest) {
 
     const sheetRaw = await sheetRes.json()
     const sheet = sheetRaw?.data?.items ?? sheetRaw?.data ?? sheetRaw
+
+    if (tmdbId && !sheetTmdbMatches(sheet, tmdbId)) {
+      console.warn(`[Purstream] ❌ sheet tmdb ${sheet?.tmdbId ?? sheet?.tmdb_id} ≠ ${tmdbId}`)
+      const fallback = await getCinflixStreamUrl(type === 'movie' ? 'movie' : 'tv', Number(tmdbId), season, episode)
+      return NextResponse.json({ videoUrl: fallback, error: fallback ? undefined : 'TMDB mismatch on Purstream' })
+    }
     const allUrls: { url: string; name?: string }[] = sheet.urls || []
 
     let videoUrl: string | null = null
@@ -202,6 +209,11 @@ export async function GET(request: NextRequest) {
           console.warn(`[Purstream] ❌ S${season}E${episode} introuvable — pas de fallback`)
         }
       }
+    }
+
+    if (videoUrl && tmdbId && !mediaUrlMatchesTmdb(videoUrl, tmdbId)) {
+      console.warn(`[Purstream] ❌ URL TMDB mismatch for ${tmdbId}: ${videoUrl.slice(0, 80)}`)
+      videoUrl = null
     }
 
     if (!videoUrl && tmdbId) {

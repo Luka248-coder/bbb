@@ -6,6 +6,7 @@ import { Loading } from '@/components/loading'
 import { PresenceTracker } from '@/components/presence-tracker'
 import { getEpisodeVideoUrl, getMovieById, getSeriesById, getPosterUrl, getMovieVideoUrl } from '@/lib/fastflux'
 import { isCinflixMediaUrl } from '@/lib/cinflix-url'
+import { mediaUrlMatchesTmdb } from '@/lib/tmdb-media-url'
 import { getMovieDetails, getSeriesDetails } from '@/lib/tmdb'
 import { getSession } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
@@ -17,17 +18,16 @@ interface WatchPageProps {
   searchParams: Promise<{ season?: string; episode?: string; play?: string; from?: string }>
 }
 
-async function saveVideoUrl(type: 'movie' | 'series', tmdbId: number, url: string, season?: number, episode?: number) {
+async function saveVideoUrl(type: 'movie' | 'series', tmdbId: number, url: string | null, season?: number, episode?: number) {
   try {
     const supabase = await createClient()
     if (type === 'movie') {
-      await supabase.from('movies').update({ video_url: url }).eq('tmdb_id', tmdbId)
+      await supabase.from('movies').update({ video_url: url || null }).eq('tmdb_id', tmdbId)
     } else if (type === 'series' && season !== undefined && episode !== undefined) {
-      // Chercher l'épisode en DB et sauvegarder l'URL
       const { data: series } = await supabase.from('series').select('id').eq('tmdb_id', tmdbId).single()
       if (series?.id) {
         await supabase.from('episodes')
-          .update({ video_url: url })
+          .update({ video_url: url || null })
           .eq('series_id', series.id)
           .eq('season_number', season)
           .eq('episode_number', episode)
@@ -63,9 +63,13 @@ async function WatchContent({
     title = movie?.title || 'Film'
     console.log('[Watch] Movie from DB:', movie?.tmdb_id, '| video_url:', movie?.video_url)
 
-    if (movie?.video_url) {
+    if (movie?.video_url && mediaUrlMatchesTmdb(movie.video_url, tmdbId)) {
       playerUrl = movie.video_url
     } else {
+      if (movie?.video_url) {
+        console.warn('[Watch] Ignoring stored URL with TMDB mismatch for', tmdbId)
+        await saveVideoUrl('movie', tmdbId, null)
+      }
       let titleForPurstream = movie?.title || movie?.original_title
       if (!titleForPurstream) {
         const tmdbDetails = await getMovieDetails(tmdbId).catch(() => null)
@@ -76,7 +80,7 @@ async function WatchContent({
       playerUrl = await getMovieVideoUrl(tmdbId, titleForPurstream || undefined)
       console.log('[Watch] Purstream result:', playerUrl)
       // Sauvegarder l'URL en DB pour éviter de re-chercher
-      if (playerUrl && !isCinflixMediaUrl(playerUrl)) {
+      if (playerUrl && !isCinflixMediaUrl(playerUrl) && mediaUrlMatchesTmdb(playerUrl, tmdbId)) {
         await saveVideoUrl('movie', tmdbId, playerUrl)
         console.log('[Watch] ✅ URL saved to DB for movie', tmdbId)
       }
@@ -103,9 +107,12 @@ async function WatchContent({
         .eq('season_number', season)
         .eq('episode_number', episode)
         .single()
-      if (ep?.video_url) {
+      if (ep?.video_url && mediaUrlMatchesTmdb(ep.video_url, tmdbId)) {
         episodeUrl = ep.video_url
         console.log('[Watch] ✅ Episode URL from DB:', episodeUrl?.substring(0, 60))
+      } else if (ep?.video_url) {
+        console.warn('[Watch] Ignoring stored episode URL with TMDB mismatch for', tmdbId)
+        await saveVideoUrl('series', tmdbId, null, season, episode)
       }
     }
 
@@ -125,7 +132,7 @@ async function WatchContent({
       playerUrl = await getEpisodeVideoUrl(tmdbId, season, episode, titleForPurstream || undefined)
       console.log('[Watch] Purstream result:', playerUrl)
       // Sauvegarder l'URL en DB
-      if (playerUrl && !isCinflixMediaUrl(playerUrl)) {
+      if (playerUrl && !isCinflixMediaUrl(playerUrl) && mediaUrlMatchesTmdb(playerUrl, tmdbId)) {
         await saveVideoUrl('series', tmdbId, playerUrl, season, episode)
         console.log('[Watch] ✅ URL saved to DB for episode S'+season+'E'+episode)
       }
