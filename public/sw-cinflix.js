@@ -14,6 +14,10 @@ self.addEventListener('fetch', event => {
     return
   }
   if (!url.hostname.toLowerCase().includes('blink-n3')) return
+  // Let the JS probe (destination empty) hit blink so we can read the redirected URL.
+  // Only rewrite actual media element requests.
+  const dest = event.request.destination
+  if (dest && dest !== 'video' && dest !== 'audio' && dest !== 'media') return
 
   const proxy = new URL('/api/proxy-download', self.location.origin)
   proxy.searchParams.set('url', event.request.url)
