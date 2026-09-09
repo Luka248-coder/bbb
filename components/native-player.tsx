@@ -21,23 +21,6 @@ function isWebKitSafari() {
   return iOS || safari
 }
 
-function isTopstreamUrl(url: string) {
-  try {
-    const h = new URL(url).hostname.toLowerCase()
-    return h === 'topstream.cloud' || h.endsWith('.topstream.cloud')
-  } catch {
-    return url.includes('topstream.cloud')
-  }
-}
-
-function hlsProxyUrl(url: string) {
-  return `/api/hls/master.m3u8?url=${encodeURIComponent(url)}`
-}
-
-function mp4ProxyUrl(url: string) {
-  return `/api/proxy-download?url=${encodeURIComponent(url)}&filename=video.mp4`
-}
-
 interface Episode {
   id: number
   season_number: number
@@ -513,7 +496,7 @@ export function NativePlayer({
 
     v.pause()
     v.playsInline = true
-    v.setAttribute('playsinline', 'true')
+    v.setAttribute('playsinline', '')
     v.setAttribute('webkit-playsinline', 'true')
     v.muted = true
     resumeAppliedRef.current = false
@@ -523,11 +506,11 @@ export function NativePlayer({
     setBuffering(true)
     setPlaying(false)
     setShowError(false)
+    setMuted(true)
 
-    const safari = isWebKitSafari()
+    const iOS = /iP(hone|od|ad)/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     const isHls = url.includes('.m3u8')
-    const topstream = isTopstreamUrl(url)
-    const nativeHls = isHls && (safari || !Hls.isSupported()) && !!v.canPlayType('application/vnd.apple.mpegurl')
 
     const playSrc = () => {
       v.muted = true
@@ -539,17 +522,13 @@ export function NativePlayer({
       })
     }
 
-    // Safari / iOS : jamais hls.js (écran noir avec durée). Playlist en .m3u8 same-origin.
-    if (isHls && nativeHls) {
-      v.src = topstream ? hlsProxyUrl(url) : url
-      playSrc()
-      return
-    }
-
-    if (isHls && Hls.isSupported() && !safari) {
-      const hls = new Hls({ enableWorker: true })
+    // iOS n'a pas MSE : HLS natif. Desktop (Chrome + Safari Mac) : hls.js comme Chrome.
+    if (isHls && Hls.isSupported() && !iOS) {
+      const hls = new Hls({ enableWorker: true, xhrSetup: (xhr) => {
+        xhr.withCredentials = false
+      }})
       hlsRef.current = hls
-      hls.loadSource(topstream ? hlsProxyUrl(url) : url)
+      hls.loadSource(url)
       hls.attachMedia(v)
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -559,7 +538,6 @@ export function NativePlayer({
           lang: t.lang ?? '',
         }))
         setHlsAudioTracks(tracks)
-
         const frIdx = hls.audioTracks.findIndex(t =>
           t.lang === 'fr' ||
           t.name?.toLowerCase().includes('fran') ||
@@ -603,9 +581,7 @@ export function NativePlayer({
       return
     }
 
-    // MP4 : sur Safari on passe par le proxy (UA Chrome + Referer), Chrome peut lire en direct.
-    v.src = safari || topstream ? mp4ProxyUrl(url) : url
-    if (safari || topstream) proxyTriedRef.current = true
+    v.src = url
     playSrc()
   }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
 
@@ -1086,36 +1062,27 @@ export function NativePlayer({
   }, [])
 
   const toggleFs = () => {
-    const el = containerRef.current
     const v = videoRef.current
+    const el = containerRef.current
     if (!v) return
 
-    const iosEnter = (v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen
-    const iosExit = (v as HTMLVideoElement & { webkitExitFullscreen?: () => void }).webkitExitFullscreen
-    const displaying = (v as HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }).webkitDisplayingFullscreen
+    const iOS = /iP(hone|od|ad)/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
-    if (typeof iosEnter === 'function') {
-      try {
-        if (displaying && typeof iosExit === 'function') iosExit.call(v)
-        else iosEnter.call(v)
-      } catch {}
+    if (iOS) {
+      const enter = (v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen
+      try { enter?.call(v) } catch {}
       return
     }
 
-    const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }
-    if (document.fullscreenElement || doc.webkitFullscreenElement) {
+    if (document.fullscreenElement) {
       document.exitFullscreen?.()
-      doc.webkitExitFullscreen?.()
       return
     }
-
-    const req = el?.requestFullscreen || (el as any)?.webkitRequestFullscreen
-    if (req && el) {
-      Promise.resolve(req.call(el)).catch(() => {
-        try { iosEnter?.call(v) } catch {}
-      })
-      return
-    }
+    el?.requestFullscreen?.().catch(() => {
+      const enter = (v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen
+      try { enter?.call(v) } catch {}
+    })
   }
 
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1269,10 +1236,8 @@ export function NativePlayer({
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         playsInline
-        muted={muted}
         preload="auto"
         controls={false}
-        x-webkit-airplay="allow"
       />
       <button
         type="button"
