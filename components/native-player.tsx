@@ -59,27 +59,54 @@ function blinkFromPerformance(): string | null {
   return null
 }
 
+async function resolveFromPlayEndpoint(raw: string): Promise<string | null> {
+  const ctrl = new AbortController()
+  const abortTimer = window.setTimeout(() => ctrl.abort(), 2500)
+  try {
+    const u = new URL(raw)
+    const params = new URLSearchParams({
+      type: u.searchParams.get('type') || 'movie',
+      id: u.searchParams.get('id') || '',
+    })
+    const season = u.searchParams.get('s')
+    const episode = u.searchParams.get('e')
+    if (season) params.set('s', season)
+    if (episode) params.set('e', episode)
+    const res = await fetch(`/api/cinflix-play?${params}`, {
+      method: 'GET',
+      redirect: 'manual',
+      cache: 'no-store',
+      signal: ctrl.signal,
+    })
+    const loc = res.headers.get('location')
+    if (loc) {
+      const abs = new URL(loc, window.location.origin)
+      if (abs.pathname.includes('/api/proxy-download')) {
+        return `${abs.pathname}${abs.search}`
+      }
+      const blink = blinkMp4From(abs.toString())
+      if (blink) return withCinflixReferer(blink)
+    }
+  } catch {
+  } finally {
+    window.clearTimeout(abortTimer)
+  }
+  return null
+}
+
 function ensureCinflixSw(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
   return (async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=8', { scope: '/', updateViaCache: 'none' })
+      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=9', { scope: '/', updateViaCache: 'none' })
       if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
-      if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('cinflix-sw-v8')) {
-        sessionStorage.setItem('cinflix-sw-v8', '1')
-        await new Promise(r => window.setTimeout(r, 400))
-        if (!navigator.serviceWorker.controller) {
-          window.location.reload()
-          return false
-        }
-      }
       await Promise.race([
         new Promise<void>(resolve => {
           navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
         }),
-        new Promise<void>(resolve => window.setTimeout(resolve, 4000)),
+        new Promise<void>(resolve => window.setTimeout(resolve, 2500)),
       ])
       return !!navigator.serviceWorker.controller
     } catch {
@@ -105,14 +132,21 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
 
   await ensureCinflixSw()
 
-  const api = new URL(raw)
-  api.searchParams.set('_', String(Date.now()))
-  const apiUrl = api.toString()
+  const src = new URL(raw)
+  const bounce = new URL('/api/cinflix-bounce', window.location.origin)
+  bounce.searchParams.set('type', src.searchParams.get('type') || 'movie')
+  bounce.searchParams.set('id', src.searchParams.get('id') || '')
+  const season = src.searchParams.get('s')
+  const episode = src.searchParams.get('e')
+  if (season) bounce.searchParams.set('s', season)
+  if (episode) bounce.searchParams.set('e', episode)
+  bounce.searchParams.set('_', String(Date.now()))
+  const apiUrl = bounce.toString()
 
   const blinkUrl = await new Promise<string | null>(resolve => {
     let done = false
     let channel: BroadcastChannel | null = null
-    const img = new Image()
+    const iframe = document.createElement('iframe')
     const ctrl = new AbortController()
 
     const finish = (found: string | null) => {
@@ -121,9 +155,7 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
       navigator.serviceWorker.removeEventListener('message', onMsg)
       try { channel?.close() } catch {}
       window.clearTimeout(timer)
-      img.onload = null
-      img.onerror = null
-      img.src = ''
+      try { iframe.remove() } catch {}
       try { ctrl.abort() } catch {}
       resolve(found)
     }
@@ -139,16 +171,15 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
       channel.onmessage = onMsg
     } catch {}
 
-    img.referrerPolicy = 'no-referrer'
-    img.onload = () => {
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none'
+    iframe.referrerPolicy = 'no-referrer'
+    iframe.onload = () => {
       const found = blinkFromPerformance()
       if (found) finish(found)
     }
-    img.onerror = () => {
-      const found = blinkFromPerformance()
-      if (found) finish(found)
-    }
-    img.src = apiUrl
+    document.body.appendChild(iframe)
+    iframe.src = apiUrl
 
     fetch(apiUrl, {
       mode: 'no-cors',
@@ -159,10 +190,28 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
       signal: ctrl.signal,
     }).catch(() => {})
 
-    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 7000)
+    fetch(apiUrl, {
+      mode: 'cors',
+      redirect: 'follow',
+      cache: 'no-store',
+      credentials: 'omit',
+      headers: { Range: 'bytes=0-0' },
+      signal: ctrl.signal,
+    }).catch(() => {})
+
+    void resolveFromPlayEndpoint(raw).then(playUrl => {
+      if (!playUrl) return
+      const blink = blinkMp4From(playUrl)
+      if (blink) finish(blink)
+      else if (playUrl.includes('/api/proxy-download')) finish(playUrl)
+    })
+
+    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 8000)
   })
 
-  return blinkUrl ? withCinflixReferer(blinkUrl) : null
+  if (!blinkUrl) return null
+  if (blinkUrl.includes('/api/proxy-download')) return blinkUrl
+  return withCinflixReferer(blinkUrl)
 }
 
 function playbackUrl(url: string): string {
