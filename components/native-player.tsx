@@ -270,6 +270,15 @@ export function NativePlayer({
 
   const [displayTitle, setDisplayTitle] = useState(() => getDisplayTitle(initialSeason, initialEpisode))
   const [showEpisodes, setShowEpisodes] = useState(false)
+  const [iosPlayer, setIosPlayer] = useState(false)
+  const iosRef = useRef(false)
+
+  useEffect(() => {
+    const ios = /iP(hone|od|ad)/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    iosRef.current = ios
+    setIosPlayer(ios)
+  }, [])
 
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -508,8 +517,6 @@ export function NativePlayer({
     setShowError(false)
     setMuted(true)
 
-    const iOS = /iP(hone|od|ad)/.test(navigator.userAgent)
-      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     const isHls = url.includes('.m3u8')
 
     const playSrc = () => {
@@ -522,8 +529,7 @@ export function NativePlayer({
       })
     }
 
-    // iOS n'a pas MSE : HLS natif. Desktop (Chrome + Safari Mac) : hls.js comme Chrome.
-    if (isHls && Hls.isSupported() && !iOS) {
+    if (isHls && Hls.isSupported() && !iosRef.current) {
       const hls = new Hls({ enableWorker: true, xhrSetup: (xhr) => {
         xhr.withCredentials = false
       }})
@@ -582,6 +588,10 @@ export function NativePlayer({
     }
 
     v.src = url
+    if (iosRef.current) {
+      setBuffering(false)
+      return
+    }
     playSrc()
   }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
 
@@ -596,6 +606,7 @@ export function NativePlayer({
       syncVideoState(v)
     }
     const kickPlayback = () => {
+      if (iosRef.current) return
       if (v.paused) {
         v.muted = true
         v.play()?.catch(() => {})
@@ -943,6 +954,7 @@ export function NativePlayer({
   // seulement (sans lancer/mettre en pause à l'aveugle). S'ils sont déjà
   // visibles, le tap bascule la lecture. Corrige les taps "fantômes" sur mobile.
   const handleSurfaceTap = (e: React.MouseEvent) => {
+    if (iosRef.current) return
     const target = e.target as HTMLElement | null
     if (target?.closest('button, a, input, textarea, [data-no-surface]')) return
     if (!showControls) { resetTimer(); return }
@@ -1236,8 +1248,9 @@ export function NativePlayer({
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         playsInline
+        controls={iosPlayer}
         preload="auto"
-        controls={false}
+        controlsList="nodownload"
       />
       <button
         type="button"
@@ -1248,9 +1261,20 @@ export function NativePlayer({
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
+      {iosPlayer && type === 'series' && (
+        <button
+          type="button"
+          onClick={() => setShowEpisodes(true)}
+          className="absolute z-[90] h-10 px-4 rounded-full bg-white text-black text-xs font-black tracking-widest uppercase inline-flex items-center gap-2"
+          style={{ top: 'max(12px, env(safe-area-inset-top, 0px))', right: 16 }}
+        >
+          <List className="w-4 h-4" />
+          Épisodes
+        </button>
+      )}
 
       <AnimatePresence>
-        {!playing && !buffering && !fetchingEpisode && tmdbDetails && (
+        {!iosPlayer && !playing && !buffering && !fetchingEpisode && tmdbDetails && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 pointer-events-none z-[16]"
@@ -1424,7 +1448,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {buffering && !fetchingEpisode && !episodeNotFound && (
+        {!iosPlayer && buffering && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-[18] flex items-center justify-center pointer-events-none"
@@ -1435,7 +1459,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {!playing && !fetchingEpisode && !episodeNotFound && (
+        {!iosPlayer && !playing && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
             className="absolute inset-0 z-[17] flex flex-col items-center justify-center gap-3 pointer-events-none"
@@ -1459,7 +1483,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {showControls && !fetchingEpisode && (
+        {showControls && !fetchingEpisode && !iosPlayer && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
             className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none ${!showControls ? 'cursor-none' : ''}`}
