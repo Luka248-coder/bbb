@@ -9,12 +9,11 @@ const CINFLIX_REFERER = `${CINFLIX_ORIGIN}/`
 const TIMEOUT_MS = 8000
 
 const HEADERS: Record<string, string> = {
-  Accept: 'application/json, text/plain, */*',
+  Accept: '*/*',
   'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   Referer: CINFLIX_REFERER,
-  Origin: CINFLIX_ORIGIN,
 }
 
 function pickUrl(value: unknown): string | null {
@@ -130,12 +129,33 @@ function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
 }
 
 export async function resolveCinflixApiUrl(apiUrl: string): Promise<string | null> {
-  const res = await requestNoRedirect(apiUrl)
-  if (res.location) return res.location
-  if (res.contentType.includes('json') && res.text) {
+  const viaHttps = await requestNoRedirect(apiUrl)
+  if (viaHttps.location) return viaHttps.location
+  if (viaHttps.contentType.includes('json') && viaHttps.text) {
     try {
-      return urlFromPayload(JSON.parse(res.text))
+      const fromJson = urlFromPayload(JSON.parse(viaHttps.text))
+      if (fromJson) return fromJson
     } catch {}
+  }
+
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'GET',
+      redirect: 'manual',
+      cache: 'no-store',
+      headers: HEADERS,
+      signal: ctrl.signal,
+    })
+    const loc = headerLocation(res.headers.get('location') || undefined, apiUrl)
+    if (loc) {
+      try { await res.body?.cancel() } catch {}
+      return loc
+    }
+  } catch {
+  } finally {
+    clearTimeout(timer)
   }
   return null
 }

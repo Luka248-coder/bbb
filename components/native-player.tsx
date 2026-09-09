@@ -59,19 +59,109 @@ function blinkFromPerformance(): string | null {
   return null
 }
 
-function ensureCinflixSw() {
-  if (!('serviceWorker' in navigator)) return
-  navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' }).catch(() => {})
+function ensureCinflixSw(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
+  return (async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=11', { scope: '/', updateViaCache: 'none' })
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+      await navigator.serviceWorker.ready
+      if (navigator.serviceWorker.controller) return true
+      await Promise.race([
+        new Promise<void>(resolve => {
+          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
+        }),
+        new Promise<void>(resolve => window.setTimeout(resolve, 2000)),
+      ])
+      return !!navigator.serviceWorker.controller
+    } catch {
+      return false
+    }
+  })()
+}
+
+async function resolveCinflixFromPhone(apiUrl: string): Promise<string | null> {
+  await ensureCinflixSw()
+  const probe = new URL(apiUrl)
+  probe.searchParams.set('_', String(Date.now()))
+  const probeUrl = probe.toString()
+
+  return new Promise(resolve => {
+    let done = false
+    let channel: BroadcastChannel | null = null
+    const img = new Image()
+    const fetchCtrl = new AbortController()
+
+    const finish = (found: string | null) => {
+      if (done) return
+      done = true
+      navigator.serviceWorker.removeEventListener('message', onMsg)
+      try { channel?.close() } catch {}
+      window.clearTimeout(timer)
+      window.clearTimeout(fetchCut)
+      img.onload = null
+      img.onerror = null
+      img.src = ''
+      try { fetchCtrl.abort() } catch {}
+      resolve(found)
+    }
+
+    const onMsg = (event: MessageEvent) => {
+      const found = blinkMp4From(typeof event.data?.url === 'string' ? event.data.url : '')
+      if (found) finish(found)
+    }
+
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    try {
+      channel = new BroadcastChannel('cinflix-blink')
+      channel.onmessage = onMsg
+    } catch {}
+
+    img.referrerPolicy = 'no-referrer'
+    img.onload = () => {
+      const found = blinkFromPerformance()
+      if (found) finish(found)
+    }
+    img.onerror = () => {
+      const found = blinkFromPerformance()
+      if (found) finish(found)
+    }
+    img.src = probeUrl
+
+    fetch(probeUrl, {
+      mode: 'no-cors',
+      redirect: 'follow',
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      signal: fetchCtrl.signal,
+    }).catch(() => {})
+
+    const fetchCut = window.setTimeout(() => {
+      try { fetchCtrl.abort() } catch {}
+    }, 2500)
+
+    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 7000)
+  })
 }
 
 async function resolveCinflixSrc(url: string): Promise<string | null> {
   const known = blinkMp4From(url)
   if (known) return withCinflixReferer(known)
 
-  if (!isCinflixApiUrl(url)) return null
+  let raw = url
+  if (raw.includes('/api/proxy-download')) {
+    try {
+      const inner = new URL(raw, window.location.origin).searchParams.get('url')
+      if (inner) raw = inner
+    } catch {}
+  }
+  const innerBlink = blinkMp4From(raw)
+  if (innerBlink) return withCinflixReferer(innerBlink)
+  if (!isCinflixApiUrl(raw)) return null
 
   try {
-    const u = new URL(url)
+    const u = new URL(raw)
     const params = new URLSearchParams({
       type: u.searchParams.get('type') || 'movie',
       id: u.searchParams.get('id') || '',
@@ -88,7 +178,8 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
     }
   } catch {}
 
-  return null
+  const fromPhone = await resolveCinflixFromPhone(raw)
+  return fromPhone ? withCinflixReferer(fromPhone) : null
 }
 
 interface Episode {
@@ -664,7 +755,6 @@ export function NativePlayer({
     }
 
     void (async () => {
-      ensureCinflixSw()
       if (gen !== loadGenRef.current) return
 
       let playUrl = safariMediaUrl(url)
