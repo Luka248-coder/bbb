@@ -271,6 +271,7 @@ export function NativePlayer({
   const [displayTitle, setDisplayTitle] = useState(() => getDisplayTitle(initialSeason, initialEpisode))
   const [showEpisodes, setShowEpisodes] = useState(false)
   const [iosPlayer, setIosPlayer] = useState(false)
+  const [iosReady, setIosReady] = useState(false)
   const iosRef = useRef(false)
 
   useEffect(() => {
@@ -278,6 +279,7 @@ export function NativePlayer({
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     iosRef.current = ios
     setIosPlayer(ios)
+    setIosReady(true)
   }, [])
 
   const [playing, setPlaying] = useState(false)
@@ -507,7 +509,6 @@ export function NativePlayer({
     v.playsInline = true
     v.setAttribute('playsinline', '')
     v.setAttribute('webkit-playsinline', 'true')
-    v.muted = true
     resumeAppliedRef.current = false
     sourceUrlRef.current = url
     proxyTriedRef.current = false
@@ -515,9 +516,22 @@ export function NativePlayer({
     setBuffering(true)
     setPlaying(false)
     setShowError(false)
-    setMuted(true)
+
+    if (iosRef.current) {
+      v.muted = false
+      setMuted(false)
+    } else {
+      v.muted = true
+      setMuted(true)
+    }
 
     const isHls = url.includes('.m3u8')
+    const alreadyProxied = url.includes('/api/hls/') || url.includes('/api/stream-proxy')
+    const playUrl = iosRef.current && !alreadyProxied
+      ? isHls
+        ? `/api/hls/master.m3u8?url=${encodeURIComponent(url)}`
+        : `/api/stream-proxy?url=${encodeURIComponent(url)}`
+      : url
 
     const playSrc = () => {
       v.muted = true
@@ -587,7 +601,13 @@ export function NativePlayer({
       return
     }
 
-    v.src = url
+    v.removeAttribute('src')
+    while (v.firstChild) v.removeChild(v.firstChild)
+    const source = document.createElement('source')
+    source.src = playUrl
+    source.type = isHls ? 'application/vnd.apple.mpegurl' : 'video/mp4'
+    v.appendChild(source)
+    v.load()
     if (iosRef.current) {
       setBuffering(false)
       return
@@ -613,6 +633,7 @@ export function NativePlayer({
       }
     }
     const applyResume = () => {
+      if (iosRef.current) return
       if (resumeAppliedRef.current || !(v.duration > 0)) return
       const saved = resumeTimeRef.current
       if (!(saved > 2 && saved < 98)) {
@@ -652,7 +673,18 @@ export function NativePlayer({
     }
     const onError = () => {
       const raw = sourceUrlRef.current
-      if (raw && !proxyTriedRef.current && /^https?:/i.test(raw) && !raw.includes('/api/proxy-download')) {
+      if (iosRef.current) {
+        if (raw?.includes('.m3u8') && !v.currentSrc.includes('/api/hls/') && !proxyTriedRef.current) {
+          proxyTriedRef.current = true
+          v.src = `/api/hls/master.m3u8?url=${encodeURIComponent(raw)}`
+          v.load()
+          return
+        }
+        setBuffering(false)
+        setPlaying(false)
+        return
+      }
+      if (raw && !proxyTriedRef.current && /^https?:/i.test(raw) && !raw.includes('/api/proxy-download') && !raw.includes('.m3u8')) {
         proxyTriedRef.current = true
         setBuffering(true)
         v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
@@ -750,26 +782,25 @@ export function NativePlayer({
 
   // Load video whenever videoUrl changes
   useEffect(() => {
-    if (videoUrl) {
-      // URL trouvée — annuler le timer et jouer
-      if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
-      setEpisodeNotFound(false)
-      loadVideo(videoUrl)
-    }
+    if (!iosReady || !videoUrl) return
+    if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
+    setEpisodeNotFound(false)
+    loadVideo(videoUrl)
     return () => {
       hlsRef.current?.destroy()
       hlsRef.current = null
     }
-  }, [videoUrl, loadVideo])
+  }, [videoUrl, loadVideo, iosReady])
 
   // Si la durée est là mais aucune image au bout de 4s (typique Safari),
   // on retente via le proxy Referer au lieu de rester coincé à 0:00.
   useEffect(() => {
-    if (!buffering || !videoUrl) return
+    if (iosPlayer || !buffering || !videoUrl) return
     const t = window.setTimeout(() => {
       const v = videoRef.current
       const raw = sourceUrlRef.current
       if (!v || !raw || proxyTriedRef.current) return
+      if (raw.includes('.m3u8')) return
       if (!(v.duration > 0) || v.currentTime > 0.2) return
       proxyTriedRef.current = true
       v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
@@ -780,7 +811,7 @@ export function NativePlayer({
       })
     }, 4000)
     return () => window.clearTimeout(t)
-  }, [buffering, videoUrl])
+  }, [buffering, videoUrl, iosPlayer])
 
   // Fullscreen listener
   useEffect(() => {
@@ -1248,8 +1279,10 @@ export function NativePlayer({
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         playsInline
+        webkit-playsinline="true"
+        x-webkit-airplay="allow"
         controls={iosPlayer}
-        preload="auto"
+        preload="metadata"
         controlsList="nodownload"
       />
       <button

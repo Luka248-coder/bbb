@@ -12,10 +12,24 @@ const SPOOF_HEADERS: Record<string, string> = {
   'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
 }
 
+function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/\.+$/, '')
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return true
+  if (h === '::1' || h === '0.0.0.0') return true
+  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(h)) return false
+  const p = h.split('.').map(Number)
+  if (p[0] === 10 || p[0] === 127 || p[0] === 0) return true
+  if (p[0] === 169 && p[1] === 254) return true
+  if (p[0] === 192 && p[1] === 168) return true
+  if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return true
+  return false
+}
+
 function isSafeTarget(url: string): boolean {
   try {
-    const h = new URL(url).hostname.toLowerCase()
-    return h === 'topstream.cloud' || h.endsWith('.topstream.cloud')
+    const u = new URL(url)
+    if (u.protocol !== 'https:') return false
+    return !isBlockedHost(u.hostname)
   } catch {
     return false
   }
