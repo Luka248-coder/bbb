@@ -48,8 +48,8 @@ function mediaHeaders(target: URL, range: string): Record<string, string> {
 }
 
 async function fetchMedia(target: URL, range: string): Promise<Response> {
-  const headers = mediaHeaders(target, range)
   let url = target.toString()
+  let headers = mediaHeaders(new URL(url), range)
   let res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store' })
 
   for (let i = 0; i < 4 && res.status >= 300 && res.status < 400; i++) {
@@ -57,6 +57,7 @@ async function fetchMedia(target: URL, range: string): Promise<Response> {
     try { await res.body?.cancel() } catch {}
     if (!loc) break
     url = new URL(loc, url).toString()
+    headers = mediaHeaders(new URL(url), range)
     res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store' })
   }
 
@@ -122,17 +123,6 @@ async function proxy(request: NextRequest, withBody: boolean) {
     const parsed = new URL(rawUrl)
     if (!/^https?:$/i.test(parsed.protocol)) {
       return new NextResponse('URL invalide', { status: 400 })
-    }
-
-    if (parsed.hostname.toLowerCase().includes('cinflix.xyz')) {
-      const dest = new URL('/api/cinflix-play', request.url)
-      dest.searchParams.set('type', parsed.searchParams.get('type') || 'movie')
-      dest.searchParams.set('id', parsed.searchParams.get('id') || '')
-      const season = parsed.searchParams.get('s')
-      const episode = parsed.searchParams.get('e')
-      if (season) dest.searchParams.set('s', season)
-      if (episode) dest.searchParams.set('e', episode)
-      return NextResponse.redirect(dest, 307)
     }
 
     const target = parsed
