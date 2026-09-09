@@ -10,6 +10,7 @@ import { PresenceTracker } from '@/components/presence-tracker'
 import { ProfileProvider } from '@/contexts/ProfileContext'
 import { ProfileGate } from '@/components/profile-gate'
 import { CinflixSwRegister } from '@/components/cinflix-sw-register'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const barlowCondensed = Barlow_Condensed({
