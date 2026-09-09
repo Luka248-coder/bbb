@@ -59,126 +59,15 @@ function blinkFromPerformance(): string | null {
   return null
 }
 
-function firstOk<T>(promises: Promise<T | null>[]): Promise<T | null> {
-  return new Promise(resolve => {
-    let left = promises.length
-    if (!left) {
-      resolve(null)
-      return
-    }
-    for (const p of promises) {
-      p.then(value => {
-        if (value) resolve(value)
-        else if (--left === 0) resolve(null)
-      }).catch(() => {
-        if (--left === 0) resolve(null)
-      })
-    }
-  })
-}
-
-function probeCinflixBlink(apiUrl: string, timeoutMs = 8000): Promise<string | null> {
-  const existing = blinkFromPerformance()
-  if (existing) return Promise.resolve(existing)
-
-  return new Promise(resolve => {
-    let done = false
-    const video = document.createElement('video')
-    video.muted = true
-    video.preload = 'metadata'
-    video.playsInline = true
-    video.setAttribute('playsinline', '')
-    video.setAttribute('webkit-playsinline', 'true')
-    video.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none'
-
-    const finish = (url: string | null) => {
-      if (done) return
-      done = true
-      stopWatch()
-      window.clearTimeout(timer)
-      video.removeAttribute('src')
-      try { video.load() } catch {}
-      video.remove()
-      resolve(url)
-    }
-
-    const stopWatch = watchBlinkRedirect(url => finish(url), timeoutMs)
-    const timer = window.setTimeout(() => finish(blinkFromPerformance()), timeoutMs)
-    video.addEventListener('error', () => finish(blinkFromPerformance()))
-    document.body.appendChild(video)
-    video.src = apiUrl
-  })
-}
-
-async function resolveFromEdge(apiUrl: string): Promise<string | null> {
-  try {
-    const u = new URL(apiUrl)
-    const params = new URLSearchParams({
-      type: u.searchParams.get('type') || 'movie',
-      id: u.searchParams.get('id') || '',
-    })
-    const season = u.searchParams.get('s')
-    const episode = u.searchParams.get('e')
-    if (season) params.set('s', season)
-    if (episode) params.set('e', episode)
-    const res = await fetch(`/api/cinflix-resolve?${params}`, { cache: 'no-store' })
-    const data = await res.json().catch(() => null)
-    const media = typeof data?.url === 'string' ? data.url : null
-    if (media && !isCinflixApiUrl(media)) return withCinflixReferer(media)
-  } catch {}
-  return null
-}
-
 function ensureCinflixSw() {
   if (!('serviceWorker' in navigator)) return
   navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' }).catch(() => {})
 }
 
-async function resolveCinflixSrc(url: string): Promise<string | null> {
-  const known = blinkMp4From(url)
-  if (known) return withCinflixReferer(known)
-  if (url.includes('/api/proxy-download')) return url
-  if (!isCinflixApiUrl(url)) return null
-
-  const proxied = await firstOk([
-    resolveFromEdge(url),
-    probeCinflixBlink(url).then(blink => (blink ? withCinflixReferer(blink) : null)),
-  ])
-  return proxied
-}
-
-function watchBlinkRedirect(onBlink: (url: string) => void, timeoutMs = 12000): () => void {
-  let done = false
-  const fire = (url: string) => {
-    if (done) return
-    done = true
-    onBlink(url)
-  }
-  const existing = blinkFromPerformance()
-  if (existing) {
-    fire(existing)
-    return () => { done = true }
-  }
-  let obs: PerformanceObserver | null = null
-  try {
-    obs = new PerformanceObserver(list => {
-      for (const entry of list.getEntries()) {
-        const found = blinkMp4From(entry.name)
-        if (found) fire(found)
-      }
-    })
-    obs.observe({ type: 'resource', buffered: true })
-  } catch {}
-  const timer = window.setTimeout(() => {
-    const found = blinkFromPerformance()
-    if (found) fire(found)
-    obs?.disconnect()
-  }, timeoutMs)
-  return () => {
-    done = true
-    obs?.disconnect()
-    window.clearTimeout(timer)
-  }
+function playbackUrl(url: string): string {
+  if (url.includes('/api/proxy-download') || url.includes('/api/hls/')) return url
+  if (isCinflixApiUrl(url) || blinkMp4From(url)) return withCinflixReferer(url)
+  return url
 }
 
 interface Episode {
@@ -406,7 +295,6 @@ export function NativePlayer({
   const hlsRef = useRef<Hls | null>(null)
   const sourceUrlRef = useRef<string | null>(null)
   const proxyTriedRef = useRef(false)
-  const blinkWatchStopRef = useRef<(() => void) | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -674,8 +562,6 @@ export function NativePlayer({
     resumeAppliedRef.current = false
     sourceUrlRef.current = url
     proxyTriedRef.current = false
-    blinkWatchStopRef.current?.()
-    blinkWatchStopRef.current = null
 
     setBuffering(true)
     setPlaying(false)
@@ -756,59 +642,14 @@ export function NativePlayer({
       return
     }
 
-    void (async () => {
-      ensureCinflixSw()
-      if (gen !== loadGenRef.current) return
-
-      let playUrl = safariMediaUrl(url)
-      const cinflixSrc = await resolveCinflixSrc(url)
-      if (gen !== loadGenRef.current) return
-      if (isCinflixApiUrl(url) || url.includes('/api/cinflix-play')) {
-        if (!cinflixSrc || isCinflixApiUrl(cinflixSrc) || cinflixSrc.includes('/api/cinflix-play')) {
-          setBuffering(false)
-          setPlaying(false)
-          setShowError(true)
-          return
-        }
-        playUrl = cinflixSrc
-        proxyTriedRef.current = true
-      } else if (cinflixSrc) {
-        playUrl = cinflixSrc
-        if (cinflixSrc.includes('/api/proxy-download')) proxyTriedRef.current = true
-      }
-
-      if (gen !== loadGenRef.current) return
-      v.removeAttribute('src')
-      while (v.firstChild) v.removeChild(v.firstChild)
-
-      if (blinkMp4From(playUrl) || isCinflixApiUrl(playUrl) || playUrl.includes('/api/cinflix-play')) {
-        const proxied = blinkMp4From(playUrl) ? withCinflixReferer(playUrl) : cinflixSrc
-        if (!proxied || isCinflixApiUrl(proxied) || proxied.includes('/api/cinflix-play')) {
-          setBuffering(false)
-          setPlaying(false)
-          setShowError(true)
-          return
-        }
-        playUrl = proxied
-        proxyTriedRef.current = true
-      }
-
-      if (isCinflixApiUrl(url)) {
-        blinkWatchStopRef.current = watchBlinkRedirect(blink => {
-          if (gen !== loadGenRef.current) return
-          blinkWatchStopRef.current = null
-          proxyTriedRef.current = true
-          sourceUrlRef.current = blink
-          v.src = withCinflixReferer(blink)
-          v.load()
-          playSrc()
-        })
-      }
-
-      v.src = playUrl
-      v.load()
-      playSrc()
-    })()
+    ensureCinflixSw()
+    const playUrl = playbackUrl(safariMediaUrl(url))
+    if (playUrl.includes('/api/proxy-download')) proxyTriedRef.current = true
+    v.removeAttribute('src')
+    while (v.firstChild) v.removeChild(v.firstChild)
+    v.src = playUrl
+    v.load()
+    playSrc()
   }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
 
   // ─── Mount & video events ───────────────────────────────────────────────────
