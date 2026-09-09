@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isCinflixApiUrl } from '@/lib/cinflix-url'
+import { resolveCinflixApiUrl } from '@/lib/cinflix'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -7,37 +9,14 @@ const CINFLIX_ORIGIN = 'https://cinflix.xyz'
 const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function resolveCinflixApi(apiUrl: string): Promise<string | null> {
-  const res = await fetch(apiUrl, {
-    method: 'GET',
-    redirect: 'manual',
-    cache: 'no-store',
-    headers: {
-      Accept: 'application/json, text/plain, */*',
-      'Accept-Language': 'fr-FR,fr;q=0.9',
-      'User-Agent': BROWSER_UA,
-      Referer: `${CINFLIX_ORIGIN}/`,
-      Origin: CINFLIX_ORIGIN,
-    },
-  })
-  const loc = res.headers.get('location')
-  try { await res.body?.cancel() } catch {}
-  if (!loc) return null
-  try {
-    return new URL(loc, apiUrl).toString()
-  } catch {
-    return null
-  }
-}
-
 async function resolveTarget(rawUrl: string): Promise<URL> {
-  let target = rawUrl
-  let parsed = new URL(target)
+  const parsed = new URL(rawUrl)
   if (parsed.hostname.toLowerCase().includes('cinflix.xyz')) {
-    const resolved = await resolveCinflixApi(target)
-    if (!resolved) throw new Error('Cinflix n\'a pas renvoyé de flux')
-    target = resolved
-    parsed = new URL(target)
+    const resolved = await resolveCinflixApiUrl(rawUrl)
+    if (!resolved || isCinflixApiUrl(resolved)) {
+      throw new Error('Cinflix n\'a pas renvoyé de flux')
+    }
+    return new URL(resolved)
   }
   return parsed
 }
