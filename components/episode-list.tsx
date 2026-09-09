@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Play, ChevronDown, Clock, Star, Lock, X } from 'lucide-react'
+import { Play, ChevronDown, Lock } from 'lucide-react'
 import type { TMDBEpisode } from '@/lib/tmdb'
 
 interface EpisodeListProps {
@@ -23,95 +21,7 @@ function formatRuntime(mins: number) {
   if (!mins) return null
   const h = Math.floor(mins / 60)
   const m = mins % 60
-  return h > 0 ? `${h}h${m > 0 ? m + 'min' : ''}` : `${m}min`
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return null
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-// Composant modal pour le sélecteur de saison (scroll garanti)
-function SeasonModal({
-  open,
-  totalSeasons,
-  currentSeason,
-  episodeCount,
-  onSelect,
-  onClose,
-}: {
-  open: boolean
-  totalSeasons: number
-  currentSeason: number
-  episodeCount: number
-  onSelect: (s: number) => void
-  onClose: () => void
-}) {
-  // Fermer avec Escape
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, onClose])
-
-  if (!open) return null
-
-  const content = (
-    <div
-      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
-      {/* Panel */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
-        transition={{ duration: 0.2 }}
-        onClick={e => e.stopPropagation()}
-        className="relative z-10 w-full sm:w-80 bg-zinc-900 border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/60 overflow-hidden"
-        style={{ maxHeight: '70vh' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
-          <span className="text-white font-bold text-base">Choisir une saison</span>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-            <X className="w-4 h-4 text-white/70" />
-          </button>
-        </div>
-
-        {/* Liste scrollable */}
-        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(70vh - 60px)', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
-            <button
-              key={s}
-              onClick={() => { onSelect(s); onClose() }}
-              className={`w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold transition-colors border-b border-white/5 last:border-0 ${
-                s === currentSeason
-                  ? 'bg-primary/20 text-primary'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <span>Saison {s}</span>
-              <div className="flex items-center gap-3">
-                {s === currentSeason && (
-                  <span className="text-xs text-primary/70 font-medium">{episodeCount} ép.</span>
-                )}
-                {s === currentSeason && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-      </motion.div>
-    </div>
-  )
-
-  return typeof document !== 'undefined' ? createPortal(content, document.body) : null
+  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`
 }
 
 export function EpisodeList({
@@ -126,7 +36,13 @@ export function EpisodeList({
 }: EpisodeListProps) {
   const router = useRouter()
   const [seasonOpen, setSeasonOpen] = useState(false)
-  const [hoveredEp, setHoveredEp] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!seasonOpen) return
+    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') setSeasonOpen(false) }
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [seasonOpen])
 
   const playEpisode = (ep: TMDBEpisode) => {
     const from = encodeURIComponent(window.location.pathname + window.location.search)
@@ -134,253 +50,98 @@ export function EpisodeList({
     router.push(`/watch/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}&play=1${isDrawer ? `&from=${from}` : ''}`)
   }
 
-  const selectEpisode = (ep: TMDBEpisode) => {
-    if (isDrawer && onClose) onClose()
-    router.push(`/title/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}`)
-  }
-
   const isCurrentEp = (ep: TMDBEpisode) =>
     ep.season_number === currentSeason && ep.episode_number === currentEpisode
 
   const isFuture = (ep: TMDBEpisode) =>
-    ep.air_date && new Date(ep.air_date) > new Date()
+    !!(ep.air_date && new Date(ep.air_date) > new Date())
 
   return (
     <div className="w-full">
-      {/* Season selector */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative">
-          <button
-            onClick={() => setSeasonOpen(true)}
-            className="flex items-center gap-3 px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-white font-bold transition-all group"
-          >
-            <span className="text-base">Saison {currentSeason}</span>
-            <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2 py-0.5">
-              <span className="text-xs text-white/60 font-medium">{episodes.length} épisodes</span>
+      <div className="relative mb-5">
+        <button
+          type="button"
+          onClick={() => setSeasonOpen(v => !v)}
+          className="h-10 px-4 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-zinc-200 font-semibold text-sm inline-flex items-center gap-2"
+        >
+          Saison {currentSeason}
+          <span className="text-zinc-500 font-medium text-xs">{episodes.length} ép.</span>
+          <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${seasonOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {seasonOpen && (
+          <>
+            <button type="button" className="fixed inset-0 z-40" aria-label="Fermer" onClick={() => setSeasonOpen(false)} />
+            <div className="absolute top-full left-0 mt-2 z-50 w-56 max-h-72 overflow-y-auto rounded-2xl bg-[#0a0a0e] border border-white/10 p-1.5 shadow-2xl">
+              {Array.from({ length: totalSeasons }, (_, i) => i + 1).map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => { onSeasonChange(s); setSeasonOpen(false) }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                    s === currentSeason ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  Saison {s}
+                </button>
+              ))}
             </div>
-            <ChevronDown className="w-4 h-4 text-white/50" />
-          </button>
-        </div>
+          </>
+        )}
       </div>
 
-      {/* Season modal — rendu hors du flux normal, pas de problème overflow */}
-      <AnimatePresence>
-        {seasonOpen && (
-          <SeasonModal
-            open={seasonOpen}
-            totalSeasons={totalSeasons}
-            currentSeason={currentSeason}
-            episodeCount={episodes.length}
-            onSelect={onSeasonChange}
-            onClose={() => setSeasonOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Episode list */}
-      <div className="space-y-3">
-        {episodes.map((ep, index) => {
+      <div className="space-y-1.5">
+        {episodes.map(ep => {
           const isCurrent = isCurrentEp(ep)
           const future = isFuture(ep)
-          const isHovered = hoveredEp === ep.episode_number
-          const still = ep.still_path
-            ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
-            : null
+          const still = ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : null
           const runtime = formatRuntime(ep.runtime)
-          const date = formatDate(ep.air_date)
 
           return (
-            <motion.div
+            <button
               key={ep.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03, duration: 0.3 }}
-              onMouseEnter={() => setHoveredEp(ep.episode_number)}
-              onMouseLeave={() => setHoveredEp(null)}
-              onClick={() => !future && playEpisode(ep)}
-              className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border ${
+              type="button"
+              disabled={future}
+              onClick={() => playEpisode(ep)}
+              className={`w-full flex items-center gap-3 p-2 sm:p-2.5 rounded-2xl text-left transition-colors ${
                 isCurrent
-                  ? 'border-primary/40 bg-primary/5'
+                  ? 'bg-white/[0.08] border border-white/15'
                   : future
-                  ? 'border-white/5 bg-white/[0.02] opacity-50 cursor-default'
-                  : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/10'
+                    ? 'bg-white/[0.01] border border-white/[0.04] opacity-50 cursor-not-allowed'
+                    : 'bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.07] hover:border-white/12'
               }`}
             >
-              {/* Left accent bar for current — desktop only */}
-              {isCurrent && (
-                <div className="hidden md:block absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-full z-10" />
-              )}
-
-              {/* ── MOBILE layout: thumbnail pleine largeur + infos dessous ── */}
-              <div className="md:hidden">
-                {/* Thumbnail */}
-                <div className="relative w-full aspect-video bg-zinc-900 overflow-hidden">
-                  {still ? (
-                    <Image src={still} alt={ep.name} fill className="object-cover" sizes="100vw" />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-800">
-                      <Play className="w-8 h-8 text-white/20" />
-                    </div>
-                  )}
-
-                  {/* Gradient bas */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-
-                  {/* Badge numéro épisode */}
-                  <div className={`absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-xs font-black backdrop-blur-md ${
-                    isCurrent ? 'bg-primary text-white' : 'bg-black/60 text-white/80'
-                  }`}>
-                    Ép. {String(ep.episode_number).padStart(2, '0')}
-                  </div>
-
-                  {/* EN COURS badge */}
-                  {isCurrent && (
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-primary/90 backdrop-blur-sm rounded-full px-3 py-1.5">
-                      <div className="flex gap-0.5 items-end h-3">
-                        {[1, 2, 3].map(b => (
-                          <motion.div
-                            key={b}
-                            className="w-0.5 bg-white rounded-full"
-                            animate={{ height: ['4px', '10px', '4px'] }}
-                            transition={{ duration: 0.8, repeat: Infinity, delay: b * 0.15 }}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-white text-[10px] font-bold tracking-wide">EN COURS</span>
-                    </div>
-                  )}
-
-                  {/* Bouton play centré */}
-                  {!future && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
-                        <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Future lock */}
-                  {future && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                      <Lock className="w-7 h-7 text-white/40" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Infos sous la vignette */}
-                <div className="px-4 py-3">
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className={`font-bold text-sm leading-tight flex-1 ${isCurrent ? 'text-white' : 'text-white/90'}`}>
-                      {ep.name}
-                    </h3>
-                    <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
-                      {ep.vote_average > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          <span className="text-white/60 text-xs font-semibold">{ep.vote_average.toFixed(1)}</span>
-                        </div>
-                      )}
-                      {runtime && (
-                        <div className="flex items-center gap-1 text-white/35">
-                          <Clock className="w-3 h-3" />
-                          <span className="text-xs">{runtime}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {ep.overview && (
-                    <p className="text-white/45 text-xs leading-relaxed line-clamp-2">{ep.overview}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* ── DESKTOP layout: horizontal ── */}
-              <div className="hidden md:flex gap-0">
-                {/* Thumbnail */}
-                <div className="relative flex-shrink-0 w-[220px] aspect-video bg-white/5 overflow-hidden">
-                  {still ? (
-                    <Image
-                      src={still}
-                      alt={ep.name}
-                      fill
-                      className={`object-cover transition-transform duration-500 ${isHovered && !future ? 'scale-105' : 'scale-100'}`}
-                      sizes="220px"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-800">
-                      <Play className="w-8 h-8 text-white/20" />
-                    </div>
-                  )}
-                  <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered && !future ? 'opacity-100' : 'opacity-0'}`}>
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xl">
-                      <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                    </div>
-                  </div>
-                  <div className={`absolute bottom-2 left-2 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black backdrop-blur-md ${
-                    isCurrent ? 'bg-primary text-white' : 'bg-black/60 text-white/80'
-                  }`}>
-                    {String(ep.episode_number).padStart(2, '0')}
-                  </div>
-                  {future && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                      <Lock className="w-6 h-6 text-white/40" />
-                    </div>
-                  )}
-                  {isCurrent && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-primary/90 backdrop-blur-sm rounded-lg px-2 py-1">
-                      <div className="flex gap-0.5 items-end h-3">
-                        {[1, 2, 3].map(b => (
-                          <motion.div
-                            key={b}
-                            className="w-0.5 bg-white rounded-full"
-                            animate={{ height: ['4px', '10px', '4px'] }}
-                            transition={{ duration: 0.8, repeat: Infinity, delay: b * 0.15 }}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-white text-[10px] font-bold">EN COURS</span>
-                    </div>
-                  )}
-                </div>
-                {/* Content */}
-                <div className="flex-1 flex flex-col justify-center px-5 py-4 min-w-0">
-                  <div className="flex items-start justify-between gap-4 mb-2">
-                    <h3 className={`font-bold leading-tight text-base ${isCurrent ? 'text-white' : 'text-white/90'}`}>
-                      {ep.name}
-                    </h3>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      {ep.vote_average > 0 && (
-                        <div className="flex items-center gap-1 opacity-60">
-                          <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                          <span className="text-white text-xs font-semibold">{ep.vote_average.toFixed(1)}</span>
-                        </div>
-                      )}
-                      {runtime && (
-                        <div className="flex items-center gap-1 text-white/40">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span className="text-xs font-medium">{runtime}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {ep.overview && (
-                    <p className="text-white/50 text-sm leading-relaxed line-clamp-2 mb-2">{ep.overview}</p>
-                  )}
-                  {date && <p className="text-white/25 text-xs">{date}</p>}
-                </div>
+              <div className="relative w-28 sm:w-44 aspect-video rounded-xl overflow-hidden bg-zinc-800 shrink-0">
+                {still ? (
+                  <Image src={still} alt="" fill className="object-cover" sizes="176px" />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <Play className="w-5 h-5 text-white/20" />
+                  </span>
+                )}
                 {!future && (
-                  <div className={`flex items-center pr-4 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                    <div
-                      onClick={e => { e.stopPropagation(); playEpisode(ep) }}
-                      className="w-9 h-9 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-                    </div>
-                  </div>
+                  <span className="absolute inset-0 bg-black/0 hover:bg-black/35 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                      <Play className="w-3.5 h-3.5 text-black fill-black ml-px" />
+                    </span>
+                  </span>
+                )}
+                {future && (
+                  <span className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <Lock className="w-4 h-4 text-white/50" />
+                  </span>
                 )}
               </div>
 
-            </motion.div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-zinc-500 mb-0.5">
+                  E{String(ep.episode_number).padStart(2, '0')}
+                  {isCurrent ? <span className="text-red-400 ml-2 font-semibold">En cours</span> : null}
+                </p>
+                <p className="text-sm font-semibold text-white truncate">{ep.name}</p>
+                {runtime && <p className="text-[11px] text-zinc-500 mt-0.5">{runtime}</p>}
+              </div>
+            </button>
           )
         })}
       </div>
