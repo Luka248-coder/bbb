@@ -21,6 +21,14 @@ function isWebKitSafari() {
   return iOS || safari
 }
 
+function safariMediaUrl(raw: string) {
+  if (!raw.includes('.m3u8') || raw.includes('/api/hls/')) return raw
+  const origin = window.location.hostname === 'streamself.dev'
+    ? `${window.location.protocol}//www.streamself.dev`
+    : window.location.origin
+  return `${origin}/api/hls/master.m3u8?url=${encodeURIComponent(raw)}&direct=1`
+}
+
 interface Episode {
   id: number
   season_number: number
@@ -270,17 +278,15 @@ export function NativePlayer({
 
   const [displayTitle, setDisplayTitle] = useState(() => getDisplayTitle(initialSeason, initialEpisode))
   const [showEpisodes, setShowEpisodes] = useState(false)
-  const [iosPlayer, setIosPlayer] = useState(false)
-  const [iosReady, setIosReady] = useState(false)
-  const [iosPlayUrl, setIosPlayUrl] = useState<string | null>(null)
+  const safariRef = useRef(false)
   const iosRef = useRef(false)
+  const [safariReady, setSafariReady] = useState(false)
 
   useEffect(() => {
-    const ios = /iP(hone|od|ad)/.test(navigator.userAgent)
+    safariRef.current = isWebKitSafari()
+    iosRef.current = /iP(hone|od|ad)/.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    iosRef.current = ios
-    setIosPlayer(ios)
-    setIosReady(true)
+    setSafariReady(true)
   }, [])
 
   const [playing, setPlaying] = useState(false)
@@ -518,7 +524,7 @@ export function NativePlayer({
     setPlaying(false)
     setShowError(false)
 
-    if (iosRef.current) {
+    if (safariRef.current) {
       v.muted = false
       setMuted(false)
     } else {
@@ -527,7 +533,7 @@ export function NativePlayer({
     }
 
     const isHls = url.includes('.m3u8')
-    const playUrl = url
+    const playUrl = safariRef.current ? safariMediaUrl(url) : url
 
     const playSrc = () => {
       v.muted = true
@@ -539,7 +545,7 @@ export function NativePlayer({
       })
     }
 
-    if (isHls && Hls.isSupported() && !iosRef.current) {
+    if (isHls && Hls.isSupported() && !safariRef.current) {
       const hls = new Hls({ enableWorker: true, xhrSetup: (xhr) => {
         xhr.withCredentials = false
       }})
@@ -601,7 +607,7 @@ export function NativePlayer({
     while (v.firstChild) v.removeChild(v.firstChild)
     v.src = playUrl
     v.load()
-    if (iosRef.current) {
+    if (safariRef.current) {
       setBuffering(false)
       return
     }
@@ -619,14 +625,14 @@ export function NativePlayer({
       syncVideoState(v)
     }
     const kickPlayback = () => {
-      if (iosRef.current) return
+      if (safariRef.current) return
       if (v.paused) {
         v.muted = true
         v.play()?.catch(() => {})
       }
     }
     const applyResume = () => {
-      if (iosRef.current) return
+      if (safariRef.current) return
       if (resumeAppliedRef.current || !(v.duration > 0)) return
       const saved = resumeTimeRef.current
       if (!(saved > 2 && saved < 98)) {
@@ -666,7 +672,7 @@ export function NativePlayer({
     }
     const onError = () => {
       const raw = sourceUrlRef.current
-      if (iosRef.current) {
+      if (safariRef.current) {
         setBuffering(false)
         setPlaying(false)
         return
@@ -721,7 +727,7 @@ export function NativePlayer({
       v.removeEventListener('stalled', onWaiting)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
-  }, [resetTimer, clearErrorTimer, syncVideoState, iosPlayUrl])
+  }, [resetTimer, clearErrorTimer, syncVideoState])
 
   // ─── Si série en DB mais épisode sans URL → overlay immédiat si pas de tmdbId
   useEffect(() => {
@@ -769,17 +775,7 @@ export function NativePlayer({
 
   // Load video whenever videoUrl changes
   useEffect(() => {
-    if (!iosReady || !videoUrl) return
-    if (iosRef.current) {
-      const origin = window.location.hostname === 'streamself.dev'
-        ? `${window.location.protocol}//www.streamself.dev`
-        : window.location.origin
-      const next = videoUrl.includes('.m3u8')
-        ? `${origin}/api/hls/master.m3u8?url=${encodeURIComponent(videoUrl)}&direct=1`
-        : videoUrl
-      setIosPlayUrl(next)
-      return
-    }
+    if (!safariReady || !videoUrl) return
     if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
     setEpisodeNotFound(false)
     loadVideo(videoUrl)
@@ -787,12 +783,12 @@ export function NativePlayer({
       hlsRef.current?.destroy()
       hlsRef.current = null
     }
-  }, [videoUrl, loadVideo, iosReady])
+  }, [videoUrl, loadVideo, safariReady])
 
   // Si la durée est là mais aucune image au bout de 4s (typique Safari),
   // on retente via le proxy Referer au lieu de rester coincé à 0:00.
   useEffect(() => {
-    if (iosPlayer || !buffering || !videoUrl) return
+    if (safariRef.current || !buffering || !videoUrl) return
     const t = window.setTimeout(() => {
       const v = videoRef.current
       const raw = sourceUrlRef.current
@@ -808,7 +804,7 @@ export function NativePlayer({
       })
     }, 4000)
     return () => window.clearTimeout(t)
-  }, [buffering, videoUrl, iosPlayer])
+  }, [buffering, videoUrl])
 
   // Fullscreen listener
   useEffect(() => {
@@ -969,6 +965,10 @@ export function NativePlayer({
     if (!v) return
     if (v.paused) {
       setShowError(false)
+      if (safariRef.current) {
+        v.muted = false
+        setMuted(false)
+      }
       v.play()?.catch(() => {
         setBuffering(false)
         setPlaying(false)
@@ -982,7 +982,6 @@ export function NativePlayer({
   // seulement (sans lancer/mettre en pause à l'aveugle). S'ils sont déjà
   // visibles, le tap bascule la lecture. Corrige les taps "fantômes" sur mobile.
   const handleSurfaceTap = (e: React.MouseEvent) => {
-    if (iosRef.current) return
     const target = e.target as HTMLElement | null
     if (target?.closest('button, a, input, textarea, [data-no-surface]')) return
     if (!showControls) { resetTimer(); return }
@@ -1106,10 +1105,7 @@ export function NativePlayer({
     const el = containerRef.current
     if (!v) return
 
-    const iOS = /iP(hone|od|ad)/.test(navigator.userAgent)
-      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-
-    if (iOS) {
+    if (iosRef.current) {
       const enter = (v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen
       try { enter?.call(v) } catch {}
       return
@@ -1119,7 +1115,9 @@ export function NativePlayer({
       document.exitFullscreen?.()
       return
     }
-    el?.requestFullscreen?.().catch(() => {
+
+    const req = (v.requestFullscreen || el?.requestFullscreen)?.bind(safariRef.current ? v : el || v)
+    req?.().catch(() => {
       const enter = (v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen
       try { enter?.call(v) } catch {}
     })
@@ -1278,10 +1276,8 @@ export function NativePlayer({
         playsInline
         webkit-playsinline="true"
         x-webkit-airplay="allow"
-        controls={Boolean(iosPlayer && iosPlayUrl)}
         preload="metadata"
         controlsList="nodownload"
-        src={iosPlayer ? (iosPlayUrl || undefined) : undefined}
       />
       <button
         type="button"
@@ -1292,20 +1288,9 @@ export function NativePlayer({
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
-      {iosPlayer && type === 'series' && (
-        <button
-          type="button"
-          onClick={() => setShowEpisodes(true)}
-          className="absolute z-[90] h-10 px-4 rounded-full bg-white text-black text-xs font-black tracking-widest uppercase inline-flex items-center gap-2"
-          style={{ top: 'max(12px, env(safe-area-inset-top, 0px))', right: 16 }}
-        >
-          <List className="w-4 h-4" />
-          Épisodes
-        </button>
-      )}
 
       <AnimatePresence>
-        {!iosPlayer && !playing && !buffering && !fetchingEpisode && tmdbDetails && (
+        {!playing && !buffering && !fetchingEpisode && tmdbDetails && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 pointer-events-none z-[16]"
@@ -1479,7 +1464,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {!iosPlayer && buffering && !fetchingEpisode && !episodeNotFound && (
+        {buffering && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-[18] flex items-center justify-center pointer-events-none"
@@ -1490,18 +1475,16 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {!iosPlayer && !playing && !fetchingEpisode && !episodeNotFound && (
+        {!playing && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-0 z-[17] flex flex-col items-center justify-center gap-3 pointer-events-none"
+            className="absolute inset-0 z-[25] flex flex-col items-center justify-center gap-3 pointer-events-none"
           >
             <button
               type="button"
               onClick={e => {
                 e.stopPropagation()
-                const v = videoRef.current
-                if (!v) return
-                v.play()?.catch(() => {})
+                togglePlay()
               }}
               className="pointer-events-auto w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
               aria-label="Lecture"
@@ -1514,7 +1497,7 @@ export function NativePlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {showControls && !fetchingEpisode && !iosPlayer && (
+        {showControls && !fetchingEpisode && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
             className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none ${!showControls ? 'cursor-none' : ''}`}
