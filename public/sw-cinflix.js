@@ -30,6 +30,16 @@ function jsonResponse(body) {
   })
 }
 
+function emptyHtml() {
+  return new Response('<!doctype html><title></title>', {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  })
+}
+
 function cinflixApiFromResolve(requestUrl) {
   const u = new URL(requestUrl)
   const type = u.searchParams.get('type') === 'tv' || u.searchParams.get('type') === 'series' ? 'tv' : 'movie'
@@ -75,57 +85,13 @@ async function tellClients(blinkUrl) {
   }
 }
 
-function probeHtml(cinflixUrl) {
-  return `<!doctype html>
-<meta charset="utf-8">
-<title>cinflix-resolve</title>
-<pre id="out">{"url":null}</pre>
-<script>
-const cinflix = ${JSON.stringify(cinflixUrl)}
-function show(url) {
-  document.getElementById('out').textContent = JSON.stringify({ url })
-}
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', event => {
-    const url = event.data && event.data.url
-    if (typeof url === 'string' && url.toLowerCase().includes('blink-n3')) show(url)
-  })
-  try {
-    const ch = new BroadcastChannel('cinflix-blink')
-    ch.onmessage = event => {
-      const url = event.data && event.data.url
-      if (typeof url === 'string' && url.toLowerCase().includes('blink-n3')) show(url)
-    }
-  } catch (e) {}
-  navigator.serviceWorker.register('/sw-cinflix.js?v=12', { scope: '/', updateViaCache: 'none' }).then(async () => {
-    await navigator.serviceWorker.ready
-    const img = new Image()
-    img.referrerPolicy = 'no-referrer'
-    img.src = cinflix
-    fetch(cinflix, { mode: 'no-cors', redirect: 'follow', cache: 'no-store', credentials: 'omit' }).catch(() => {})
-  }).catch(() => {})
-}
-</script>`
-}
-
 async function handleCinflixResolve(event) {
   const cinflixUrl = cinflixApiFromResolve(event.request.url)
-  const dest = event.request.destination
-  const isNav = event.request.mode === 'navigate' || dest === 'document'
-
-  if (isNav) {
-    return new Response(probeHtml(cinflixUrl), {
-      status: 200,
-      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
-    })
-  }
-
   const pending = waitBlink(8000)
   const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
   for (const client of list) {
     client.postMessage({ type: 'CINFLIX_PROBE', url: cinflixUrl })
   }
-
   const blink = await pending
   return jsonResponse({ url: blink })
 }
@@ -159,5 +125,5 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  event.respondWith(new Response('', { status: 204 }))
+  event.respondWith(emptyHtml())
 })
