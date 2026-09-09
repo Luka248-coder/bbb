@@ -59,11 +59,41 @@ function blinkFromPerformance(): string | null {
   return null
 }
 
+function probeCinflixNetwork(apiUrl: string) {
+  const probe = new URL(apiUrl)
+  probe.searchParams.set('_', String(Date.now()))
+  const probeUrl = probe.toString()
+  const img = new Image()
+  img.referrerPolicy = 'no-referrer'
+  img.src = probeUrl
+  const ctrl = new AbortController()
+  fetch(probeUrl, {
+    mode: 'no-cors',
+    redirect: 'follow',
+    cache: 'no-store',
+    credentials: 'omit',
+    referrerPolicy: 'no-referrer',
+    signal: ctrl.signal,
+  }).catch(() => {})
+  window.setTimeout(() => {
+    img.src = ''
+    try { ctrl.abort() } catch {}
+  }, 3000)
+}
+
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'CINFLIX_PROBE' && typeof event.data.url === 'string') {
+      probeCinflixNetwork(event.data.url)
+    }
+  })
+}
+
 function ensureCinflixSw(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
   return (async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=11', { scope: '/', updateViaCache: 'none' })
+      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=12', { scope: '/', updateViaCache: 'none' })
       if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
@@ -160,7 +190,25 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
   if (innerBlink) return withCinflixReferer(innerBlink)
   if (!isCinflixApiUrl(raw)) return null
 
+  await ensureCinflixSw()
+
   try {
+    const u = new URL(raw)
+    const params = new URLSearchParams({
+      type: u.searchParams.get('type') || 'movie',
+      id: u.searchParams.get('id') || '',
+    })
+    const season = u.searchParams.get('s')
+    const episode = u.searchParams.get('e')
+    if (season) params.set('s', season)
+    if (episode) params.set('e', episode)
+    const res = await fetch(`/api/cinflix-resolve?${params}`)
+    const data = await res.json().catch(() => null)
+    const media = typeof data?.url === 'string' ? data.url : null
+    if (media && !isCinflixApiUrl(media)) {
+      return media.includes('/api/proxy-download') ? media : withCinflixReferer(media)
+    }
+  } catch {}
     const u = new URL(raw)
     const params = new URLSearchParams({
       type: u.searchParams.get('type') || 'movie',
