@@ -797,9 +797,19 @@ export function NativePlayer({
 
   // Fullscreen listener
   useEffect(() => {
-    const handler = () => setFullscreen(!!document.fullscreenElement)
+    const v = videoRef.current
+    const handler = () => {
+      const displaying = (v as HTMLVideoElement & { webkitDisplayingFullscreen?: boolean })?.webkitDisplayingFullscreen
+      setFullscreen(!!document.fullscreenElement || !!displaying)
+    }
     document.addEventListener('fullscreenchange', handler)
-    return () => document.removeEventListener('fullscreenchange', handler)
+    v?.addEventListener('webkitbeginfullscreen', handler)
+    v?.addEventListener('webkitendfullscreen', handler)
+    return () => {
+      document.removeEventListener('fullscreenchange', handler)
+      v?.removeEventListener('webkitbeginfullscreen', handler)
+      v?.removeEventListener('webkitendfullscreen', handler)
+    }
   }, [])
 
   // Close settings on outside click
@@ -956,7 +966,9 @@ export function NativePlayer({
   // Tap sur la surface vidéo : si les contrôles sont masqués, on les révèle
   // seulement (sans lancer/mettre en pause à l'aveugle). S'ils sont déjà
   // visibles, le tap bascule la lecture. Corrige les taps "fantômes" sur mobile.
-  const handleSurfaceTap = () => {
+  const handleSurfaceTap = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement | null
+    if (target?.closest('button, a, input, textarea, [data-no-surface]')) return
     if (!showControls) { resetTimer(); return }
     togglePlay()
     resetTimer()
@@ -1076,15 +1088,33 @@ export function NativePlayer({
   const toggleFs = () => {
     const el = containerRef.current
     const v = videoRef.current
-    if (!el) return
-    if (document.fullscreenElement) {
-      document.exitFullscreen()
-    } else if ((el as any).webkitRequestFullscreen) {
-      (el as any).webkitRequestFullscreen()
-    } else if (v && (v as any).webkitEnterFullscreen) {
-      ;(v as any).webkitEnterFullscreen()
-    } else {
-      el.requestFullscreen()
+    if (!v) return
+
+    const iosEnter = (v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen
+    const iosExit = (v as HTMLVideoElement & { webkitExitFullscreen?: () => void }).webkitExitFullscreen
+    const displaying = (v as HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }).webkitDisplayingFullscreen
+
+    if (typeof iosEnter === 'function') {
+      try {
+        if (displaying && typeof iosExit === 'function') iosExit.call(v)
+        else iosEnter.call(v)
+      } catch {}
+      return
+    }
+
+    const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }
+    if (document.fullscreenElement || doc.webkitFullscreenElement) {
+      document.exitFullscreen?.()
+      doc.webkitExitFullscreen?.()
+      return
+    }
+
+    const req = el?.requestFullscreen || (el as any)?.webkitRequestFullscreen
+    if (req && el) {
+      Promise.resolve(req.call(el)).catch(() => {
+        try { iosEnter?.call(v) } catch {}
+      })
+      return
     }
   }
 
@@ -1229,6 +1259,7 @@ export function NativePlayer({
       className={`bg-black relative overflow-hidden player-fullscreen ${showControls ? '' : 'cursor-none'}`}
       style={{ touchAction: 'manipulation' }}
       onMouseMove={resetTimer}
+      onClick={handleSurfaceTap}
     >
       <style>{`
         .np-slider{-webkit-appearance:none;appearance:none;height:3px;background:rgba(255,255,255,.22);border-radius:99px;outline:none}
@@ -1252,10 +1283,6 @@ export function NativePlayer({
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
-      <div
-        className="absolute inset-0 z-[15]"
-        onClick={handleSurfaceTap}
-      />
 
       <AnimatePresence>
         {!playing && !buffering && !fetchingEpisode && tmdbDetails && (
@@ -1529,7 +1556,11 @@ export function NativePlayer({
                 <button type="button" onClick={() => skip(-10)} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
                   <SkipBack className="w-5 h-5" />
                 </button>
-                <button type="button" onClick={togglePlay} className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center mx-1 hover:scale-105 transition-transform">
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); togglePlay() }}
+                  className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center mx-1 hover:scale-105 transition-transform"
+                >
                   {playing ? <Pause className="w-5 h-5 fill-black" /> : <Play className="w-5 h-5 fill-black ml-0.5" />}
                 </button>
                 <button type="button" onClick={() => skip(10)} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
@@ -1807,7 +1838,11 @@ export function NativePlayer({
                   </AnimatePresence>
                 </div>
 
-                <button type="button" onClick={toggleFs} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); toggleFs() }}
+                  className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center"
+                >
                   {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                 </button>
               </div>
