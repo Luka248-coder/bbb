@@ -63,7 +63,7 @@ function probeCinflixNetwork(apiUrl: string) {
   const probe = new URL(apiUrl)
   probe.searchParams.set('_', String(Date.now()))
   const probeUrl = probe.toString()
-  const img = new Image()
+  const img = document.createElement('img')
   img.referrerPolicy = 'no-referrer'
   img.src = probeUrl
   const ctrl = new AbortController()
@@ -119,7 +119,7 @@ async function resolveCinflixFromPhone(apiUrl: string): Promise<string | null> {
   return new Promise(resolve => {
     let done = false
     let channel: BroadcastChannel | null = null
-    const img = new Image()
+    const img = document.createElement('img')
     const fetchCtrl = new AbortController()
 
     const finish = (found: string | null) => {
