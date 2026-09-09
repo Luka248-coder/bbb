@@ -46,5 +46,13 @@ self.addEventListener('fetch', event => {
     return
   }
 
+  if (dest === 'iframe' || dest === 'document' || event.request.mode === 'navigate') {
+    event.respondWith(new Response('<!doctype html><title>ok</title>', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+    }))
+    return
+  }
+
   event.respondWith(new Response('', { status: 204 }))
 })

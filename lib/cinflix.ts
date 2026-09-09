@@ -4,16 +4,11 @@ export { cinflixStreamApiUrl, isCinflixApiUrl, isCinflixMediaUrl, isPlayableMedi
 
 const CINFLIX_ORIGIN = 'https://cinflix.xyz'
 const CINFLIX_REFERER = `${CINFLIX_ORIGIN}/`
-const TIMEOUT_MS = 8000
+const TIMEOUT_MS = 2500
 
-const HEADERS: Record<string, string> = {
-  Accept: 'application/json, text/plain, */*',
-  'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  Referer: CINFLIX_REFERER,
-  Origin: CINFLIX_ORIGIN,
-}
+const USER_AGENTS = [
+  'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36',
+]
 
 function pickUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -22,16 +17,31 @@ function pickUrl(value: unknown): string | null {
   return isPlayableMediaUrl(trimmed) ? trimmed : null
 }
 
+function isBlinkMedia(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return host.includes('blink-n3') || /\.mp4(?:$|\?)/i.test(url)
+  } catch {
+    return false
+  }
+}
+
 function headerLocation(raw: string | null, base: string): string | null {
   if (!raw) return null
   try {
     const u = new URL(raw.trim(), base)
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
-    if (isCinflixApiUrl(u.toString())) return null
-    return u.toString()
+    const href = u.toString()
+    if (isCinflixApiUrl(href)) return null
+    return isBlinkMedia(href) || /\.mp4(?:$|\?)/i.test(href) ? href : href
   } catch {
     return null
   }
+}
+
+function acceptIfMedia(url: string | null): string | null {
+  if (!url || isCinflixApiUrl(url)) return null
+  return isBlinkMedia(url) ? url : null
 }
 
 function urlFromPayload(data: any): string | null {
@@ -49,81 +59,65 @@ function urlFromPayload(data: any): string | null {
   )
 }
 
-async function requestNoRedirect(urlStr: string): Promise<{
-  status: number
-  location: string | null
-  contentType: string
-  text: string
-}> {
-  const empty = { status: 0, location: null, contentType: '', text: '' }
+function headersFor(ua: string): Record<string, string> {
+  return {
+    Accept: '*/*',
+    'Accept-Language': 'fr-FR,fr;q=0.9',
+    'User-Agent': ua,
+    Referer: CINFLIX_REFERER,
+  }
+}
+
+async function tryResolve(apiUrl: string, ua: string): Promise<string | null> {
+  const headers = headersFor(ua)
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
-    const res = await fetch(urlStr, {
+    const manual = await fetch(apiUrl, {
       method: 'GET',
       redirect: 'manual',
       cache: 'no-store',
-      headers: HEADERS,
+      headers,
       signal: ctrl.signal,
     })
-    const location = headerLocation(res.headers.get('location'), urlStr)
-    const contentType = res.headers.get('content-type') || ''
-    const status = res.status || 0
-
-    if ((status >= 300 && status < 400) || contentType.includes('text/html') || contentType.includes('video/')) {
-      try { await res.body?.cancel() } catch {}
-      return { status, location, contentType, text: '' }
+    const loc = acceptIfMedia(headerLocation(manual.headers.get('location'), apiUrl))
+    if (loc) {
+      try { await manual.body?.cancel() } catch {}
+      return loc
+    }
+    const contentType = manual.headers.get('content-type') || ''
+    if (contentType.includes('json')) {
+      const text = (await manual.text()).slice(0, 64 * 1024)
+      try {
+        const fromJson = urlFromPayload(JSON.parse(text))
+        if (fromJson) return fromJson
+      } catch {}
+    } else {
+      try { await manual.body?.cancel() } catch {}
     }
 
-    const text = contentType.includes('json') ? (await res.text()).slice(0, 64 * 1024) : ''
-    if (!contentType.includes('json')) {
-      try { await res.body?.cancel() } catch {}
-    }
-    return { status, location, contentType, text }
-  } catch {
-    return empty
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
-function isBlinkMedia(url: string): boolean {
-  try {
-    const host = new URL(url).hostname.toLowerCase()
-    return host.includes('blink-n3') || /\.mp4(?:$|\?)/i.test(url)
-  } catch {
-    return false
-  }
-}
-
-export async function resolveCinflixApiUrl(apiUrl: string): Promise<string | null> {
-  const res = await requestNoRedirect(apiUrl)
-  if (res.location && !isCinflixApiUrl(res.location)) return res.location
-  if (res.contentType.includes('json') && res.text) {
-    try {
-      const fromJson = urlFromPayload(JSON.parse(res.text))
-      if (fromJson) return fromJson
-    } catch {}
-  }
-
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
-  try {
     const followed = await fetch(apiUrl, {
       method: 'GET',
       redirect: 'follow',
       cache: 'no-store',
-      headers: HEADERS,
+      headers,
       signal: ctrl.signal,
     })
-    const finalUrl = followed.url
+    const finalUrl = acceptIfMedia(followed.url)
     try { await followed.body?.cancel() } catch {}
-    if (finalUrl && !isCinflixApiUrl(finalUrl) && isBlinkMedia(finalUrl)) return finalUrl
+    if (finalUrl) return finalUrl
   } catch {
   } finally {
     clearTimeout(timer)
   }
+  return null
+}
 
+export async function resolveCinflixApiUrl(apiUrl: string): Promise<string | null> {
+  for (const ua of USER_AGENTS) {
+    const url = await tryResolve(apiUrl, ua)
+    if (url) return url
+  }
   return null
 }
 

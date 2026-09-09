@@ -12,6 +12,11 @@ const BYPASS_PATHS = [
   '/api/auth/discord',
   '/api/auth/register',
   '/api/auth/admin',
+  '/api/cinflix-resolve',
+  '/api/cinflix-play',
+  '/api/cinflix-bounce',
+  '/api/proxy-download',
+  '/sw-cinflix.js',
 ]
 
 export async function proxy(request: NextRequest) {
@@ -32,16 +37,24 @@ export async function proxy(request: NextRequest) {
       return NextResponse.json({ url: null }, { status: 400 })
     }
     const apiUrl = cinflixStreamApiUrl(type, id, season, episode)
-    const media = await resolveCinflixApiUrl(apiUrl)
+    const media = await Promise.race([
+      resolveCinflixApiUrl(apiUrl),
+      new Promise<string | null>(resolve => setTimeout(() => resolve(null), 3000)),
+    ])
     if (pathname === '/api/cinflix-play') {
       if (!media) {
-        return new NextResponse('Cinflix n\'a pas renvoyé de flux', { status: 502 })
+        return new NextResponse('Cinflix n\'a pas renvoyé de flux', {
+          status: 502,
+          headers: { 'Cache-Control': 'no-store' },
+        })
       }
       const dest = new URL('/api/proxy-download', request.url)
       dest.searchParams.set('url', media)
-      return NextResponse.redirect(dest, 307)
+      const redirect = NextResponse.redirect(dest, 307)
+      redirect.headers.set('Cache-Control', 'no-store')
+      return redirect
     }
-    return NextResponse.json({ url: media })
+    return NextResponse.json({ url: media }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
   // Toujours autoriser les chemins bypass
