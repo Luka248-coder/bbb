@@ -325,6 +325,10 @@ export function NativePlayer({
   const currentEpisodeRef = useRef(initialEpisode)
   const titleRef = useRef(initialTitle)
   const resumeTimeRef = useRef(0)
+  const resumeAppliedRef = useRef(false)
+  const goBack = useCallback(() => {
+    window.location.href = backUrl
+  }, [backUrl])
 
   const playingRef = useRef(false)
   const syncVideoState = useCallback((video: HTMLVideoElement) => {
@@ -470,10 +474,8 @@ export function NativePlayer({
     }
     setHlsAudioTracks([])
 
-    // Reset video element completely
     v.pause()
-    v.removeAttribute('src')
-    v.load()
+    resumeAppliedRef.current = false
 
     setBuffering(true)
     setPlaying(false)
@@ -512,9 +514,7 @@ export function NativePlayer({
 
         v.muted = true
         startErrorTimer()
-        v.play().then(() => {
-          v.muted = false
-        }).catch(() => {
+        v.play()?.catch(() => {
           cancelErrorTimer()
           setBuffering(false)
           setPlaying(false)
@@ -558,21 +558,20 @@ export function NativePlayer({
       v.src = effectiveUrl
       v.muted = true
       startErrorTimer()
-      v.play().then(() => { v.muted = false }).catch(() => {
+      v.play()?.catch(() => {
         cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
       })
     } else {
-      // MP4 direct — pour topstream on passe par proxy-download pour le Referer
       const mp4Url =
-        isTopstream
+        isTopstream || /^https?:\/\//i.test(url)
           ? `/api/proxy-download?url=${encodeURIComponent(url)}&filename=video.mp4`
           : url
       v.src = mp4Url
       v.muted = true
       startErrorTimer()
-      v.play().then(() => { v.muted = false }).catch(() => {
+      v.play()?.catch(() => {
         cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
@@ -592,14 +591,16 @@ export function NativePlayer({
     }
     const onMeta = () => {
       syncVideoState(v)
-      if (resumeTimeRef.current > 0 && v.duration > 0) {
-        v.currentTime = (resumeTimeRef.current / 100) * v.duration
-        resumeTimeRef.current = 0
-        syncVideoState(v)
-      }
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
       }
+    }
+    const applyResume = () => {
+      if (resumeAppliedRef.current || resumeTimeRef.current <= 0 || !(v.duration > 0)) return
+      resumeAppliedRef.current = true
+      v.currentTime = (resumeTimeRef.current / 100) * v.duration
+      resumeTimeRef.current = 0
+      syncVideoState(v)
     }
     const onPlay = () => { syncVideoState(v); resetTimer() }
     const onPlaying = () => {
@@ -607,28 +608,29 @@ export function NativePlayer({
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
-      // Ne PAS appeler resetTimer ici : onPlaying fire à chaque segment HLS (~10s)
-      // ce qui ferait réapparaître les contrôles en permanence
+      if (v.muted) v.muted = false
     }
     const onPause = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
     const onEnded = () => { syncVideoState(v); setBuffering(false); setShowControls(true) }
-    const onWaiting = () => setBuffering(true)
+    const onWaiting = () => {
+      if (v.readyState < 3) setBuffering(true)
+    }
     const onCanPlay = () => {
       syncVideoState(v)
+      applyResume()
       setBuffering(false)
       setShowError(false)
       clearErrorTimer()
-      // Ne pas relancer play() ici : loadVideo() démarre déjà la lecture au
-      // chargement. onCanPlay se déclenche aussi après chaque reprise de
-      // buffering, donc relancer play() ici coupait/relançait la vidéo et
-      // pouvait écraser une pause volontaire de l'utilisateur.
+    }
+    const onError = () => {
+      setBuffering(false)
+      setPlaying(false)
     }
     const onProgress = () => {
-      if (v.buffered.length > 0) {
+      if (v.buffered.length > 0 && v.duration > 0) {
         setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100)
       }
     }
-    const syncInterval = window.setInterval(() => syncVideoState(v), 250)
 
     v.addEventListener('timeupdate', onTimeUpdate)
     v.addEventListener('loadedmetadata', onMeta)
@@ -638,8 +640,11 @@ export function NativePlayer({
     v.addEventListener('ended', onEnded)
     v.addEventListener('waiting', onWaiting)
     v.addEventListener('canplay', onCanPlay)
+    v.addEventListener('canplaythrough', onCanPlay)
     v.addEventListener('durationchange', onMeta)
     v.addEventListener('progress', onProgress)
+    v.addEventListener('error', onError)
+    v.addEventListener('stalled', onWaiting)
 
     return () => {
       v.removeEventListener('timeupdate', onTimeUpdate)
@@ -650,9 +655,11 @@ export function NativePlayer({
       v.removeEventListener('ended', onEnded)
       v.removeEventListener('waiting', onWaiting)
       v.removeEventListener('canplay', onCanPlay)
+      v.removeEventListener('canplaythrough', onCanPlay)
       v.removeEventListener('durationchange', onMeta)
       v.removeEventListener('progress', onProgress)
-      window.clearInterval(syncInterval)
+      v.removeEventListener('error', onError)
+      v.removeEventListener('stalled', onWaiting)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
   }, [resetTimer, clearErrorTimer, syncVideoState])
@@ -864,9 +871,9 @@ export function NativePlayer({
     if (!v) return
     if (v.paused) {
       setShowError(false)
-      setBuffering(true)
       startErrorTimer()
-      v.play().catch(() => {
+      v.muted = true
+      v.play()?.catch(() => {
         cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
@@ -1037,48 +1044,39 @@ export function NativePlayer({
 
   useEffect(() => {
     if (type !== 'series' || !tmdbId) return
+    let cancelled = false
 
-    if (seriesDbId) {
-      fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
-        .then(r => r.json())
-        .then(async (data: Episode[]) => {
-          if (data && data.length > 0) {
+    async function load() {
+      if (seriesDbId) {
+        try {
+          const r = await fetch(`/api/auth/admin/episodes?seriesId=${seriesDbId}`)
+          const data: Episode[] = await r.json()
+          if (!cancelled && data && data.length > 0) {
             setAllEpisodes(data)
-          } else {
-            await loadEpisodesFromTmdb()
+            return
           }
-        })
-        .catch(() => loadEpisodesFromTmdb())
-    } else {
-      loadEpisodesFromTmdb()
-    }
-
-    async function loadEpisodesFromTmdb() {
+        } catch {}
+      }
       try {
-        const res = await fetch(`/api/content/series/${tmdbId}`)
-        const d = await res.json()
-        const seasons: number = d?.details?.number_of_seasons || 1
-        const fakeEpisodes: Episode[] = []
-        for (let s = 1; s <= seasons; s++) {
-          const sr = await fetch(`/api/content/series/${tmdbId}?season=${s}`)
-          if (!sr.ok) continue
-          const sd = await sr.json()
-          for (const ep of (sd.seasonData?.episodes || [])) {
-            fakeEpisodes.push({
-              id: ep.id,
-              series_id: 0,
-              season_number: ep.season_number,
-              episode_number: ep.episode_number,
-              title: ep.name || `Épisode ${ep.episode_number}`,
-              still_path: ep.still_path || null,
-              video_url: null,
-            } as any)
-          }
-        }
-        if (fakeEpisodes.length > 0) setAllEpisodes(fakeEpisodes)
+        const sr = await fetch(`/api/content/series/${tmdbId}?season=${currentSeason}`)
+        if (!sr.ok) return
+        const sd = await sr.json()
+        const fakeEpisodes: Episode[] = (sd.seasonData?.episodes || []).map((ep: any) => ({
+          id: ep.id,
+          series_id: 0,
+          season_number: ep.season_number,
+          episode_number: ep.episode_number,
+          title: ep.name || `Épisode ${ep.episode_number}`,
+          still_path: ep.still_path || null,
+          video_url: null,
+        }))
+        if (!cancelled && fakeEpisodes.length > 0) setAllEpisodes(fakeEpisodes)
       } catch {}
     }
-  }, [seriesDbId, tmdbId, type])
+
+    load()
+    return () => { cancelled = true }
+  }, [seriesDbId, tmdbId, type, currentSeason])
 
   const sortedEpisodes = [...allEpisodes].sort((a, b) =>
     a.season_number !== b.season_number ? a.season_number - b.season_number : a.episode_number - b.episode_number
@@ -1158,8 +1156,8 @@ export function NativePlayer({
     <div
       ref={containerRef}
       className={`bg-black relative overflow-hidden player-fullscreen ${showControls ? '' : 'cursor-none'}`}
+      style={{ touchAction: 'manipulation' }}
       onMouseMove={resetTimer}
-      onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
     >
       <style>{`
         .np-slider{-webkit-appearance:none;appearance:none;height:3px;background:rgba(255,255,255,.22);border-radius:99px;outline:none}
@@ -1169,7 +1167,18 @@ export function NativePlayer({
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         playsInline
+        preload="auto"
+        controls={false}
       />
+      <button
+        type="button"
+        onClick={goBack}
+        className="absolute z-[90] w-11 h-11 rounded-full flex items-center justify-center bg-black/55 border border-white/15 text-white"
+        style={{ top: 'max(12px, env(safe-area-inset-top, 0px))', left: 16 }}
+        aria-label="Retour"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </button>
       <div
         className="absolute inset-0 z-[15]"
         onClick={handleSurfaceTap}
@@ -1332,10 +1341,10 @@ export function NativePlayer({
                 Le contenu met trop de temps à se lancer.<br/>Réessayez ou revenez plus tard.
               </p>
               <div className="flex gap-3 w-full">
-                <Link href={backUrl} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors text-center"
+                <button type="button" onClick={goBack} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors text-center"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   Retour
-                </Link>
+                </button>
                 <button
                   onClick={() => { setShowError(false); if (videoUrl) loadVideo(videoUrl) }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
@@ -1385,13 +1394,7 @@ export function NativePlayer({
               onClick={e => e.stopPropagation()}
               onPointerDown={e => e.stopPropagation()}
             >
-              <Link
-                href={backUrl}
-                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/12 text-white backdrop-blur-md hover:bg-white/16"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 pl-14">
                 <p className="text-white font-semibold text-sm md:text-base truncate leading-tight">{displayTitle}</p>
                 {seriesTag && <p className="text-white/45 text-[11px] font-bold tracking-wider uppercase mt-0.5">{seriesTag}</p>}
               </div>
