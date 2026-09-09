@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Play, Pause, Volume2, VolumeX,
   Maximize, Minimize, SkipBack, SkipForward, Cast,
-  Film, Loader2, List, X, ChevronDown, ChevronUp, Settings, Download,
+  Film, Loader2, List, X, ChevronLeft, ChevronRight, Settings, Download,
   Lock, LogIn
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -64,7 +64,6 @@ function EpisodesPanel({
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSeason, setSelectedSeason] = useState(currentSeason)
-  const [showSeasonPicker, setShowSeasonPicker] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -118,139 +117,94 @@ function EpisodesPanel({
       initial={{ x: '100%' }}
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
-      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="absolute inset-y-0 right-0 w-full sm:w-96 bg-zinc-950/95 backdrop-blur-xl flex flex-col z-50 border-l border-white/5"
+      transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+      className="absolute inset-y-0 right-0 w-full sm:w-[420px] z-50 flex flex-col"
+      style={{ background: 'linear-gradient(180deg, rgba(8,8,10,0.97), rgba(8,8,10,0.92))', backdropFilter: 'blur(28px)', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       onClick={e => e.stopPropagation()}
     >
-      <div className="px-5 pt-6 pb-4 border-b border-white/10">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
-              <List className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-white font-bold text-lg">Épisodes</h2>
-              <p className="text-white/40 text-xs">{episodes.length} épisodes</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4 text-white" />
-          </button>
+      <div className="px-5 pt-6 pb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-extrabold tracking-[0.22em] uppercase text-white/35 mb-1">Catalogue</p>
+          <h2 className="text-white text-2xl font-black tracking-tight">Épisodes</h2>
+          <p className="text-white/40 text-xs mt-1">{episodes.length} titres</p>
         </div>
-      </div>
-
-      <div className="px-4 py-3 border-b border-white/5">
         <button
-          onClick={() => setShowSeasonPicker(!showSeasonPicker)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors border border-white/10"
+          type="button"
+          onClick={onClose}
+          className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/14 border border-white/10 flex items-center justify-center"
         >
-          <span className="text-white/60 text-sm">Saison</span>
-          <div className="flex items-center gap-2">
-            <span className="text-primary font-bold text-lg">{selectedSeason}</span>
-            {showSeasonPicker
-              ? <ChevronUp className="w-4 h-4 text-white/40" />
-              : <ChevronDown className="w-4 h-4 text-white/40" />}
-          </div>
+          <X className="w-4 h-4 text-white" />
         </button>
-
-        <AnimatePresence>
-          {showSeasonPicker && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: 'auto' }}
-              exit={{ opacity: 0, y: -10, height: 0 }}
-              className="mt-2 bg-zinc-900 rounded-2xl border border-white/10 overflow-y-auto overscroll-contain" style={{ maxHeight: '40vh', WebkitOverflowScrolling: 'touch' }}
-            >
-              {seasons.map(s => {
-                const sEps = episodes.filter(e => e.season_number === s)
-                const isSelected = s === selectedSeason
-                return (
-                  <button
-                    key={s}
-                    onClick={() => { setSelectedSeason(s); setShowSeasonPicker(false) }}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}
-                  >
-                    <span className="font-semibold">Saison {s}</span>
-                    <span className={`text-sm ${isSelected ? 'text-primary font-bold' : 'text-white/40'}`}>{sEps.length} ép.</span>
-                  </button>
-                )
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="px-5 pb-3 flex gap-2 overflow-x-auto hide-scrollbar">
+        {seasons.map(s => {
+          const active = s === selectedSeason
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => { setSelectedSeason(s) }}
+              className={`shrink-0 h-9 px-4 rounded-full text-xs font-bold tracking-wide transition-all ${
+                active ? 'bg-white text-black' : 'bg-white/5 text-white/60 hover:text-white border border-white/10'
+              }`}
+            >
+              Saison {s}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-white/50" />
           </div>
         ) : filteredEps.length === 0 ? (
-          <p className="text-white/40 text-center py-12 text-sm">Aucun épisode</p>
+          <p className="text-white/40 text-center py-16 text-sm">Aucun épisode</p>
         ) : (
-          <div className="py-2">
+          <div className="space-y-2">
             {filteredEps.map(ep => {
               const isCurrent = ep.season_number === currentSeason && ep.episode_number === currentEpisode
               const epTitle = ep.title || `Épisode ${ep.episode_number}`
               return (
                 <button
                   key={ep.id}
+                  type="button"
                   onClick={() => {
-                    if (ep.video_url) {
-                      onSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, epTitle)
-                    } else {
-                      onSelectEpisodeApi(ep.season_number, ep.episode_number, epTitle)
-                    }
+                    if (ep.video_url) onSelectEpisode(ep.season_number, ep.episode_number, ep.video_url, epTitle)
+                    else onSelectEpisodeApi(ep.season_number, ep.episode_number, epTitle)
                   }}
-                  className={`w-full flex gap-3 px-4 py-3 text-left transition-all ${
-                    isCurrent ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-white/5 border-l-2 border-transparent'
+                  className={`w-full flex gap-3 p-2 rounded-2xl text-left transition-all ${
+                    isCurrent ? 'bg-white/10 ring-1 ring-white/20' : 'hover:bg-white/6'
                   }`}
                 >
-                  <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                  <div className="relative w-[118px] aspect-video rounded-xl overflow-hidden bg-white/5 flex-shrink-0">
                     {ep.still_path ? (
-                      <Image
-                        src={`https://image.tmdb.org/t/p/w185${ep.still_path}`}
-                        alt={epTitle}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
-                      />
+                      <Image src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt={epTitle} fill className="object-cover" sizes="118px" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Film className="w-5 h-5 text-white/20" />
                       </div>
                     )}
-                    <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs font-bold px-1.5 py-0.5 rounded">
-                      E{ep.episode_number}
-                    </div>
+                    <span className="absolute bottom-1.5 left-1.5 text-[10px] font-black text-white/90 px-1.5 py-0.5 rounded-md bg-black/70">
+                      {ep.episode_number}
+                    </span>
                     {isCurrent && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                          <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
-                        </div>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                        <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                          <Play className="w-3.5 h-3.5 text-black fill-black ml-0.5" />
+                        </span>
                       </div>
                     )}
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-semibold text-sm truncate mb-0.5 ${isCurrent ? 'text-primary' : 'text-white'}`}>
-                      {epTitle}
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <p className={`font-bold text-sm truncate ${isCurrent ? 'text-white' : 'text-white/90'}`}>{epTitle}</p>
+                    <p className="text-white/40 text-[11px] mt-0.5">
+                      {ep.runtime ? `${ep.runtime} min` : `Épisode ${ep.episode_number}`}
+                      {isCurrent ? ' · En cours' : ''}
                     </p>
-                    {ep.runtime && (
-                      <p className="text-white/40 text-xs mb-1">{ep.runtime} min</p>
-                    )}
-                    {ep.overview && (
-                      <p className="text-white/40 text-xs line-clamp-2">{ep.overview}</p>
-                    )}
-                    {isCurrent && (
-                      <span className="inline-flex items-center gap-1 text-primary text-xs font-medium mt-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        EN COURS
-                      </span>
-                    )}
+                    {ep.overview && <p className="text-white/35 text-[11px] line-clamp-2 mt-1 leading-relaxed">{ep.overview}</p>}
                   </div>
                 </button>
               )
@@ -1057,10 +1011,14 @@ export function NativePlayer({
   }
 
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    seekAt(e.clientX)
+  }
+
+  const seekAt = (clientX: number) => {
     const v = videoRef.current
     const bar = progressRef.current
     if (!v || !bar) return
-    const pct = Math.max(0, Math.min(1, (e.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth))
+    const pct = Math.max(0, Math.min(1, (clientX - bar.getBoundingClientRect().left) / bar.offsetWidth))
     v.currentTime = pct * duration
     resetTimer()
   }
@@ -1168,42 +1126,27 @@ export function NativePlayer({
   }
 
   const progress = duration ? (currentTime / duration) * 100 : 0
+  const remaining = Math.max(0, duration - currentTime)
+  const seriesTag = type === 'series' ? `S${String(currentSeason).padStart(2, '0')} · E${String(currentEpisode).padStart(2, '0')}` : null
 
-  // ─── No video ────────────────────────────────────────────────────────────────
   if (!videoUrl && !fetchingEpisode && (type !== 'series' || !seriesDbId)) {
     return (
-      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(180,20,20,0.12) 0%, transparent 70%)' }} />
-          <div className="absolute inset-0 opacity-[0.03]"
-            style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center gap-6 px-6 text-center">
-          <div className="relative flex items-center justify-center mb-2">
-            <div className="absolute w-32 h-32 rounded-full border border-red-500/10 animate-ping" style={{ animationDuration: '3s' }} />
-            <div className="absolute w-24 h-24 rounded-full border border-red-500/15" />
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}>
-              <Film className="w-9 h-9 text-zinc-500" />
-            </div>
+      <div className="player-fullscreen bg-black flex flex-col items-center justify-center relative overflow-hidden">
+        {poster && (
+          <Image src={poster} alt="" fill className="object-cover opacity-25 blur-2xl scale-110" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/50" />
+        <div className="relative z-10 flex flex-col items-center gap-5 px-6 text-center max-w-md">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/12 flex items-center justify-center">
+            <Film className="w-7 h-7 text-white/50" />
           </div>
-
-          <div className="space-y-2">
-            <h2 className="text-white font-bold text-2xl tracking-tight">Contenu non disponible</h2>
-            <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
-              Ce contenu n'a pas encore été ajouté par l'administrateur. Revenez plus tard.
-            </p>
-          </div>
-
-          <Link
-            href={backUrl}
-            className="mt-2 inline-flex items-center gap-2.5 px-6 py-3.5 min-h-11 rounded-2xl text-sm font-semibold text-white"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
-          >
+          <h2 className="text-white font-black text-3xl tracking-tight">Indisponible</h2>
+          <p className="text-white/45 text-sm leading-relaxed">
+            Ce titre n’est pas encore lisible. Revenez plus tard ou ouvrez la fiche.
+          </p>
+          <Link href={backUrl} className="mt-2 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white text-black text-sm font-bold">
             <ArrowLeft className="w-4 h-4" />
-            Retour
+            Retour à la fiche
           </Link>
         </div>
       </div>
@@ -1214,13 +1157,17 @@ export function NativePlayer({
   return (
     <div
       ref={containerRef}
-      className="bg-black relative overflow-hidden player-fullscreen"
+      className={`bg-black relative overflow-hidden player-fullscreen ${showControls ? '' : 'cursor-none'}`}
       onMouseMove={resetTimer}
       onMouseLeave={() => playing && !showEpisodes && setShowControls(false)}
     >
+      <style>{`
+        .np-slider{-webkit-appearance:none;appearance:none;height:3px;background:rgba(255,255,255,.22);border-radius:99px;outline:none}
+        .np-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:99px;background:#fff;cursor:pointer}
+      `}</style>
       <video
         ref={videoRef}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain bg-black"
         playsInline
       />
       <div
@@ -1228,50 +1175,39 @@ export function NativePlayer({
         onClick={handleSurfaceTap}
       />
 
-      {/* Écran pause — infos film/série */}
       <AnimatePresence>
         {!playing && !buffering && !fetchingEpisode && tmdbDetails && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
+            className="absolute inset-0 pointer-events-none z-[16]"
+            style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.28) 42%, transparent 70%)' }}
           >
-            <div className="absolute left-10 max-w-lg" style={{ top: '50%', transform: 'translateY(-50%)' }}>
+            <div className="absolute left-8 md:left-14 top-1/2 -translate-y-[58%] max-w-md">
               {tmdbDetails.logo_path ? (
                 <img
                   src={`https://image.tmdb.org/t/p/w500${tmdbDetails.logo_path}`}
                   alt={initialTitle}
-                  className="max-h-28 max-w-xs object-contain mb-4 drop-shadow-2xl"
-                  style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.8))' }}
+                  className="max-h-24 md:max-h-32 max-w-[70%] object-contain mb-5 drop-shadow-2xl"
                 />
               ) : (
-                <h2 className="text-white font-black text-5xl mb-4 leading-tight drop-shadow-2xl" style={{ textShadow: '0 4px 24px rgba(0,0,0,0.9)' }}>
-                  {initialTitle}
-                </h2>
+                <h2 className="text-white font-black text-4xl md:text-5xl mb-4 leading-[0.95] tracking-tight">{initialTitle}</h2>
               )}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                {seriesTag && (
+                  <span className="text-[11px] font-black tracking-widest uppercase text-black bg-white rounded-full px-2.5 py-1">{seriesTag}</span>
+                )}
                 {tmdbDetails.release_date && (
-                  <span className="text-white/60 text-sm font-semibold px-2.5 py-1 rounded-lg"
-                    style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                    {new Date(tmdbDetails.release_date).getFullYear()}
-                  </span>
+                  <span className="text-white/70 text-sm font-semibold">{new Date(tmdbDetails.release_date).getFullYear()}</span>
                 )}
-                {tmdbDetails.runtime && (
-                  <span className="text-white/60 text-sm font-medium">
-                    {Math.floor(tmdbDetails.runtime / 60)}h {tmdbDetails.runtime % 60}m
-                  </span>
-                )}
+                {tmdbDetails.runtime ? (
+                  <span className="text-white/45 text-sm">{Math.floor(tmdbDetails.runtime / 60)}h{String(tmdbDetails.runtime % 60).padStart(2, '0')}</span>
+                ) : null}
                 {tmdbDetails.vote_average > 0 && (
-                  <span className="flex items-center gap-1 text-yellow-400 text-sm font-bold">
-                    ★ {tmdbDetails.vote_average.toFixed(1)}
-                  </span>
+                  <span className="text-amber-400 text-sm font-bold">★ {tmdbDetails.vote_average.toFixed(1)}</span>
                 )}
               </div>
               {tmdbDetails.overview && (
-                <p className="text-white/70 text-sm leading-relaxed line-clamp-3 max-w-md">
-                  {tmdbDetails.overview}
-                </p>
+                <p className="hidden md:block text-white/60 text-sm leading-relaxed line-clamp-3">{tmdbDetails.overview}</p>
               )}
             </div>
           </motion.div>
@@ -1286,9 +1222,10 @@ export function NativePlayer({
             className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-4"
             style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
           >
-            <Loader2 className="w-10 h-10 text-white animate-spin" />
-            <p className="text-white/50 text-sm font-medium">{displayTitle}</p>
-            <p className="text-white/30 text-xs">Chargement de l'épisode...</p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-14 h-14 rounded-full border-2 border-white/25 border-t-white animate-spin" />
+              <p className="text-white/50 text-xs font-medium tracking-wide">{displayTitle}</p>
+            </div>
           </motion.div>
         )}
         {episodeNotFound && (
@@ -1412,169 +1349,149 @@ export function NativePlayer({
         )}
       </AnimatePresence>
 
-      {/* Buffering spinner (mid-play only) */}
       <AnimatePresence>
         {buffering && !fetchingEpisode && !episodeNotFound && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            className="absolute inset-0 z-[18] flex items-center justify-center pointer-events-none"
           >
-            <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-            </div>
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white animate-spin" />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Big play icon */}
       <AnimatePresence>
         {!playing && !buffering && !fetchingEpisode && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute inset-0 z-[17] flex items-center justify-center pointer-events-none"
           >
-            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.9), rgba(153,27,27,0.85))', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(6px)', boxShadow: '0 0 40px rgba(220,38,38,0.5), inset 0 1px 0 rgba(255,255,255,0.25)' }}>
-              <Play className="w-11 h-11 text-white fill-white ml-1.5" />
+            <div className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
+              <Play className="w-8 h-8 text-black fill-black ml-1" />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Prev / Next episode buttons — series only */}
-      {type === 'series' && (
-        <AnimatePresence>
-          {showControls && !fetchingEpisode && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 z-20 flex items-center justify-between px-8 pointer-events-none">
-              <button
-                onClick={() => prevEp && goToEpisode(prevEp)}
-                disabled={!prevEp}
-                className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center border transition-all backdrop-blur-sm ${prevEp ? 'bg-black/50 border-white/20 text-white hover:bg-white/20' : 'bg-black/20 border-white/10 text-white/20 cursor-not-allowed'}`}
-              >
-                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
-              </button>
-              <div className="w-24 h-24" />
-              <button
-                onClick={() => nextEp && goToEpisode(nextEp)}
-                disabled={!nextEp}
-                className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center border transition-all backdrop-blur-sm ${nextEp ? 'bg-black/50 border-white/20 text-white hover:bg-white/20' : 'bg-black/20 border-white/10 text-white/20 cursor-not-allowed'}`}
-              >
-                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M6 18l8.5-6L6 6v12zm10-12v12h2V6h-2z"/></svg>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
-
-      {/* Controls overlay */}
       <AnimatePresence>
         {showControls && !fetchingEpisode && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            className="absolute inset-0 z-20 flex flex-col justify-between pointer-events-none"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
+            className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none ${!showControls ? 'cursor-none' : ''}`}
           >
-            {/* Top bar */}
             <div
-              className="pointer-events-auto px-4 pb-16 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center gap-3"
-              style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}
+              className="pointer-events-auto px-4 md:px-6 pb-20 bg-gradient-to-b from-black/75 via-black/25 to-transparent flex items-center gap-3"
+              style={{ paddingTop: 'max(14px, env(safe-area-inset-top, 0px))' }}
               onClick={e => e.stopPropagation()}
               onPointerDown={e => e.stopPropagation()}
             >
               <Link
                 href={backUrl}
-                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center bg-black/70 border border-white/15 text-white"
+                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/12 text-white backdrop-blur-md hover:bg-white/16"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-white font-semibold text-base truncate drop-shadow-lg flex-1">{displayTitle}</h1>
-
+              <div className="min-w-0 flex-1">
+                <p className="text-white font-semibold text-sm md:text-base truncate leading-tight">{displayTitle}</p>
+                {seriesTag && <p className="text-white/45 text-[11px] font-bold tracking-wider uppercase mt-0.5">{seriesTag}</p>}
+              </div>
               {type === 'series' && (
                 <button
+                  type="button"
                   onClick={() => setShowEpisodes(true)}
-                  className="flex items-center gap-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl transition-all border border-white/10 shrink-0"
+                  className="shrink-0 h-10 px-4 rounded-full bg-white text-black text-xs font-black tracking-widest uppercase inline-flex items-center gap-2"
                 >
                   <List className="w-4 h-4" />
-                  <span className="text-sm font-medium hidden sm:inline">Épisodes</span>
+                  <span className="hidden sm:inline">Épisodes</span>
                 </button>
               )}
             </div>
 
-            {/* Bottom controls */}
-            <div className="pointer-events-auto px-6 pb-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
-              <p className="text-white/50 text-xs font-medium mb-2 truncate">{displayTitle}</p>
-
-              <div
-                ref={progressRef}
-                className="relative w-full cursor-pointer group/bar mb-4"
-                style={{ height: '4px' }}
-                onClick={seek}
-                onMouseMove={onProgressHover}
-                onMouseLeave={() => setHoverTime(null)}
-                onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.height = '6px' }}
-                onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.height = '4px' }}
-              >
-                <div className="absolute inset-0 bg-white/15 rounded-full" />
-                <div className="absolute inset-y-0 left-0 bg-white/25 rounded-full" style={{ width: `${buffered}%` }} />
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #b91c1c, #ef4444)', boxShadow: '0 0 10px rgba(239,68,68,0.7)' }}>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover/bar:opacity-100 scale-0 group-hover/bar:scale-100 transition-all" style={{ boxShadow: '0 0 0 4px rgba(239,68,68,0.35), 0 2px 8px rgba(0,0,0,0.5)' }} />
-                </div>
-                {hoverTime !== null && (
-                  <div className="absolute -top-8 bg-black/80 text-white text-xs px-2 py-1 rounded-lg pointer-events-none -translate-x-1/2 whitespace-nowrap" style={{ left: hoverX }}>
-                    {fmt(hoverTime)}
+            <div
+              className="pointer-events-auto px-4 md:px-7 pb-5 md:pb-7 bg-gradient-to-t from-black via-black/70 to-transparent"
+              onClick={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-white/70 text-xs font-mono tabular-nums w-12">{fmt(currentTime)}</span>
+                <div
+                  ref={progressRef}
+                  className="relative flex-1 h-5 cursor-pointer group/bar flex items-center"
+                  onClick={seek}
+                  onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); seekAt(e.clientX) }}
+                  onPointerMove={e => { if (e.buttons) seekAt(e.clientX); onProgressHover(e as any) }}
+                  onMouseMove={onProgressHover}
+                  onMouseLeave={() => setHoverTime(null)}
+                >
+                  <div className="relative w-full h-[3px] group-hover/bar:h-[5px] transition-all rounded-full bg-white/20">
+                    <div className="absolute inset-y-0 left-0 bg-white/30 rounded-full" style={{ width: `${buffered}%` }} />
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-white" style={{ width: `${progress}%` }}>
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full opacity-0 group-hover/bar:opacity-100 shadow-md" />
+                    </div>
                   </div>
-                )}
+                  {hoverTime !== null && (
+                    <div className="absolute -top-8 bg-black/85 text-white text-[11px] font-semibold px-2 py-1 rounded-md pointer-events-none -translate-x-1/2" style={{ left: hoverX }}>
+                      {fmt(hoverTime)}
+                    </div>
+                  )}
+                </div>
+                <span className="text-white/45 text-xs font-mono tabular-nums w-12 text-right">-{fmt(remaining)}</span>
               </div>
 
-              <div className="flex items-center gap-1 min-w-0">
-                <button onClick={() => skip(-10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-0.5 min-w-0">
+                <button type="button" onClick={() => skip(-10)} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
                   <SkipBack className="w-5 h-5" />
                 </button>
-                <button onClick={togglePlay} className="text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                  {playing
-                    ? <Pause className="w-7 h-7 fill-white" />
-                    : <Play className="w-7 h-7 fill-white ml-0.5" />}
+                <button type="button" onClick={togglePlay} className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center mx-1 hover:scale-105 transition-transform">
+                  {playing ? <Pause className="w-5 h-5 fill-black" /> : <Play className="w-5 h-5 fill-black ml-0.5" />}
                 </button>
-                <button onClick={() => skip(10)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                <button type="button" onClick={() => skip(10)} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
                   <SkipForward className="w-5 h-5" />
                 </button>
 
-                <div className="hidden sm:flex items-center gap-1 ml-1" onMouseEnter={() => setShowVol(true)} onMouseLeave={() => setShowVol(false)}>
-                  <button onClick={toggleMute} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                <div className="hidden sm:flex items-center ml-1" onMouseEnter={() => setShowVol(true)} onMouseLeave={() => setShowVol(false)}>
+                  <button type="button" onClick={toggleMute} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
                     {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                   </button>
                   <AnimatePresence>
                     {showVol && (
-                      <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 80, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="overflow-hidden">
-                        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={e => changeVolume(+e.target.value)} className="w-20 accent-primary cursor-pointer" />
+                      <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 88, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="overflow-hidden flex items-center">
+                        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={e => changeVolume(+e.target.value)} className="np-slider w-[80px] cursor-pointer" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                <span className="text-white/50 text-sm font-mono ml-1 sm:ml-2 tabular-nums text-xs sm:text-sm">
-                  {fmt(currentTime)} / {fmt(duration)}
-                </span>
-
                 <div className="flex-1" />
 
                 {type === 'series' && (
-                  <button onClick={() => setShowEpisodes(true)} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
-                    <List className="w-5 h-5" />
-                  </button>
+                  <>
+                    <button type="button" disabled={!prevEp} onClick={() => prevEp && goToEpisode(prevEp)} className="hidden md:flex w-10 h-10 rounded-full text-white/70 hover:text-white hover:bg-white/10 items-center justify-center disabled:opacity-25" title="Épisode précédent">
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button type="button" disabled={!nextEp} onClick={() => nextEp && goToEpisode(nextEp)} className="hidden md:flex w-10 h-10 rounded-full text-white/70 hover:text-white hover:bg-white/10 items-center justify-center disabled:opacity-25" title="Épisode suivant">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <button type="button" onClick={() => setShowEpisodes(true)} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
+                      <List className="w-5 h-5" />
+                    </button>
+                  </>
                 )}
 
                 <button
+                  type="button"
                   onClick={() => {
                     // @ts-ignore
                     if (videoRef.current?.webkitShowPlaybackTargetPicker) videoRef.current.webkitShowPlaybackTargetPicker()
                   }}
-                  className="hidden sm:flex text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all"
+                  className="hidden sm:flex w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 items-center justify-center"
                 >
                   <Cast className="w-5 h-5" />
                 </button>
 
                 {tmdbId && (
                   <button
+                    type="button"
                     disabled={isDownloading}
                     onClick={e => {
                       e.stopPropagation()
@@ -1582,7 +1499,7 @@ export function NativePlayer({
                       if (!userId) { setShowLoginPrompt(true); return }
                       triggerDownload()
                     }}
-                    className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
+                    className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center disabled:opacity-50"
                     title="Télécharger"
                   >
                     {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
@@ -1591,8 +1508,9 @@ export function NativePlayer({
 
                 <div ref={settingsRef} className="relative">
                   <button
+                    type="button"
                     onClick={() => setShowSettings(s => !s)}
-                    className={`p-2.5 rounded-xl hover:bg-white/10 transition-all ${showSettings ? 'text-white bg-white/10' : 'text-white/70 hover:text-white'}`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${showSettings ? 'bg-white text-black' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
                   >
                     <Settings className="w-5 h-5" />
                   </button>
@@ -1604,14 +1522,8 @@ export function NativePlayer({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 6, scale: 0.97 }}
                         transition={{ duration: 0.12 }}
-                        className="absolute bottom-full right-0 mb-2 shadow-2xl"
-                        style={{
-                          background: 'rgba(22,22,22,0.96)',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          minWidth: '260px',
-                          backdropFilter: 'blur(12px)',
-                        }}
+                        className="absolute bottom-full right-0 mb-2 shadow-2xl overflow-hidden min-w-[270px] rounded-2xl border border-white/10"
+                        style={{ background: 'rgba(12,12,14,0.96)', backdropFilter: 'blur(20px)' }}
                         onClick={e => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-between" style={{ padding: '14px 18px 10px' }}>
@@ -1808,7 +1720,7 @@ export function NativePlayer({
                   </AnimatePresence>
                 </div>
 
-                <button onClick={toggleFs} className="text-white/70 hover:text-white p-2.5 rounded-xl hover:bg-white/10 transition-all">
+                <button type="button" onClick={toggleFs} className="w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center">
                   {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                 </button>
               </div>

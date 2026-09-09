@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useDrawer } from '@/components/movie-drawer'
-import { Search, X, ChevronDown } from 'lucide-react'
+import { Search, X, ChevronDown, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { getPosterUrl, getBackdropUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
@@ -44,11 +44,6 @@ function itemTitle(item: Movie | Series) {
   return (item.name || item.original_name || '').trim()
 }
 
-function itemOriginal(item: Movie | Series) {
-  if (isMovie(item)) return (item.original_title || '').trim()
-  return (item.original_name || '').trim()
-}
-
 function itemDate(item: Movie | Series) {
   return isMovie(item) ? item.release_date : item.first_air_date
 }
@@ -58,6 +53,43 @@ function itemYear(item: Movie | Series) {
   if (!d) return ''
   const y = new Date(d).getFullYear()
   return Number.isFinite(y) ? String(y) : ''
+}
+
+function mapTmdbResult(r: any, type: 'movie' | 'series'): Movie | Series {
+  if (type === 'movie') {
+    return {
+      id: r.id,
+      tmdb_id: r.id,
+      title: r.title || r.original_title || '',
+      original_title: r.original_title || r.title || '',
+      overview: r.overview || '',
+      poster_path: r.poster_path || null,
+      backdrop_path: r.backdrop_path || null,
+      release_date: r.release_date || '',
+      vote_average: r.vote_average || 0,
+      vote_count: r.vote_count || 0,
+      genre_ids: r.genre_ids || [],
+      popularity: r.popularity || 0,
+      adult: !!r.adult,
+      video_url: null,
+    }
+  }
+  return {
+    id: r.id,
+    tmdb_id: r.id,
+    name: r.name || r.original_name || '',
+    original_name: r.original_name || r.name || '',
+    overview: r.overview || '',
+    poster_path: r.poster_path || null,
+    backdrop_path: r.backdrop_path || null,
+    first_air_date: r.first_air_date || '',
+    vote_average: r.vote_average || 0,
+    vote_count: r.vote_count || 0,
+    genre_ids: r.genre_ids || [],
+    popularity: r.popularity || 0,
+    number_of_seasons: r.number_of_seasons || 0,
+    number_of_episodes: r.number_of_episodes || 0,
+  }
 }
 
 export function ContentGrid({ title, content, type }: ContentGridProps) {
@@ -74,6 +106,12 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const loaderRef = useRef<HTMLDivElement>(null)
   const sortRef = useRef<HTMLDivElement>(null)
+  const [tmdbResults, setTmdbResults] = useState<(Movie | Series)[]>([])
+  const [tmdbSearching, setTmdbSearching] = useState(false)
+  const [tmdbPage, setTmdbPage] = useState(1)
+  const [tmdbTotalPages, setTmdbTotalPages] = useState(0)
+  const tmdbLoadingMore = useRef(false)
+  const isTmdbSearch = search.trim().length > 0
 
   const setSort = useCallback((next: SortType) => {
     const p = new URLSearchParams(searchParams.toString())
@@ -111,16 +149,49 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
     return Object.entries(genreMap).sort((a, b) => a[1].localeCompare(b[1], 'fr'))
   }, [content])
 
-  const filtered = useMemo(() => {
-    let items = [...content]
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      items = items.filter(item => {
-        const t = itemTitle(item).toLowerCase()
-        const o = itemOriginal(item).toLowerCase()
-        return t.includes(q) || o.includes(q)
-      })
+  useEffect(() => {
+    const q = search.trim()
+    if (!q) {
+      setTmdbResults([])
+      setTmdbSearching(false)
+      setTmdbPage(1)
+      setTmdbTotalPages(0)
+      return
     }
+
+    const ac = new AbortController()
+    setTmdbSearching(true)
+    setTmdbPage(1)
+    setTmdbTotalPages(0)
+    tmdbLoadingMore.current = false
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/tmdb/search?q=${encodeURIComponent(q)}&type=${type}&page=1`,
+          { signal: ac.signal },
+        )
+        const data = await res.json()
+        setTmdbResults((data.results || []).map((r: any) => mapTmdbResult(r, type)))
+        setTmdbPage(1)
+        setTmdbTotalPages(data.total_pages || 1)
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          setTmdbResults([])
+          setTmdbTotalPages(0)
+        }
+      } finally {
+        if (!ac.signal.aborted) setTmdbSearching(false)
+      }
+    }, 350)
+
+    return () => {
+      clearTimeout(timer)
+      ac.abort()
+    }
+  }, [search, type])
+
+  const filtered = useMemo(() => {
+    let items = [...(isTmdbSearch ? tmdbResults : content)]
     if (selectedGenre) items = items.filter(item => item.genre_ids?.includes(selectedGenre))
     switch (sort) {
       case 'rating':
@@ -136,16 +207,37 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
         items.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
     }
     return items
-  }, [content, search, sort, selectedGenre])
+  }, [content, isTmdbSearch, tmdbResults, sort, selectedGenre])
 
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, sort, selectedGenre])
 
-  const visible = filtered.slice(0, visibleCount)
-  const hasMore = visibleCount < filtered.length
+  const visible = isTmdbSearch ? filtered : filtered.slice(0, visibleCount)
+  const hasMore = isTmdbSearch ? tmdbPage < tmdbTotalPages : visibleCount < filtered.length
 
   const loadMore = useCallback(() => {
+    if (isTmdbSearch) {
+      if (tmdbLoadingMore.current || tmdbPage >= tmdbTotalPages) return
+      const q = search.trim()
+      if (!q) return
+      tmdbLoadingMore.current = true
+      const next = tmdbPage + 1
+      fetch(`/api/tmdb/search?q=${encodeURIComponent(q)}&type=${type}&page=${next}`)
+        .then(r => r.json())
+        .then(data => {
+          setTmdbResults(prev => {
+            const seen = new Set(prev.map(i => i.tmdb_id || i.id))
+            const extra = (data.results || [])
+              .map((r: any) => mapTmdbResult(r, type))
+              .filter(i => !seen.has(i.tmdb_id || i.id))
+            return [...prev, ...extra]
+          })
+          setTmdbPage(next)
+        })
+        .finally(() => { tmdbLoadingMore.current = false })
+      return
+    }
     setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length))
-  }, [filtered.length])
+  }, [isTmdbSearch, tmdbPage, tmdbTotalPages, search, type, filtered.length])
 
   useEffect(() => {
     const el = loaderRef.current
@@ -182,7 +274,11 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-[#08080a] via-[#08080a]/50 to-black/40" />
         <div className="relative h-full max-w-[1400px] mx-auto px-4 md:px-8 flex flex-col justify-end pb-6 pt-24">
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">{title}</h1>
-          <p className="text-white/50 text-sm mt-1">{filtered.length} titre{filtered.length > 1 ? 's' : ''}</p>
+          <p className="text-white/50 text-sm mt-1">
+            {isTmdbSearch
+              ? `${filtered.length} résultat${filtered.length > 1 ? 's' : ''} TMDB`
+              : `${filtered.length} titre${filtered.length > 1 ? 's' : ''}`}
+          </p>
         </div>
       </div>
 
@@ -197,11 +293,13 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
               placeholder={`Rechercher un ${type === 'movie' ? 'film' : 'série'}…`}
               className="flex-1 min-w-0 bg-transparent text-white text-sm outline-none placeholder-white/30"
             />
-            {search && (
+            {tmdbSearching ? (
+              <Loader2 className="w-4 h-4 text-white/40 animate-spin shrink-0" />
+            ) : search ? (
               <button type="button" onClick={() => setSearch('')} className="text-white/35 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
-            )}
+            ) : null}
           </div>
 
           <div ref={sortRef} className="relative shrink-0">
@@ -256,7 +354,9 @@ export function ContentGrid({ title, content, type }: ContentGridProps) {
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {tmdbSearching && tmdbResults.length === 0 ? (
+          <p className="text-center text-white/35 py-24">Recherche en cours…</p>
+        ) : filtered.length === 0 ? (
           <p className="text-center text-white/35 py-24">Aucun résultat</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-3 gap-y-6">

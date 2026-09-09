@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Star, Check, Plus, Info } from 'lucide-react'
 import { getPosterUrl, type Movie, type Series } from '@/lib/content-types'
@@ -30,6 +31,22 @@ export function ContentCard({
   const year = releaseDate ? new Date(releaseDate).getFullYear() : ''
   const tmdbId = content.tmdb_id || content.id
   const { openDrawer } = useDrawer()
+  const router = useRouter()
+
+  const isCardAction = (e: React.SyntheticEvent) =>
+    (e.target as HTMLElement).closest('[data-card-action]')
+
+  const playNow = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    router.push(`/watch/${type}/${tmdbId}?play=1`)
+  }
+
+  const openInfo = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    openDrawer(type, tmdbId)
+  }
   const [hovered, setHovered] = useState(false)
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const [glare, setGlare] = useState({ x: 50, y: 50 })
@@ -66,7 +83,7 @@ export function ContentCard({
         onMouseEnter={() => !isTouch && setHovered(true)}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => { if (!isTouch) { setHovered(false); setTilt({ x: 0, y: 0 }) } }}
-        onClick={() => openDrawer(type, tmdbId)}
+        onClick={(e) => { if (!isCardAction(e)) openDrawer(type, tmdbId) }}
         style={isTouch ? {} : {
           transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transition: hovered ? 'transform 0.1s ease-out' : 'transform 0.4s ease-out',
@@ -93,7 +110,6 @@ export function ContentCard({
           <div
             className="relative overflow-hidden cursor-pointer w-full h-full"
             style={{ borderRadius: '1rem', background: '#111' }}
-            onClick={(e) => { e.stopPropagation(); openDrawer(type, tmdbId) }}
           >
             {/* Glare desktop uniquement */}
             {!isTouch && (
@@ -135,7 +151,7 @@ export function ContentCard({
             <AnimatePresence>
               {hovered && (
                 <motion.div key="hover" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-                  className="absolute inset-0 flex flex-col justify-end"
+                  className="absolute inset-0 z-20 flex flex-col justify-end pointer-events-auto"
                   style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 55%, rgba(0,0,0,0.15) 100%)' }}>
                   <div className="px-3 pb-3">
                     {logoUrl && (
@@ -158,24 +174,36 @@ export function ContentCard({
                     {shortOverview && (
                       <p className="text-white/65 text-[11px] leading-relaxed mb-3 line-clamp-2">{shortOverview}</p>
                     )}
-                    <div className="flex items-center gap-2">
-                      <button onClick={(e) => { e.stopPropagation(); openDrawer(type, tmdbId) }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl font-black text-black text-xs tracking-widest uppercase"
-                        style={{ background: '#fff' }}>
-                        <Play className="w-3.5 h-3.5 fill-black" />
+                    <div className="flex items-center gap-2" data-card-action>
+                      <button
+                        type="button"
+                        data-card-action
+                        onClick={playNow}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full font-black text-black text-xs tracking-widest uppercase"
+                        style={{ background: '#fff' }}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-black pointer-events-none" />
                         Lecture
                       </button>
                       {onToggleFavorite && (
-                        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        <button
+                          type="button"
+                          data-card-action
+                          onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+                          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{ background: isFavorite ? 'rgba(220,38,38,0.85)' : 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                          {isFavorite ? <Check className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-white" />}
+                          {isFavorite ? <Check className="w-4 h-4 text-white pointer-events-none" /> : <Plus className="w-4 h-4 text-white pointer-events-none" />}
                         </button>
                       )}
-                      <button onClick={(e) => { e.stopPropagation(); openDrawer(type, tmdbId) }}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                        <Info className="w-4 h-4 text-white/70" />
+                      <button
+                        type="button"
+                        data-card-action
+                        onClick={openInfo}
+                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)' }}
+                        aria-label="Plus d’infos"
+                      >
+                        <Info className="w-4 h-4 text-white/80 pointer-events-none" />
                       </button>
                     </div>
                   </div>
