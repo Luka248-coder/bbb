@@ -2,7 +2,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetch-all'
 import type { Movie, Series, Episode } from '@/lib/content-types'
-import { getCinflixStreamUrl } from '@/lib/cinflix'
 
 export type { Movie, Series, Episode } from '@/lib/content-types'
 export { GENRES, getGenreNames, getPosterUrl, getBackdropUrl } from '@/lib/content-types'
@@ -363,7 +362,9 @@ export async function getMovieVideoUrl(tmdbId: number, titleOverride?: string): 
     if (url) return url
   }
 
-  return getCinflixStreamUrl('movie', tmdbId)
+  // Cinflix is resolved client-side via /api/purstream so the watch page
+  // does not hang on the Cinflix 302.
+  return null
 }
 
 export async function getEpisodeVideoUrl(
@@ -382,5 +383,5 @@ export async function getEpisodeVideoUrl(
     if (url) return url
   }
 
-  return getCinflixStreamUrl('tv', tmdbId, season, episode)
+  return null
 }
