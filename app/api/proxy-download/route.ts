@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isCinflixApiUrl } from '@/lib/cinflix-url'
-import { resolveCinflixApiUrl } from '@/lib/cinflix'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -127,13 +125,9 @@ async function proxy(request: NextRequest, withBody: boolean) {
     }
 
     if (parsed.hostname.toLowerCase().includes('cinflix.xyz')) {
-      const resolved = await resolveCinflixApiUrl(rawUrl)
-      if (!resolved || isCinflixApiUrl(resolved)) {
-        return new NextResponse('Cinflix n\'a pas renvoyé de flux', { status: 502 })
-      }
-      const dest = request.nextUrl.clone()
-      dest.searchParams.set('url', resolved)
-      return NextResponse.redirect(dest, 307)
+      // Do not resolve Cinflix from Vercel (US IPs are blocked). The device
+      // follows this 302, Cinflix 302s to blink, sw-cinflix proxies blink.
+      return NextResponse.redirect(rawUrl, 302)
     }
 
     const target = parsed

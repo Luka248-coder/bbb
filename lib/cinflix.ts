@@ -1,11 +1,6 @@
-import https from 'node:https'
-import dns from 'node:dns'
-import { URL } from 'node:url'
 import { cinflixStreamApiUrl, isCinflixApiUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
 
 export { cinflixStreamApiUrl, isCinflixApiUrl, isCinflixMediaUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
-
-try { dns.setDefaultResultOrder('ipv4first') } catch {}
 
 const CINFLIX_ORIGIN = 'https://cinflix.xyz'
 const CINFLIX_REFERER = `${CINFLIX_ORIGIN}/`
@@ -27,11 +22,10 @@ function pickUrl(value: unknown): string | null {
   return isPlayableMediaUrl(trimmed) ? trimmed : null
 }
 
-function headerLocation(raw: string | string[] | undefined, base: string): string | null {
-  const value = Array.isArray(raw) ? raw[0] : raw
-  if (!value) return null
+function headerLocation(raw: string | null, base: string): string | null {
+  if (!raw) return null
   try {
-    const u = new URL(String(value).trim(), base)
+    const u = new URL(raw.trim(), base)
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
     if (isCinflixApiUrl(u.toString())) return null
     return u.toString()
@@ -55,81 +49,42 @@ function urlFromPayload(data: any): string | null {
   )
 }
 
-type CinflixResponse = {
+async function requestNoRedirect(urlStr: string): Promise<{
   status: number
   location: string | null
   contentType: string
   text: string
-}
+}> {
+  const empty = { status: 0, location: null, contentType: '', text: '' }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+  try {
+    const res = await fetch(urlStr, {
+      method: 'GET',
+      redirect: 'manual',
+      cache: 'no-store',
+      headers: HEADERS,
+      signal: ctrl.signal,
+    })
+    const location = headerLocation(res.headers.get('location'), urlStr)
+    const contentType = res.headers.get('content-type') || ''
+    const status = res.status || 0
 
-function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
-  return new Promise(resolve => {
-    const empty: CinflixResponse = { status: 0, location: null, contentType: '', text: '' }
-    let settled = false
-    const done = (value: CinflixResponse) => {
-      if (settled) return
-      settled = true
-      resolve(value)
+    if ((status >= 300 && status < 400) || contentType.includes('text/html') || contentType.includes('video/')) {
+      try { await res.body?.cancel() } catch {}
+      return { status, location, contentType, text: '' }
     }
 
-    try {
-      const u = new URL(urlStr)
-      const req = https.request(
-        {
-          protocol: u.protocol,
-          hostname: u.hostname,
-          port: u.port || 443,
-          path: `${u.pathname}${u.search}`,
-          method: 'GET',
-          headers: HEADERS,
-          timeout: TIMEOUT_MS,
-        },
-        res => {
-          const location = headerLocation(res.headers.location, urlStr)
-          const contentType = String(res.headers['content-type'] || '')
-          const status = res.statusCode || 0
-
-          if (status >= 300 && status < 400) {
-            res.resume()
-            done({ status, location, contentType, text: '' })
-            return
-          }
-
-          if (contentType.includes('text/html') || contentType.includes('video/')) {
-            res.resume()
-            done({ status, location, contentType, text: '' })
-            return
-          }
-
-          const chunks: Buffer[] = []
-          let size = 0
-          res.on('data', chunk => {
-            size += chunk.length
-            if (size <= 64 * 1024) chunks.push(chunk)
-            else res.destroy()
-          })
-          res.on('end', () => {
-            done({
-              status,
-              location,
-              contentType,
-              text: Buffer.concat(chunks).toString('utf8'),
-            })
-          })
-          res.on('error', () => done({ status, location, contentType, text: '' }))
-        },
-      )
-
-      req.on('timeout', () => {
-        req.destroy()
-        done(empty)
-      })
-      req.on('error', () => done(empty))
-      req.end()
-    } catch {
-      done(empty)
+    const text = contentType.includes('json') ? (await res.text()).slice(0, 64 * 1024) : ''
+    if (!contentType.includes('json')) {
+      try { await res.body?.cancel() } catch {}
     }
-  })
+    return { status, location, contentType, text }
+  } catch {
+    return empty
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export async function resolveCinflixApiUrl(apiUrl: string): Promise<string | null> {

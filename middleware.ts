@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCinflixStreamUrl } from '@/lib/cinflix'
+import { cinflixStreamApiUrl } from '@/lib/cinflix-url'
+import { resolveCinflixApiUrl } from '@/lib/cinflix'
 
-export const runtime = 'edge'
-export const preferredRegion = ['cdg1', 'fra1']
-
-export async function GET(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const type = searchParams.get('type') === 'tv' || searchParams.get('type') === 'series' ? 'tv' : 'movie'
   const id = Number(searchParams.get('id') || 0)
@@ -15,6 +13,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ url: null }, { status: 400 })
   }
 
-  const url = await getCinflixStreamUrl(type, id, season, episode)
+  const apiUrl = cinflixStreamApiUrl(type, id, season, episode)
+  const url = await resolveCinflixApiUrl(apiUrl)
   return NextResponse.json({ url })
+}
+
+export const config = {
+  matcher: '/api/cinflix-resolve',
 }
