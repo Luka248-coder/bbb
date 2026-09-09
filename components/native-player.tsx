@@ -236,6 +236,8 @@ export function NativePlayer({
 }: NativePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
+  const sourceUrlRef = useRef<string | null>(null)
+  const proxyTriedRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -327,7 +329,17 @@ export function NativePlayer({
   const resumeTimeRef = useRef(0)
   const resumeAppliedRef = useRef(false)
   const goBack = useCallback(() => {
-    window.location.href = backUrl
+    const v = videoRef.current
+    if (hlsRef.current) {
+      hlsRef.current.destroy()
+      hlsRef.current = null
+    }
+    if (v) {
+      v.pause()
+      v.removeAttribute('src')
+      v.load()
+    }
+    window.location.replace(backUrl)
   }, [backUrl])
 
   const playingRef = useRef(false)
@@ -476,6 +488,8 @@ export function NativePlayer({
 
     v.pause()
     resumeAppliedRef.current = false
+    sourceUrlRef.current = url
+    proxyTriedRef.current = false
 
     setBuffering(true)
     setPlaying(false)
@@ -564,11 +578,7 @@ export function NativePlayer({
         setPlaying(false)
       })
     } else {
-      const mp4Url =
-        isTopstream || /^https?:\/\//i.test(url)
-          ? `/api/proxy-download?url=${encodeURIComponent(url)}&filename=video.mp4`
-          : url
-      v.src = mp4Url
+      v.src = url
       v.muted = true
       startErrorTimer()
       v.play()?.catch(() => {
@@ -596,6 +606,13 @@ export function NativePlayer({
       }
     }
     const applyResume = () => {
+      // Sur iPhone, seek avant la 1re image bloque le MP4 à 0:00 avec spinner.
+      const coarse = window.matchMedia('(pointer: coarse)').matches
+      if (coarse) {
+        resumeTimeRef.current = 0
+        resumeAppliedRef.current = true
+        return
+      }
       if (resumeAppliedRef.current || resumeTimeRef.current <= 0 || !(v.duration > 0)) return
       resumeAppliedRef.current = true
       v.currentTime = (resumeTimeRef.current / 100) * v.duration
@@ -618,11 +635,20 @@ export function NativePlayer({
     const onCanPlay = () => {
       syncVideoState(v)
       applyResume()
-      setBuffering(false)
-      setShowError(false)
-      clearErrorTimer()
     }
     const onError = () => {
+      const raw = sourceUrlRef.current
+      if (raw && !proxyTriedRef.current && /^https?:/i.test(raw) && !raw.includes('/api/proxy-download')) {
+        proxyTriedRef.current = true
+        setBuffering(true)
+        v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
+        v.muted = true
+        v.play()?.catch(() => {
+          setBuffering(false)
+          setPlaying(false)
+        })
+        return
+      }
       setBuffering(false)
       setPlaying(false)
     }
@@ -721,6 +747,26 @@ export function NativePlayer({
       hlsRef.current = null
     }
   }, [videoUrl, loadVideo])
+
+  // Si la durée est là mais aucune image au bout de 4s (typique Safari),
+  // on retente via le proxy Referer au lieu de rester coincé à 0:00.
+  useEffect(() => {
+    if (!buffering || !videoUrl) return
+    const t = window.setTimeout(() => {
+      const v = videoRef.current
+      const raw = sourceUrlRef.current
+      if (!v || !raw || proxyTriedRef.current) return
+      if (!(v.duration > 0) || v.currentTime > 0.2) return
+      proxyTriedRef.current = true
+      v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
+      v.muted = true
+      v.play()?.catch(() => {
+        setBuffering(false)
+        setPlaying(false)
+      })
+    }, 4000)
+    return () => window.clearTimeout(t)
+  }, [buffering, videoUrl])
 
   // Fullscreen listener
   useEffect(() => {
