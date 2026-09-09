@@ -67,6 +67,14 @@ function ensureCinflixSw(): Promise<boolean> {
       if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
+      if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('cinflix-sw-v8')) {
+        sessionStorage.setItem('cinflix-sw-v8', '1')
+        await new Promise(r => window.setTimeout(r, 400))
+        if (!navigator.serviceWorker.controller) {
+          window.location.reload()
+          return false
+        }
+      }
       await Promise.race([
         new Promise<void>(resolve => {
           navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
