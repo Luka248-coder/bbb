@@ -272,6 +272,7 @@ export function NativePlayer({
   const [showEpisodes, setShowEpisodes] = useState(false)
   const [iosPlayer, setIosPlayer] = useState(false)
   const [iosReady, setIosReady] = useState(false)
+  const [iosPlayUrl, setIosPlayUrl] = useState<string | null>(null)
   const iosRef = useRef(false)
 
   useEffect(() => {
@@ -526,12 +527,7 @@ export function NativePlayer({
     }
 
     const isHls = url.includes('.m3u8')
-    const alreadyProxied = url.includes('/api/hls/') || url.includes('/api/stream-proxy')
-    const playUrl = iosRef.current && !alreadyProxied
-      ? isHls
-        ? `/api/hls/master.m3u8?url=${encodeURIComponent(url)}`
-        : `/api/stream-proxy?url=${encodeURIComponent(url)}`
-      : url
+    const playUrl = url
 
     const playSrc = () => {
       v.muted = true
@@ -603,10 +599,7 @@ export function NativePlayer({
 
     v.removeAttribute('src')
     while (v.firstChild) v.removeChild(v.firstChild)
-    const source = document.createElement('source')
-    source.src = playUrl
-    source.type = isHls ? 'application/vnd.apple.mpegurl' : 'video/mp4'
-    v.appendChild(source)
+    v.src = playUrl
     v.load()
     if (iosRef.current) {
       setBuffering(false)
@@ -674,12 +667,6 @@ export function NativePlayer({
     const onError = () => {
       const raw = sourceUrlRef.current
       if (iosRef.current) {
-        if (raw?.includes('.m3u8') && !v.currentSrc.includes('/api/hls/') && !proxyTriedRef.current) {
-          proxyTriedRef.current = true
-          v.src = `/api/hls/master.m3u8?url=${encodeURIComponent(raw)}`
-          v.load()
-          return
-        }
         setBuffering(false)
         setPlaying(false)
         return
@@ -734,7 +721,7 @@ export function NativePlayer({
       v.removeEventListener('stalled', onWaiting)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
-  }, [resetTimer, clearErrorTimer, syncVideoState])
+  }, [resetTimer, clearErrorTimer, syncVideoState, iosPlayUrl])
 
   // ─── Si série en DB mais épisode sans URL → overlay immédiat si pas de tmdbId
   useEffect(() => {
@@ -783,6 +770,16 @@ export function NativePlayer({
   // Load video whenever videoUrl changes
   useEffect(() => {
     if (!iosReady || !videoUrl) return
+    if (iosRef.current) {
+      const origin = window.location.hostname === 'streamself.dev'
+        ? `${window.location.protocol}//www.streamself.dev`
+        : window.location.origin
+      const next = videoUrl.includes('.m3u8')
+        ? `${origin}/api/hls/master.m3u8?url=${encodeURIComponent(videoUrl)}&direct=1`
+        : videoUrl
+      setIosPlayUrl(next)
+      return
+    }
     if (fetchTimeoutRef.current) { clearTimeout(fetchTimeoutRef.current); fetchTimeoutRef.current = null }
     setEpisodeNotFound(false)
     loadVideo(videoUrl)
@@ -1281,9 +1278,10 @@ export function NativePlayer({
         playsInline
         webkit-playsinline="true"
         x-webkit-airplay="allow"
-        controls={iosPlayer}
+        controls={Boolean(iosPlayer && iosPlayUrl)}
         preload="metadata"
         controlsList="nodownload"
+        src={iosPlayer ? (iosPlayUrl || undefined) : undefined}
       />
       <button
         type="button"
