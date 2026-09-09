@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { PlayerPage } from '@/components/player-page'
 import { NativePlayer } from '@/components/native-player'
 import { Loading } from '@/components/loading'
 import { PresenceTracker } from '@/components/presence-tracker'
@@ -37,14 +36,12 @@ async function saveVideoUrl(type: 'movie' | 'series', tmdbId: number, url: strin
 }
 
 async function WatchContent({
-  type, id, season, episode, play, from,
+  type, id, season, episode,
 }: {
   type: 'movie' | 'series'
   id: string
   season: number
   episode: number
-  play: boolean
-  from?: string
 }) {
   const tmdbId = parseInt(id)
   const user = await getSession()
@@ -135,40 +132,7 @@ async function WatchContent({
     contentYear = series?.first_air_date ? parseInt(series.first_air_date.slice(0, 4)) : undefined
   }
 
-  const backUrl = '/'
-
-  if (play) {
-    return (
-      <>
-        <PresenceTracker
-          page={type === 'movie' ? 'watch_movie' : 'watch_series'}
-          title={title}
-          tmdbId={tmdbId}
-          contentType={type as 'movie' | 'series'}
-          poster={poster}
-          season={type === 'series' ? season : undefined}
-          episode={type === 'series' ? episode : undefined}
-          userId={user?.id || null}
-          username={user?.username || null}
-        />
-        <NativePlayer
-          videoUrl={playerUrl}
-          title={title}
-          backUrl={backUrl}
-          type={type}
-          tmdbId={tmdbId}
-          seriesDbId={seriesDbId}
-          currentSeason={season}
-          currentEpisode={episode}
-          userId={user?.id || null}
-          profileId={profileId}
-          poster={poster}
-          seriesName={seriesName}
-          year={contentYear}
-        />
-      </>
-    )
-  }
+  const backUrl = `/title/${type}/${tmdbId}${type === 'series' ? `?season=${season}&episode=${episode}` : ''}`
 
   return (
     <>
@@ -183,15 +147,20 @@ async function WatchContent({
         userId={user?.id || null}
         username={user?.username || null}
       />
-      <PlayerPage
+      <NativePlayer
+        videoUrl={playerUrl}
+        title={title}
+        backUrl={backUrl}
         type={type}
         tmdbId={tmdbId}
-        playerUrl={playerUrl || ''}
-        initialSeason={season}
-        initialEpisode={episode}
+        seriesDbId={seriesDbId}
+        currentSeason={season}
+        currentEpisode={episode}
         userId={user?.id || null}
         profileId={profileId}
         poster={poster}
+        seriesName={seriesName}
+        year={contentYear}
       />
     </>
   )
@@ -206,11 +175,20 @@ export default async function WatchPage({ params, searchParams }: WatchPageProps
   const season = parseInt(search.season || '1')
   const episode = parseInt(search.episode || '1')
   const play = search.play === '1'
-  const from = search.from
+
+  if (!play) {
+    const qs = new URLSearchParams()
+    if (type === 'series') {
+      if (search.season) qs.set('season', search.season)
+      if (search.episode) qs.set('episode', search.episode)
+    }
+    const q = qs.toString()
+    redirect(`/title/${type}/${id}${q ? `?${q}` : ''}`)
+  }
 
   return (
     <Suspense fallback={<Loading />}>
-      <WatchContent type={type as 'movie'|'series'} id={id} season={season} episode={episode} play={play} from={from} />
+      <WatchContent type={type as 'movie'|'series'} id={id} season={season} episode={episode} />
     </Suspense>
   )
 }

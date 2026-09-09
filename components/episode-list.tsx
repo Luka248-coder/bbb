@@ -135,9 +135,8 @@ export function EpisodeList({
   }
 
   const selectEpisode = (ep: TMDBEpisode) => {
-    const from = encodeURIComponent(window.location.pathname + window.location.search)
     if (isDrawer && onClose) onClose()
-    router.push(`/watch/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}${isDrawer ? `&from=${from}` : ''}`)
+    router.push(`/title/series/${tmdbId}?season=${ep.season_number}&episode=${ep.episode_number}`)
   }
 
   const isCurrentEp = (ep: TMDBEpisode) =>

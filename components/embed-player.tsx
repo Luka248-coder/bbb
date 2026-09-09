@@ -370,51 +370,6 @@ export function EmbedPlayer({
       <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" playsInline />
       <div className="absolute inset-0 z-[15]" onClick={handleSurfaceTap} />
 
-      {/* STREAMSELF cinematic loading overlay */}
-      <AnimatePresence>
-        {initialLoading && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center"
-            style={{ background: 'radial-gradient(ellipse at 70% 60%, rgba(160,10,10,0.35) 0%, rgba(20,5,5,0.7) 45%, #0a0404 100%)' }}
-          >
-
-            <div className="relative flex items-center justify-center mb-8">
-              {/* Cercle de fond */}
-              <div className="absolute w-16 h-16 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.06)' }} />
-              {/* Arc tournant principal */}
-              <motion.div
-                className="absolute w-16 h-16 rounded-full"
-                style={{
-                  background: 'conic-gradient(from 0deg, #e50914 0%, rgba(229,9,20,0.15) 35%, transparent 60%)',
-                  borderRadius: '50%',
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-              />
-              {/* Masque central */}
-              <div className="absolute w-[52px] h-[52px] rounded-full" style={{ background: 'rgba(6,1,1,0.95)' }} />
-              {/* Logo au centre */}
-              <div className="relative w-6 h-6 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-red-600" style={{ boxShadow: '0 0 8px 2px rgba(229,9,20,0.6)' }} />
-              </div>
-            </div>
-            <motion.p
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-white/50 text-xs font-medium tracking-[0.3em] uppercase select-none"
-            >
-              STREAMSELF PRÉPARE VOTRE {type === 'series' ? 'SÉRIE' : 'FILM'}...
-            </motion.p>
-
-
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* 30s error popup */}
       <AnimatePresence>
         {showError && (
@@ -465,7 +420,7 @@ export function EmbedPlayer({
       </AnimatePresence>
 
       <AnimatePresence>
-        {buffering && !initialLoading && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        {buffering && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
             <Loader2 className="w-8 h-8 text-white animate-spin" />

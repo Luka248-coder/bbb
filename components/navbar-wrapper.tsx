@@ -8,6 +8,7 @@ const HIDDEN_PATHS = [
   '/auth',
   '/admin',
   '/watch',
+  '/title',
   '/embed',
   '/profiles',
 ]

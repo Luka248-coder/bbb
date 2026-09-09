@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, ChevronRight, ChevronLeft, Star } from 'lucide-react'
+import { Play, ChevronRight, ChevronLeft, Star, Info } from 'lucide-react'
 import { getBackdropUrl, getPosterUrl, getGenreNames, type Movie, type Series } from '@/lib/content-types'
 import { useDrawer } from '@/components/movie-drawer'
 
@@ -79,6 +79,7 @@ const SLIDE_MS = 8000
 
 export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
   const { openDrawer } = useDrawer()
+  const router = useRouter()
   const picks = useMemo(() => (
     [...movies, ...series]
       .filter(i => i.backdrop_path)
@@ -225,20 +226,21 @@ export function FeaturedBanner({ movies, series }: FeaturedBannerProps) {
               transition={{ duration: 0.4, delay: 0.44 }}
               className="flex items-center gap-3 flex-wrap"
             >
-              <Link
-                href={`/watch/${type}/${tmdbId}?play=1`}
-                className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-white text-black text-sm font-bold hover:scale-[1.03] active:scale-[0.98] transition-transform shadow-lg"
+              <button
+                type="button"
+                onClick={() => router.push(`/watch/${type}/${tmdbId}?play=1`)}
+                className="inline-flex items-center gap-2 h-12 px-8 rounded-full bg-white text-black text-sm font-black tracking-widest uppercase hover:scale-[1.03] active:scale-[0.98] transition-transform shadow-lg"
               >
-                <Play className="w-4 h-4 fill-black" />
-                Regarder
-              </Link>
+                <Play className="w-4 h-4 fill-black pointer-events-none" />
+                Lecture
+              </button>
               <button
                 type="button"
                 onClick={() => openDrawer(type, tmdbId)}
-                className="inline-flex items-center gap-1.5 h-12 px-5 rounded-full bg-white/10 border border-white/15 text-white text-sm font-semibold backdrop-blur-md hover:bg-white/16 active:scale-[0.98] transition-all"
+                className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 border border-white/15 text-white backdrop-blur-md hover:bg-white/16 active:scale-[0.96] transition-all"
+                aria-label="Plus d’infos"
               >
-                Plus d’infos
-                <ChevronRight className="w-4 h-4" />
+                <Info className="w-5 h-5 pointer-events-none" />
               </button>
             </motion.div>
           </div>
