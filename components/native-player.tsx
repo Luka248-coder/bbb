@@ -29,6 +29,35 @@ function safariMediaUrl(raw: string) {
   return `${origin}/api/hls/master.m3u8?url=${encodeURIComponent(raw)}&direct=1`
 }
 
+function withCinflixReferer(mediaUrl: string) {
+  if (mediaUrl.includes('/api/proxy-download')) return mediaUrl
+  return `/api/proxy-download?url=${encodeURIComponent(mediaUrl)}`
+}
+
+function blinkMp4From(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    if (url.includes('/api/proxy-download')) {
+      const inner = new URL(url, window.location.origin).searchParams.get('url')
+      return blinkMp4From(inner)
+    }
+    const host = new URL(url).hostname.toLowerCase()
+    if (host.includes('blink-n3') && url.includes('.mp4')) return url
+  } catch {}
+  return null
+}
+
+function blinkFromPerformance(): string | null {
+  try {
+    const entries = performance.getEntriesByType('resource')
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const found = blinkMp4From(entries[i].name)
+      if (found) return found
+    }
+  } catch {}
+  return null
+}
+
 interface Episode {
   id: number
   season_number: number
@@ -518,7 +547,7 @@ export function NativePlayer({
     v.setAttribute('webkit-playsinline', 'true')
     resumeAppliedRef.current = false
     sourceUrlRef.current = url
-    proxyTriedRef.current = /blink-n3/i.test(url) && url.includes('.mp4')
+    proxyTriedRef.current = false
 
     setBuffering(true)
     setPlaying(false)
@@ -528,10 +557,11 @@ export function NativePlayer({
     setMuted(false)
 
     const isHls = url.includes('.m3u8')
-    const blinkMp4 = /blink-n3/i.test(url) && url.includes('.mp4') && !url.includes('/api/proxy-download')
-    const playUrl = blinkMp4
-      ? `/api/proxy-download?url=${encodeURIComponent(url)}`
+    const knownBlink = blinkMp4From(url)
+    const playUrl = knownBlink
+      ? withCinflixReferer(knownBlink)
       : safariRef.current ? safariMediaUrl(url) : url
+    if (knownBlink) proxyTriedRef.current = true
 
     const playSrc = () => {
       v.muted = false
@@ -665,13 +695,30 @@ export function NativePlayer({
       setBuffering(false)
     }
     const onError = () => {
-      const raw = sourceUrlRef.current
-      if (safariRef.current) {
+      if (proxyTriedRef.current) {
         setBuffering(false)
         setPlaying(false)
         return
       }
-      if (raw && !proxyTriedRef.current && /^https?:/i.test(raw) && !raw.includes('/api/proxy-download') && !raw.includes('.m3u8')) {
+      const redirected = blinkMp4From(v.currentSrc)
+        || blinkMp4From(v.src)
+        || blinkFromPerformance()
+        || blinkMp4From(sourceUrlRef.current)
+      if (redirected) {
+        proxyTriedRef.current = true
+        setBuffering(true)
+        v.src = withCinflixReferer(redirected)
+        v.load()
+        v.muted = false
+        setMuted(false)
+        v.play()?.catch(() => {
+          setBuffering(false)
+          setPlaying(false)
+        })
+        return
+      }
+      const raw = sourceUrlRef.current
+      if (raw && /^https?:/i.test(raw) && !raw.includes('/api/proxy-download') && !raw.includes('.m3u8') && !raw.includes('cinflix.xyz')) {
         proxyTriedRef.current = true
         setBuffering(true)
         v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
