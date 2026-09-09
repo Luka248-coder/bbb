@@ -11,7 +11,7 @@ import {
   Lock, LogIn
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Hls from 'hls.js'
+import { isCinflixApiUrl } from '@/lib/cinflix-url'
 
 function isWebKitSafari() {
   if (typeof navigator === 'undefined') return false
@@ -55,6 +55,36 @@ function blinkFromPerformance(): string | null {
       if (found) return found
     }
   } catch {}
+  return null
+}
+
+async function ensureCinflixSw() {
+  if (!('serviceWorker' in navigator)) return
+  try {
+    const reg = await navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' })
+    await navigator.serviceWorker.ready
+    await reg.update().catch(() => {})
+  } catch {}
+}
+
+async function resolveCinflixSrc(url: string): Promise<string | null> {
+  const known = blinkMp4From(url)
+  if (known) return withCinflixReferer(known)
+
+  if (!isCinflixApiUrl(url)) return null
+
+  try {
+    const res = await fetch(url, { redirect: 'follow', credentials: 'omit' })
+    try { await res.body?.cancel() } catch {}
+    const final = blinkMp4From(res.url)
+    if (final) return withCinflixReferer(final)
+    const loc = res.headers.get('location')
+    if (loc) {
+      const abs = blinkMp4From(new URL(loc, url).toString())
+      if (abs) return withCinflixReferer(abs)
+    }
+  } catch {}
+
   return null
 }
 
@@ -309,6 +339,7 @@ export function NativePlayer({
   const [showEpisodes, setShowEpisodes] = useState(false)
   const safariRef = useRef(false)
   const iosRef = useRef(false)
+  const loadGenRef = useRef(0)
   const [safariReady, setSafariReady] = useState(false)
 
   useEffect(() => {
@@ -534,6 +565,7 @@ export function NativePlayer({
   const loadVideo = useCallback((url: string) => {
     const v = videoRef.current
     if (!v) return
+    const gen = ++loadGenRef.current
 
     if (hlsRef.current) {
       hlsRef.current.destroy()
@@ -557,11 +589,6 @@ export function NativePlayer({
     setMuted(false)
 
     const isHls = url.includes('.m3u8')
-    const knownBlink = blinkMp4From(url)
-    const playUrl = knownBlink
-      ? withCinflixReferer(knownBlink)
-      : safariRef.current ? safariMediaUrl(url) : url
-    if (knownBlink) proxyTriedRef.current = true
 
     const playSrc = () => {
       v.muted = false
@@ -632,15 +659,34 @@ export function NativePlayer({
       return
     }
 
-    v.removeAttribute('src')
-    while (v.firstChild) v.removeChild(v.firstChild)
-    v.src = playUrl
-    v.load()
-    if (safariRef.current) {
-      setBuffering(false)
-      return
-    }
-    playSrc()
+    void (async () => {
+      await ensureCinflixSw()
+      if (gen !== loadGenRef.current) return
+
+      let playUrl = safariRef.current ? safariMediaUrl(url) : url
+      const cinflixSrc = await resolveCinflixSrc(url)
+      if (gen !== loadGenRef.current) return
+      if (cinflixSrc) {
+        playUrl = cinflixSrc
+        proxyTriedRef.current = true
+      } else if (isCinflixApiUrl(url)) {
+        setBuffering(false)
+        setPlaying(false)
+        setShowError(true)
+        return
+      }
+
+      if (gen !== loadGenRef.current) return
+      v.removeAttribute('src')
+      while (v.firstChild) v.removeChild(v.firstChild)
+      v.src = playUrl
+      v.load()
+      if (safariRef.current) {
+        setBuffering(false)
+        return
+      }
+      playSrc()
+    })()
   }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
 
   // ─── Mount & video events ───────────────────────────────────────────────────
