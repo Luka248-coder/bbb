@@ -10,6 +10,8 @@ import { getMovieDetails, getSeriesDetails } from '@/lib/tmdb'
 import { getSession } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 
+export const maxDuration = 60
+
 interface WatchPageProps {
   params: Promise<{ type: string; id: string }>
   searchParams: Promise<{ season?: string; episode?: string; play?: string; from?: string }>
