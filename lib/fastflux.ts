@@ -42,14 +42,23 @@ function extractSeasonEpisode(url: string): { season: number; episode: number } 
 
 // ─── Parse toutes les URLs d'un sheet en épisodes (comme le site de référence) ─
 // Sélectionne la meilleure URL : premium > free, 1080p > 720p
+function scoreMediaUrl(u: { url: string; name?: string }) {
+  const name = (u.name || '').toLowerCase()
+  const href = u.url.toLowerCase()
+  let score = 0
+  if (href.includes('premium')) score += 100
+  if (href.includes('.mp4')) score += 50
+  if (name.includes('1080')) score += 20
+  else if (name.includes('720')) score += 10
+  if (href.includes('.m3u8')) score -= 20
+  return score
+}
+
 function bestUrl(urls: { url: string; name?: string }[]): string | null {
   if (!urls || urls.length === 0) return null
-  // Premium uniquement (vérifier dans l'URL)
   const premUrls = urls.filter(u => u.url.includes('premium'))
   const pool = premUrls.length > 0 ? premUrls : urls
-  // Préférer 1080p
-  const hd = pool.find(u => (u.name || '').includes('1080p'))
-  return (hd || pool[0]).url
+  return [...pool].sort((a, b) => scoreMediaUrl(b) - scoreMediaUrl(a))[0].url
 }
 
 function parseEpisodes(urls: { url: string; name?: string }[]): {

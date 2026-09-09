@@ -1,74 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'edge'
 export const maxDuration = 60
 
-const TOPSTREAM_HOST = 'free.topstream.cloud'
 const SPOOF_REFERER = 'https://purstream.ad/'
 const SPOOF_ORIGIN = 'https://purstream.ad'
 
-const SPOOF_HEADERS = {
-  'Referer': SPOOF_REFERER,
-  'Origin': SPOOF_ORIGIN,
+const SPOOF_HEADERS: Record<string, string> = {
+  Referer: SPOOF_REFERER,
+  Origin: SPOOF_ORIGIN,
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Accept': '*/*',
+  Accept: '*/*',
   'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-  'sec-fetch-dest': 'empty',
-  'sec-fetch-mode': 'cors',
-  'sec-fetch-site': 'cross-site',
 }
 
-/**
- * Vérifie que l'URL cible est bien sur free.topstream.cloud (sécurité SSRF).
- */
 function isSafeTarget(url: string): boolean {
   try {
-    const u = new URL(url)
-    return u.hostname === TOPSTREAM_HOST || u.hostname.endsWith('.' + TOPSTREAM_HOST)
+    const h = new URL(url).hostname.toLowerCase()
+    return h === 'topstream.cloud' || h.endsWith('.topstream.cloud')
   } catch {
     return false
   }
 }
 
-/**
- * Réécrit les URLs relatives/absolues dans un manifest M3U8
- * pour qu'elles passent toutes par ce proxy.
- */
+function resolveUrl(href: string, base: URL): string | null {
+  try {
+    if (href.startsWith('http://') || href.startsWith('https://')) return href
+    return new URL(href, base).toString()
+  } catch {
+    return null
+  }
+}
+
 function rewriteM3u8(body: string, baseUrl: string, proxyBase: string): string {
   const base = new URL(baseUrl)
-
   return body
     .split('\n')
     .map(line => {
       const trimmed = line.trim()
-
-      // Ignorer les directives et lignes vides
       if (!trimmed || trimmed.startsWith('#')) {
-        // Réécrire URI= dans les directives (ex: #EXT-X-KEY, #EXT-X-MAP)
         return trimmed.replace(/URI="([^"]+)"/g, (_match, uri) => {
           const absolute = resolveUrl(uri, base)
           if (!absolute) return _match
           return `URI="${proxyBase}?url=${encodeURIComponent(absolute)}"`
         })
       }
-
-      // Lignes de segments (.ts, .m3u8, .aac, etc.)
       const absolute = resolveUrl(trimmed, base)
       if (!absolute) return line
       return `${proxyBase}?url=${encodeURIComponent(absolute)}`
     })
     .join('\n')
-}
-
-function resolveUrl(href: string, base: URL): string | null {
-  try {
-    if (href.startsWith('http://') || href.startsWith('https://')) {
-      return href
-    }
-    return new URL(href, base).toString()
-  } catch {
-    return null
-  }
 }
 
 export async function GET(request: NextRequest) {
@@ -83,12 +65,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const range = request.headers.get('range')
     const upstream = await fetch(url, {
-      headers: SPOOF_HEADERS,
+      headers: {
+        ...SPOOF_HEADERS,
+        ...(range ? { Range: range } : {}),
+      },
       redirect: 'follow',
     })
 
-    if (!upstream.ok) {
+    if (!upstream.ok && upstream.status !== 206) {
       return new NextResponse(
         `Erreur upstream : ${upstream.status} ${upstream.statusText}`,
         { status: upstream.status },
@@ -97,7 +83,6 @@ export async function GET(request: NextRequest) {
 
     const contentType = upstream.headers.get('content-type') || ''
 
-    // ── M3U8 : on réécrit le manifest ────────────────────────────────────────
     if (
       url.includes('.m3u8') ||
       contentType.includes('mpegurl') ||
@@ -117,17 +102,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // ── Segments TS, MP4, etc. : stream direct ────────────────────────────────
     const responseHeaders = new Headers({
       'Content-Type': contentType || 'video/mp2t',
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': '*',
+      'Accept-Ranges': 'bytes',
     })
     const contentLength = upstream.headers.get('content-length')
     if (contentLength) responseHeaders.set('Content-Length', contentLength)
+    const contentRange = upstream.headers.get('content-range')
+    if (contentRange) responseHeaders.set('Content-Range', contentRange)
 
     return new NextResponse(upstream.body, {
-      status: 200,
+      status: upstream.status === 206 ? 206 : 200,
       headers: responseHeaders,
     })
   } catch (err: any) {
