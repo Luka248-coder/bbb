@@ -98,7 +98,7 @@ function ensureCinflixSw(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
   return (async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=9', { scope: '/', updateViaCache: 'none' })
+      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=10', { scope: '/', updateViaCache: 'none' })
       if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
@@ -106,9 +106,15 @@ function ensureCinflixSw(): Promise<boolean> {
         new Promise<void>(resolve => {
           navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
         }),
-        new Promise<void>(resolve => window.setTimeout(resolve, 2500)),
+        new Promise<void>(resolve => window.setTimeout(resolve, 2000)),
       ])
-      return !!navigator.serviceWorker.controller
+      if (navigator.serviceWorker.controller) return true
+      if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('cinflix-sw-v10')) {
+        sessionStorage.setItem('cinflix-sw-v10', '1')
+        window.location.reload()
+        return false
+      }
+      return false
     } catch {
       return false
     }
@@ -130,24 +136,18 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
   if (innerBlink) return withCinflixReferer(innerBlink)
   if (!isCinflixApiUrl(raw)) return null
 
-  await ensureCinflixSw()
+  const controlled = await ensureCinflixSw()
+  if (!controlled) return resolveFromPlayEndpoint(raw)
 
-  const src = new URL(raw)
-  const bounce = new URL('/api/cinflix-bounce', window.location.origin)
-  bounce.searchParams.set('type', src.searchParams.get('type') || 'movie')
-  bounce.searchParams.set('id', src.searchParams.get('id') || '')
-  const season = src.searchParams.get('s')
-  const episode = src.searchParams.get('e')
-  if (season) bounce.searchParams.set('s', season)
-  if (episode) bounce.searchParams.set('e', episode)
-  bounce.searchParams.set('_', String(Date.now()))
-  const apiUrl = bounce.toString()
+  const api = new URL(raw)
+  api.searchParams.set('_', String(Date.now()))
+  const apiUrl = api.toString()
 
   const blinkUrl = await new Promise<string | null>(resolve => {
     let done = false
     let channel: BroadcastChannel | null = null
-    const iframe = document.createElement('iframe')
-    const ctrl = new AbortController()
+    const img = new Image()
+    const fetchCtrl = new AbortController()
 
     const finish = (found: string | null) => {
       if (done) return
@@ -155,8 +155,11 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
       navigator.serviceWorker.removeEventListener('message', onMsg)
       try { channel?.close() } catch {}
       window.clearTimeout(timer)
-      try { iframe.remove() } catch {}
-      try { ctrl.abort() } catch {}
+      window.clearTimeout(fetchCut)
+      img.onload = null
+      img.onerror = null
+      img.src = ''
+      try { fetchCtrl.abort() } catch {}
       resolve(found)
     }
 
@@ -171,15 +174,16 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
       channel.onmessage = onMsg
     } catch {}
 
-    iframe.setAttribute('aria-hidden', 'true')
-    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none'
-    iframe.referrerPolicy = 'no-referrer'
-    iframe.onload = () => {
+    img.referrerPolicy = 'no-referrer'
+    img.onload = () => {
       const found = blinkFromPerformance()
       if (found) finish(found)
     }
-    document.body.appendChild(iframe)
-    iframe.src = apiUrl
+    img.onerror = () => {
+      const found = blinkFromPerformance()
+      if (found) finish(found)
+    }
+    img.src = apiUrl
 
     fetch(apiUrl, {
       mode: 'no-cors',
@@ -187,17 +191,12 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
       cache: 'no-store',
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
-      signal: ctrl.signal,
+      signal: fetchCtrl.signal,
     }).catch(() => {})
 
-    fetch(apiUrl, {
-      mode: 'cors',
-      redirect: 'follow',
-      cache: 'no-store',
-      credentials: 'omit',
-      headers: { Range: 'bytes=0-0' },
-      signal: ctrl.signal,
-    }).catch(() => {})
+    const fetchCut = window.setTimeout(() => {
+      try { fetchCtrl.abort() } catch {}
+    }, 2000)
 
     void resolveFromPlayEndpoint(raw).then(playUrl => {
       if (!playUrl) return

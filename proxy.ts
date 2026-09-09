@@ -14,7 +14,6 @@ const BYPASS_PATHS = [
   '/api/auth/admin',
   '/api/cinflix-resolve',
   '/api/cinflix-play',
-  '/api/cinflix-bounce',
   '/api/proxy-download',
   '/sw-cinflix.js',
 ]
