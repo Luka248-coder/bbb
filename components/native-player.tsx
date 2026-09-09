@@ -63,7 +63,7 @@ function probeCinflixNetwork(apiUrl: string) {
   const probe = new URL(apiUrl)
   probe.searchParams.set('_', String(Date.now()))
   const probeUrl = probe.toString()
-  const img = new Image()
+  const img = document.createElement('img')
   img.referrerPolicy = 'no-referrer'
   img.src = probeUrl
   const ctrl = new AbortController()
@@ -119,7 +119,7 @@ async function resolveCinflixFromPhone(apiUrl: string): Promise<string | null> {
   return new Promise(resolve => {
     let done = false
     let channel: BroadcastChannel | null = null
-    const img = new Image()
+    const img = document.createElement('img')
     const fetchCtrl = new AbortController()
 
     const finish = (found: string | null) => {
@@ -193,22 +193,6 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
   await ensureCinflixSw()
 
   try {
-    const u = new URL(raw)
-    const params = new URLSearchParams({
-      type: u.searchParams.get('type') || 'movie',
-      id: u.searchParams.get('id') || '',
-    })
-    const season = u.searchParams.get('s')
-    const episode = u.searchParams.get('e')
-    if (season) params.set('s', season)
-    if (episode) params.set('e', episode)
-    const res = await fetch(`/api/cinflix-resolve?${params}`)
-    const data = await res.json().catch(() => null)
-    const media = typeof data?.url === 'string' ? data.url : null
-    if (media && !isCinflixApiUrl(media)) {
-      return media.includes('/api/proxy-download') ? media : withCinflixReferer(media)
-    }
-  } catch {}
     const u = new URL(raw)
     const params = new URLSearchParams({
       type: u.searchParams.get('type') || 'movie',
