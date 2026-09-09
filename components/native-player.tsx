@@ -11,6 +11,7 @@ import {
   Lock, LogIn
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Hls from 'hls.js'
 import { isCinflixApiUrl } from '@/lib/cinflix-url'
 
 function isWebKitSafari() {
@@ -58,13 +59,9 @@ function blinkFromPerformance(): string | null {
   return null
 }
 
-async function ensureCinflixSw() {
+function ensureCinflixSw() {
   if (!('serviceWorker' in navigator)) return
-  try {
-    const reg = await navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' })
-    await navigator.serviceWorker.ready
-    await reg.update().catch(() => {})
-  } catch {}
+  navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' }).catch(() => {})
 }
 
 async function resolveCinflixSrc(url: string): Promise<string | null> {
@@ -74,14 +71,20 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
   if (!isCinflixApiUrl(url)) return null
 
   try {
-    const res = await fetch(url, { redirect: 'follow', credentials: 'omit' })
-    try { await res.body?.cancel() } catch {}
-    const final = blinkMp4From(res.url)
-    if (final) return withCinflixReferer(final)
-    const loc = res.headers.get('location')
-    if (loc) {
-      const abs = blinkMp4From(new URL(loc, url).toString())
-      if (abs) return withCinflixReferer(abs)
+    const u = new URL(url)
+    const params = new URLSearchParams({
+      type: u.searchParams.get('type') || 'movie',
+      id: u.searchParams.get('id') || '',
+    })
+    const season = u.searchParams.get('s')
+    const episode = u.searchParams.get('e')
+    if (season) params.set('s', season)
+    if (episode) params.set('e', episode)
+    const res = await fetch(`/api/cinflix-resolve?${params}`)
+    const data = await res.json().catch(() => null)
+    const media = typeof data?.url === 'string' ? data.url : null
+    if (media && !isCinflixApiUrl(media)) {
+      return media.includes('/api/proxy-download') ? media : withCinflixReferer(media)
     }
   } catch {}
 
@@ -602,11 +605,12 @@ export function NativePlayer({
     }
 
     if (isHls && Hls.isSupported() && !safariRef.current) {
+      startErrorTimer()
       const hls = new Hls({ enableWorker: true, xhrSetup: (xhr) => {
         xhr.withCredentials = false
       }})
       hlsRef.current = hls
-      hls.loadSource(url)
+      hls.loadSource(safariMediaUrl(url))
       hls.attachMedia(v)
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -660,10 +664,10 @@ export function NativePlayer({
     }
 
     void (async () => {
-      await ensureCinflixSw()
+      ensureCinflixSw()
       if (gen !== loadGenRef.current) return
 
-      let playUrl = safariRef.current ? safariMediaUrl(url) : url
+      let playUrl = safariMediaUrl(url)
       const cinflixSrc = await resolveCinflixSrc(url)
       if (gen !== loadGenRef.current) return
       if (cinflixSrc) {
@@ -681,10 +685,6 @@ export function NativePlayer({
       while (v.firstChild) v.removeChild(v.firstChild)
       v.src = playUrl
       v.load()
-      if (safariRef.current) {
-        setBuffering(false)
-        return
-      }
       playSrc()
     })()
   }, [startErrorTimer, clearErrorTimer, cancelErrorTimer])
@@ -834,7 +834,7 @@ export function NativePlayer({
     fetchTimeoutRef.current = setTimeout(() => {
       setFetchingEpisode(false)
       setEpisodeNotFound(true)
-    }, 12000)
+    }, 25000)
 
     ;(async () => {
       try {
@@ -1058,7 +1058,9 @@ export function NativePlayer({
       setShowError(false)
       v.muted = false
       setMuted(false)
+      startErrorTimer()
       v.play()?.catch(() => {
+        cancelErrorTimer()
         setBuffering(false)
         setPlaying(false)
       })
@@ -1301,7 +1303,7 @@ export function NativePlayer({
     fetchTimeoutRef.current = setTimeout(() => {
       setFetchingEpisode(false)
       setEpisodeNotFound(true)
-    }, 12000)
+    }, 25000)
     setShowEpisodes(false)
     window.location.assign(getEpisodePlayUrl(season, episode))
   }
