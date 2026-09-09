@@ -125,9 +125,14 @@ async function proxy(request: NextRequest, withBody: boolean) {
     }
 
     if (parsed.hostname.toLowerCase().includes('cinflix.xyz')) {
-      // Do not resolve Cinflix from Vercel (US IPs are blocked). The device
-      // follows this 302, Cinflix 302s to blink, sw-cinflix proxies blink.
-      return NextResponse.redirect(rawUrl, 302)
+      const dest = new URL('/api/cinflix-play', request.url)
+      dest.searchParams.set('type', parsed.searchParams.get('type') || 'movie')
+      dest.searchParams.set('id', parsed.searchParams.get('id') || '')
+      const season = parsed.searchParams.get('s')
+      const episode = parsed.searchParams.get('e')
+      if (season) dest.searchParams.set('s', season)
+      if (episode) dest.searchParams.set('e', episode)
+      return NextResponse.redirect(dest, 307)
     }
 
     const target = parsed

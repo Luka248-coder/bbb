@@ -31,7 +31,7 @@ function safariMediaUrl(raw: string) {
 }
 
 function withCinflixReferer(mediaUrl: string) {
-  if (mediaUrl.includes('/api/proxy-download')) return mediaUrl
+  if (mediaUrl.includes('/api/proxy-download') || mediaUrl.includes('/api/cinflix-play')) return mediaUrl
   return `/api/proxy-download?url=${encodeURIComponent(mediaUrl)}`
 }
 
@@ -93,21 +93,8 @@ function watchBlinkRedirect(onBlink: (url: string) => void, timeoutMs = 12000): 
   }
 }
 
-function ensureCinflixSw() {
-  if (!('serviceWorker' in navigator)) return
-  navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' }).catch(() => {})
-}
-
-function isProxiedMedia(url: string) {
-  return url.includes('/api/proxy-download') || !!blinkMp4From(url)
-}
-
-async function resolveCinflixSrc(url: string): Promise<string | null> {
-  const known = blinkMp4From(url)
-  if (known) return withCinflixReferer(known)
-
+function cinflixPlaySrc(url: string): string | null {
   if (!isCinflixApiUrl(url)) return null
-
   try {
     const u = new URL(url)
     const params = new URLSearchParams({
@@ -118,16 +105,61 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
     const episode = u.searchParams.get('e')
     if (season) params.set('s', season)
     if (episode) params.set('e', episode)
-    const res = await fetch(`/api/cinflix-resolve?${params}`)
+    return `/api/cinflix-play?${params}`
+  } catch {
+    return null
+  }
+}
+
+function isSameOriginPlayback(url: string) {
+  return url.includes('/api/proxy-download') || url.includes('/api/cinflix-play')
+}
+
+async function ensureCinflixSw() {
+  if (!('serviceWorker' in navigator)) return
+  try {
+    await navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' })
+    await navigator.serviceWorker.ready
+  } catch {}
+}
+
+async function resolveCinflixSrc(url: string): Promise<string | null> {
+  const known = blinkMp4From(url)
+  if (known) return withCinflixReferer(known)
+  if (url.includes('/api/proxy-download')) return url
+
+  const play = isCinflixApiUrl(url) ? cinflixPlaySrc(url) : (url.includes('/api/cinflix-play') ? url : null)
+  if (!play) return null
+
+  try {
+    const res = await fetch(play, {
+      method: 'GET',
+      redirect: 'manual',
+      cache: 'no-store',
+      headers: { Range: 'bytes=0-0' },
+    })
+    const loc = res.headers.get('location')
+    if (loc) {
+      const abs = new URL(loc, window.location.origin)
+      if (abs.pathname.includes('/api/proxy-download')) {
+        return `${abs.pathname}${abs.search}`
+      }
+      const blink = blinkMp4From(abs.toString())
+      if (blink) return withCinflixReferer(blink)
+    }
     const data = await res.json().catch(() => null)
     const media = typeof data?.url === 'string' ? data.url : null
-    if (media && !isCinflixApiUrl(media)) {
-      return media.includes('/api/proxy-download') ? media : withCinflixReferer(media)
-    }
+    if (media && !isCinflixApiUrl(media)) return withCinflixReferer(media)
   } catch {}
 
-  // Vercel US cannot read Cinflix. Hit cinflix.xyz from the phone instead.
-  return url
+  try {
+    const res = await fetch(play.replace('/api/cinflix-play', '/api/cinflix-resolve'), { cache: 'no-store' })
+    const data = await res.json().catch(() => null)
+    const media = typeof data?.url === 'string' ? data.url : null
+    if (media && !isCinflixApiUrl(media)) return withCinflixReferer(media)
+  } catch {}
+
+  return play
 }
 
 interface Episode {
@@ -714,14 +746,19 @@ export function NativePlayer({
       if (gen !== loadGenRef.current) return
       if (cinflixSrc) {
         playUrl = cinflixSrc
-        if (isProxiedMedia(cinflixSrc)) proxyTriedRef.current = true
+        if (isSameOriginPlayback(cinflixSrc)) proxyTriedRef.current = true
       }
 
       if (gen !== loadGenRef.current) return
       v.removeAttribute('src')
       while (v.firstChild) v.removeChild(v.firstChild)
 
-      if (isCinflixApiUrl(playUrl)) {
+      if (blinkMp4From(playUrl) || isCinflixApiUrl(playUrl)) {
+        playUrl = withCinflixReferer(playUrl)
+        proxyTriedRef.current = true
+      }
+
+      if (isCinflixApiUrl(url)) {
         blinkWatchStopRef.current = watchBlinkRedirect(blink => {
           if (gen !== loadGenRef.current) return
           blinkWatchStopRef.current = null
@@ -955,10 +992,11 @@ export function NativePlayer({
       const v = videoRef.current
       const raw = sourceUrlRef.current
       if (!v || !raw || proxyTriedRef.current || v.seeking) return
-      if (raw.includes('.m3u8') || isCinflixApiUrl(raw)) return
+      if (raw.includes('.m3u8') || isCinflixApiUrl(raw) || raw.includes('/api/cinflix-play')) return
+      if (raw.includes('/api/proxy-download')) return
       if (!(v.duration > 0) || v.currentTime > 0.2) return
       proxyTriedRef.current = true
-      v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
+      v.src = withCinflixReferer(raw)
       v.muted = false
       setMuted(false)
       v.play()?.catch(() => {
