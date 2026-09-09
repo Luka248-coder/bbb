@@ -208,3 +208,16 @@ body { background: transparent !important; }
 #v0-built-with-button-aec00727-a866-4b89-9314-a31381108bc4 {
   display: none !important;
 }
+
+@keyframes title-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+.title-kenburns {
+  animation: title-kenburns 25s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-kenburns {
+    animation: none;
+  }
+}
