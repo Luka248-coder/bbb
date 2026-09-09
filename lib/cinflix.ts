@@ -87,14 +87,43 @@ async function requestNoRedirect(urlStr: string): Promise<{
   }
 }
 
+function isBlinkMedia(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return host.includes('blink-n3') || /\.mp4(?:$|\?)/i.test(url)
+  } catch {
+    return false
+  }
+}
+
 export async function resolveCinflixApiUrl(apiUrl: string): Promise<string | null> {
   const res = await requestNoRedirect(apiUrl)
-  if (res.location) return res.location
+  if (res.location && !isCinflixApiUrl(res.location)) return res.location
   if (res.contentType.includes('json') && res.text) {
     try {
-      return urlFromPayload(JSON.parse(res.text))
+      const fromJson = urlFromPayload(JSON.parse(res.text))
+      if (fromJson) return fromJson
     } catch {}
   }
+
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+  try {
+    const followed = await fetch(apiUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      cache: 'no-store',
+      headers: HEADERS,
+      signal: ctrl.signal,
+    })
+    const finalUrl = followed.url
+    try { await followed.body?.cancel() } catch {}
+    if (finalUrl && !isCinflixApiUrl(finalUrl) && isBlinkMedia(finalUrl)) return finalUrl
+  } catch {
+  } finally {
+    clearTimeout(timer)
+  }
+
   return null
 }
 

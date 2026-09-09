@@ -19,18 +19,29 @@ export async function proxy(request: NextRequest) {
 
   console.log('[PROXY] pathname:', pathname)
 
-  if (pathname === '/api/cinflix-resolve') {
+  if (pathname === '/api/cinflix-resolve' || pathname === '/api/cinflix-play') {
     const { searchParams } = request.nextUrl
     const type = searchParams.get('type') === 'tv' || searchParams.get('type') === 'series' ? 'tv' : 'movie'
     const id = Number(searchParams.get('id') || 0)
     const season = Number(searchParams.get('s') || 1)
     const episode = Number(searchParams.get('e') || 1)
     if (!id) {
+      if (pathname === '/api/cinflix-play') {
+        return new NextResponse('id manquant', { status: 400 })
+      }
       return NextResponse.json({ url: null }, { status: 400 })
     }
     const apiUrl = cinflixStreamApiUrl(type, id, season, episode)
-    const url = await resolveCinflixApiUrl(apiUrl)
-    return NextResponse.json({ url })
+    const media = await resolveCinflixApiUrl(apiUrl)
+    if (pathname === '/api/cinflix-play') {
+      if (!media) {
+        return new NextResponse('Cinflix n\'a pas renvoyé de flux', { status: 502 })
+      }
+      const dest = new URL('/api/proxy-download', request.url)
+      dest.searchParams.set('url', media)
+      return NextResponse.redirect(dest, 307)
+    }
+    return NextResponse.json({ url: media })
   }
 
   // Toujours autoriser les chemins bypass

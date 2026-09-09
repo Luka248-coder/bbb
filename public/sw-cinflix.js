@@ -13,7 +13,7 @@ self.addEventListener('fetch', event => {
   } catch {
     return
   }
-  if (!url.hostname.includes('blink-n3')) return
+  if (!url.hostname.toLowerCase().includes('blink-n3')) return
 
   const proxy = new URL('/api/proxy-download', self.location.origin)
   proxy.searchParams.set('url', event.request.url)
@@ -21,5 +21,5 @@ self.addEventListener('fetch', event => {
   const range = event.request.headers.get('Range')
   if (range) headers.set('Range', range)
 
-  event.respondWith(fetch(proxy.toString(), { headers }))
+  event.respondWith(fetch(proxy.toString(), { headers, redirect: 'follow' }))
 })
