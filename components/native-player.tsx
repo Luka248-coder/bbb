@@ -293,7 +293,7 @@ export function NativePlayer({
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
-  const [muted, setMuted] = useState(true)
+  const [muted, setMuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
@@ -524,19 +524,15 @@ export function NativePlayer({
     setPlaying(false)
     setShowError(false)
 
-    if (safariRef.current) {
-      v.muted = false
-      setMuted(false)
-    } else {
-      v.muted = true
-      setMuted(true)
-    }
+    v.muted = false
+    setMuted(false)
 
     const isHls = url.includes('.m3u8')
     const playUrl = safariRef.current ? safariMediaUrl(url) : url
 
     const playSrc = () => {
-      v.muted = true
+      v.muted = false
+      setMuted(false)
       startErrorTimer()
       v.play()?.catch(() => {
         cancelErrorTimer()
@@ -624,15 +620,7 @@ export function NativePlayer({
     const onTimeUpdate = () => {
       syncVideoState(v)
     }
-    const kickPlayback = () => {
-      if (safariRef.current) return
-      if (v.paused) {
-        v.muted = true
-        v.play()?.catch(() => {})
-      }
-    }
     const applyResume = () => {
-      if (safariRef.current) return
       if (resumeAppliedRef.current || !(v.duration > 0)) return
       const saved = resumeTimeRef.current
       if (!(saved > 2 && saved < 98)) {
@@ -650,9 +638,13 @@ export function NativePlayer({
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
       }
-      kickPlayback()
     }
-    const onPlay = () => { syncVideoState(v); resetTimer() }
+    const onPlay = () => {
+      v.muted = false
+      setMuted(false)
+      syncVideoState(v)
+      resetTimer()
+    }
     const onPlaying = () => {
       syncVideoState(v)
       setBuffering(false)
@@ -668,7 +660,6 @@ export function NativePlayer({
     const onCanPlay = () => {
       syncVideoState(v)
       setBuffering(false)
-      kickPlayback()
     }
     const onError = () => {
       const raw = sourceUrlRef.current
@@ -681,7 +672,8 @@ export function NativePlayer({
         proxyTriedRef.current = true
         setBuffering(true)
         v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
-        v.muted = true
+        v.muted = false
+        setMuted(false)
         v.play()?.catch(() => {
           setBuffering(false)
           setPlaying(false)
@@ -797,7 +789,8 @@ export function NativePlayer({
       if (!(v.duration > 0) || v.currentTime > 0.2) return
       proxyTriedRef.current = true
       v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
-      v.muted = true
+      v.muted = false
+      setMuted(false)
       v.play()?.catch(() => {
         setBuffering(false)
         setPlaying(false)
@@ -965,10 +958,8 @@ export function NativePlayer({
     if (!v) return
     if (v.paused) {
       setShowError(false)
-      if (safariRef.current) {
-        v.muted = false
-        setMuted(false)
-      }
+      v.muted = false
+      setMuted(false)
       v.play()?.catch(() => {
         setBuffering(false)
         setPlaying(false)
