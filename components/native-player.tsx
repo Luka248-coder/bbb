@@ -59,9 +59,47 @@ function blinkFromPerformance(): string | null {
   return null
 }
 
+function watchBlinkRedirect(onBlink: (url: string) => void, timeoutMs = 12000): () => void {
+  let done = false
+  const fire = (url: string) => {
+    if (done) return
+    done = true
+    onBlink(url)
+  }
+  const existing = blinkFromPerformance()
+  if (existing) {
+    fire(existing)
+    return () => { done = true }
+  }
+  let obs: PerformanceObserver | null = null
+  try {
+    obs = new PerformanceObserver(list => {
+      for (const entry of list.getEntries()) {
+        const found = blinkMp4From(entry.name)
+        if (found) fire(found)
+      }
+    })
+    obs.observe({ type: 'resource', buffered: true })
+  } catch {}
+  const timer = window.setTimeout(() => {
+    const found = blinkFromPerformance()
+    if (found) fire(found)
+    obs?.disconnect()
+  }, timeoutMs)
+  return () => {
+    done = true
+    obs?.disconnect()
+    window.clearTimeout(timer)
+  }
+}
+
 function ensureCinflixSw() {
   if (!('serviceWorker' in navigator)) return
   navigator.serviceWorker.register('/sw-cinflix.js', { updateViaCache: 'none' }).catch(() => {})
+}
+
+function isProxiedMedia(url: string) {
+  return url.includes('/api/proxy-download') || !!blinkMp4From(url)
 }
 
 async function resolveCinflixSrc(url: string): Promise<string | null> {
@@ -88,7 +126,8 @@ async function resolveCinflixSrc(url: string): Promise<string | null> {
     }
   } catch {}
 
-  return withCinflixReferer(url)
+  // Vercel US cannot read Cinflix. Hit cinflix.xyz from the phone instead.
+  return url
 }
 
 interface Episode {
@@ -316,6 +355,7 @@ export function NativePlayer({
   const hlsRef = useRef<Hls | null>(null)
   const sourceUrlRef = useRef<string | null>(null)
   const proxyTriedRef = useRef(false)
+  const blinkWatchStopRef = useRef<(() => void) | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -583,6 +623,8 @@ export function NativePlayer({
     resumeAppliedRef.current = false
     sourceUrlRef.current = url
     proxyTriedRef.current = false
+    blinkWatchStopRef.current?.()
+    blinkWatchStopRef.current = null
 
     setBuffering(true)
     setPlaying(false)
@@ -672,12 +714,25 @@ export function NativePlayer({
       if (gen !== loadGenRef.current) return
       if (cinflixSrc) {
         playUrl = cinflixSrc
-        proxyTriedRef.current = true
+        if (isProxiedMedia(cinflixSrc)) proxyTriedRef.current = true
       }
 
       if (gen !== loadGenRef.current) return
       v.removeAttribute('src')
       while (v.firstChild) v.removeChild(v.firstChild)
+
+      if (isCinflixApiUrl(playUrl)) {
+        blinkWatchStopRef.current = watchBlinkRedirect(blink => {
+          if (gen !== loadGenRef.current) return
+          blinkWatchStopRef.current = null
+          proxyTriedRef.current = true
+          sourceUrlRef.current = blink
+          v.src = withCinflixReferer(blink)
+          v.load()
+          playSrc()
+        })
+      }
+
       v.src = playUrl
       v.load()
       playSrc()
@@ -900,7 +955,7 @@ export function NativePlayer({
       const v = videoRef.current
       const raw = sourceUrlRef.current
       if (!v || !raw || proxyTriedRef.current || v.seeking) return
-      if (raw.includes('.m3u8')) return
+      if (raw.includes('.m3u8') || isCinflixApiUrl(raw)) return
       if (!(v.duration > 0) || v.currentTime > 0.2) return
       proxyTriedRef.current = true
       v.src = `/api/proxy-download?url=${encodeURIComponent(raw)}&filename=video.mp4`
