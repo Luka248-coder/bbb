@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { cinflixStreamApiUrl } from '@/lib/cinflix-url'
+import { resolveCinflixApiUrl } from '@/lib/cinflix'
 
 const BYPASS_PATHS = [
   '/maintenance',
@@ -16,6 +18,20 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   console.log('[PROXY] pathname:', pathname)
+
+  if (pathname === '/api/cinflix-resolve') {
+    const { searchParams } = request.nextUrl
+    const type = searchParams.get('type') === 'tv' || searchParams.get('type') === 'series' ? 'tv' : 'movie'
+    const id = Number(searchParams.get('id') || 0)
+    const season = Number(searchParams.get('s') || 1)
+    const episode = Number(searchParams.get('e') || 1)
+    if (!id) {
+      return NextResponse.json({ url: null }, { status: 400 })
+    }
+    const apiUrl = cinflixStreamApiUrl(type, id, season, episode)
+    const url = await resolveCinflixApiUrl(apiUrl)
+    return NextResponse.json({ url })
+  }
 
   // Toujours autoriser les chemins bypass
   if (BYPASS_PATHS.some((p) => pathname.startsWith(p))) {
