@@ -63,14 +63,15 @@ function ensureCinflixSw(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(false)
   return (async () => {
     try {
-      await navigator.serviceWorker.register('/sw-cinflix.js?v=7', { scope: '/', updateViaCache: 'none' })
+      const reg = await navigator.serviceWorker.register('/sw-cinflix.js?v=8', { scope: '/', updateViaCache: 'none' })
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
       await navigator.serviceWorker.ready
       if (navigator.serviceWorker.controller) return true
       await Promise.race([
         new Promise<void>(resolve => {
           navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
         }),
-        new Promise<void>(resolve => window.setTimeout(resolve, 2500)),
+        new Promise<void>(resolve => window.setTimeout(resolve, 4000)),
       ])
       return !!navigator.serviceWorker.controller
     } catch {
@@ -94,38 +95,63 @@ async function resolveCinflixPlayUrl(url: string): Promise<string | null> {
   if (innerBlink) return withCinflixReferer(innerBlink)
   if (!isCinflixApiUrl(raw)) return null
 
-  const ready = await ensureCinflixSw()
-  if (!ready) return null
+  await ensureCinflixSw()
 
-  const ctrl = new AbortController()
+  const api = new URL(raw)
+  api.searchParams.set('_', String(Date.now()))
+  const apiUrl = api.toString()
+
   const blinkUrl = await new Promise<string | null>(resolve => {
     let done = false
+    let channel: BroadcastChannel | null = null
+    const img = new Image()
+    const ctrl = new AbortController()
+
     const finish = (found: string | null) => {
       if (done) return
       done = true
       navigator.serviceWorker.removeEventListener('message', onMsg)
+      try { channel?.close() } catch {}
       window.clearTimeout(timer)
+      img.onload = null
+      img.onerror = null
+      img.src = ''
       try { ctrl.abort() } catch {}
       resolve(found)
     }
+
     const onMsg = (event: MessageEvent) => {
       const found = blinkMp4From(typeof event.data?.url === 'string' ? event.data.url : '')
       if (found) finish(found)
     }
+
     navigator.serviceWorker.addEventListener('message', onMsg)
-    const api = new URL(raw)
-    api.searchParams.set('_', String(Date.now()))
-    fetch(api.toString(), {
+    try {
+      channel = new BroadcastChannel('cinflix-blink')
+      channel.onmessage = onMsg
+    } catch {}
+
+    img.referrerPolicy = 'no-referrer'
+    img.onload = () => {
+      const found = blinkFromPerformance()
+      if (found) finish(found)
+    }
+    img.onerror = () => {
+      const found = blinkFromPerformance()
+      if (found) finish(found)
+    }
+    img.src = apiUrl
+
+    fetch(apiUrl, {
       mode: 'no-cors',
       redirect: 'follow',
       cache: 'no-store',
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
       signal: ctrl.signal,
-    }).catch(() => {}).finally(() => {
-      window.setTimeout(() => finish(blinkFromPerformance()), 500)
-    })
-    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 8000)
+    }).catch(() => {})
+
+    const timer = window.setTimeout(() => finish(blinkFromPerformance()), 7000)
   })
 
   return blinkUrl ? withCinflixReferer(blinkUrl) : null
@@ -761,6 +787,7 @@ export function NativePlayer({
       for (let i = 0; i < v.textTracks.length; i++) {
         v.textTracks[i].mode = 'disabled'
       }
+      if (v.duration > 0) clearErrorTimer()
     }
     const onPlay = () => {
       v.muted = false
@@ -1610,7 +1637,7 @@ export function NativePlayer({
               </div>
               <h3 className="text-white font-bold text-lg mb-2">Problème de lecture</h3>
               <p className="text-white/50 text-sm leading-relaxed mb-6">
-                Le contenu met trop de temps à se lancer.<br/>Réessayez ou revenez plus tard.
+                Impossible de démarrer la lecture.<br/>Réessayez ou revenez plus tard.
               </p>
               <div className="flex gap-3 w-full">
                 <button type="button" onClick={goBack} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors text-center"
