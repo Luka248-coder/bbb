@@ -1,8 +1,11 @@
 import https from 'node:https'
+import dns from 'node:dns'
 import { URL } from 'node:url'
 import { cinflixStreamApiUrl, isCinflixApiUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
 
 export { cinflixStreamApiUrl, isCinflixApiUrl, isCinflixMediaUrl, isPlayableMediaUrl } from '@/lib/cinflix-url'
+
+try { dns.setDefaultResultOrder('ipv4first') } catch {}
 
 const CINFLIX_ORIGIN = 'https://cinflix.xyz'
 const CINFLIX_REFERER = `${CINFLIX_ORIGIN}/`
@@ -80,6 +83,7 @@ function requestNoRedirect(urlStr: string): Promise<CinflixResponse> {
           method: 'GET',
           headers: HEADERS,
           timeout: TIMEOUT_MS,
+          family: 4,
         },
         res => {
           const location = headerLocation(res.headers.location, urlStr)
@@ -157,10 +161,10 @@ export async function getCinflixStreamUrl(
       console.log(`[Cinflix] ✅ ${kind} ${tmdbId} → ${media.slice(0, 80)}`)
       return media
     }
-    console.warn(`[Cinflix] ${kind} ${tmdbId} unresolved`)
+    console.warn(`[Cinflix] ${kind} ${tmdbId} unresolved — API URL for proxy`)
   } catch (err) {
     console.error('[Cinflix]', err)
   }
 
-  return null
+  return apiUrl
 }

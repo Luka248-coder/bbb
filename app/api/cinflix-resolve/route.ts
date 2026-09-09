@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCinflixStreamUrl } from '@/lib/cinflix'
-import { isCinflixApiUrl } from '@/lib/cinflix-url'
 
 export const runtime = 'nodejs'
 export const maxDuration = 15
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   const url = await getCinflixStreamUrl(type, id, season, episode)
-  if (!url || isCinflixApiUrl(url)) {
+  if (!url) {
     return NextResponse.json({ url: null })
   }
 
